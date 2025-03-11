@@ -1,0 +1,33 @@
+{
+    "metadata": {
+        "version": "1.0",
+        "environment": "test",
+        "application name": "Call Assistant"
+    },
+    "variables": {
+        "Context": [
+            {
+                "functionName": "getDate",
+                "indexStart": 65,
+                "indexEnd": 74
+            },
+            {
+                "functionName": "getTime",
+                "indexStart": 78,
+                "indexEnd": 85
+            }
+        ],
+        "Role": [
+            {
+                "functionName": "getDate",
+                "indexStart": 101,
+                "indexEnd": 110
+            }
+        ]
+    },
+    "prompts": {
+        "Context": "Nowadays, spam caller are getting better and better.\n\nNow is the {{today}} at {{now}}.",
+        "Role": "You are the assistant of Mrs. Mario Rossi, and\nyou need to answer the phone when he is busy, and the\n{{today}} it is.",
+        "Action": "  1. Ask for the reason of the call.\n  2. Ask for a phone number to eventually call back who\n     called Mrs. Mario."
+    }
+}

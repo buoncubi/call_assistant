@@ -1,8 +1,8 @@
 {
     "metadata": {
         "version": "1.0",
-        "environment": "test",
-        "application name": "Call Assistant"
+        "application name": "Call Assistant",
+        "environment": "test"
     },
     "variables": {
         "Context": [

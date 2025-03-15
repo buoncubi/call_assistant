@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- TODO When you're ready to deploy to AWS Lambda, you'll need to:
+ - Add the Lambda appender
+ - Add the file appender if needed
+ - Update the logger references to use the Lambda appender
+ - Add the amazon package to <Configuration>
+-->
+<Configuration status="WARN"> <!-- packages="com.amazonaws.services.lambda.runtime.log4j2"> -->
+    <Properties>
+        <!-- Variables for project structure (set by virtual environment ) -->
+        <Property name="PACKAGE_ID">${env:BASE_PKG:-digital.boline.callAssistant}</Property>
+        <Property name="PACKAGE_ID_AWS">${env:BASE_PKG_AWS:-software.amazon.awssdk}</Property>
+
+        <!-- Root log level (set by virtual environment ) -->
+        <Property name="LEVEL_ROOT">${env:LOG_LEVEL_ROOT:-INFO}</Property>
+
+        <!-- AWS Services log levels (set by virtual environment ) -->
+        <Property name="LEVEL_AWS_TRANSCRIBE">${env:LOG_LEVEL_AWS_TRANSCRIBE:-WARN}</Property>
+        <Property name="LEVEL_AWS_POLLY">${env:LOG_LEVEL_AWS_POLLY:-WARN}</Property>
+        <Property name="LEVEL_AWS_BEDROCK">${env:LOG_LEVEL_AWS_BEDROCK:-WARN}</Property>
+        <Property name="LEVEL_AWS">${env:LOG_LEVEL_AWS:-WARN}</Property>
+
+        <!-- Project packages log levels (set by virtual environment ) -->
+        <Property name="LEVEL_PKG_LLM">${env:LOG_LEVEL_PKG_LLM:-WARN}</Property>
+        <Property name="LEVEL_PKG_LLM_PROMPT">${env:LOG_LEVEL_PKG_LLM_PROMPT:-WARN}</Property>
+        <Property name="LEVEL_PKG_LLM_MESSAGE">${env:LOG_LEVEL_PKG_LLM_MESSAGE:-WARN}</Property>
+        <Property name="LEVEL_PKG_SPEECH2TEXT">${env:LOG_LEVEL_PKG_SPEECH2TEXT:-WARN}</Property>
+        <Property name="LEVEL_PKG_TEXT2SPEECH">${env:LOG_LEVEL_PKG_TEXT2SPEECH:-WARN}</Property>
+        <Property name="LEVEL_PKG_DIALOGUE">${env:LOG_LEVEL_PKG_DIALOGUE:-WARN}</Property>
+        <Property name="LEVEL_PKG">${env:LOG_LEVEL_PKG:-WARN}</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- Console Appender for development -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%-7.-7t] %-5level - %msg%n</pattern>
+            </PatternLayout>
+        </Console>
+
+        <!-- Async Console Appender -->
+        <Async name="AsyncConsole" bufferSize="1024">
+            <AppenderRef ref="Console"/>
+        </Async>
+    </Appenders>
+
+    <Loggers>
+        <!-- AWS Service Loggers -->
+        <Logger name="${PACKAGE_ID_AWS}.services.transcribestreaming" level="${LEVEL_AWS_TRANSCRIBE}" additivity="false">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+        <Logger name="${PACKAGE_ID_AWS}.services.polly" level="${LEVEL_AWS_POLLY}" additivity="false">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+        <Logger name="${PACKAGE_ID_AWS}.services.bedrockruntime" level="${LEVEL_AWS_BEDROCK}" additivity="false">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+
+        <!-- AWS SDK general logging -->
+        <Logger name="software.amazon.awssdk" level="${LEVEL_AWS}">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+
+
+        <!-- Project Package Loggers -->
+        <Logger name="${PACKAGE_ID}.llm" level="${LEVEL_PKG_LLM}" additivity="false">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+        <Logger name="${PACKAGE_ID}.llm.prompt" level="${LEVEL_PKG_LLM_PROMPT}" additivity="false">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+        <Logger name="${PACKAGE_ID}.llm.message" level="${LEVEL_PKG_LLM_MESSAGE}" additivity="false">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+        <Logger name="${PACKAGE_ID}.speech2text" level="${LEVEL_PKG_SPEECH2TEXT}" additivity="false">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+        <Logger name="${PACKAGE_ID}.text2speech" level="${LEVEL_PKG_TEXT2SPEECH}" additivity="false">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+        <Logger name="${PACKAGE_ID}.dialogue" level="${LEVEL_PKG_DIALOGUE}" additivity="false">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+        <Logger name="${PACKAGE_ID}" level="${LEVEL_PKG}" additivity="false">
+            <AppenderRef ref="AsyncConsole"/>
+        </Logger>
+
+        <!-- Root Logger -->
+        <Root level="${LEVEL_ROOT}">
+            <AppenderRef ref="AsyncConsole"/>
+        </Root>
+    </Loggers>
+</Configuration>

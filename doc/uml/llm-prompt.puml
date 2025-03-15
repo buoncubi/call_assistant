@@ -1,0 +1,148 @@
+@startuml
+interface digital.boline.callAssistant.llm.prompt.Prompts {
++ Map<K,T> prompts
+}
+
+abstract class digital.boline.callAssistant.llm.prompt.SimplePrompt {
++ Map<K, T> metadata
++ Map<K, O> variables
+# String formatMap2String(Map<*,*>,String,String)
+}
+
+
+class digital.boline.callAssistant.llm.prompt.TypedPrompts$Companion {
+-  SEPARATOR
+}
+
+abstract class digital.boline.callAssistant.llm.prompt.TypedPrompts {
++ String toString()
++ Boolean equals(Any?)
++ Int hashCode()
+}
+
+class digital.boline.callAssistant.llm.prompt.PromptsManager$Companion {
+-  MESSAGE_SUMMARY_TITLE_KEY
+}
+
+abstract class digital.boline.callAssistant.llm.prompt.PromptsManager {
++ Map<String, String> rawPrompts
++ String messageSummary
++ String formatPrompts(List<String>,Boolean,Boolean)
++ void applyVariables()
+}
+
+
+class digital.boline.callAssistant.llm.prompt.PromptsManagerImpl {
++ Map<String, String> prompts
++ void applyVariables()
+}
+
+
+class digital.boline.callAssistant.llm.prompt.VariablesFunction {
+-  functionMap
+- String formattedTime
+- Pair<String, () -> String> addFunction(() -> String)
++ String? invoke(String)
++ Boolean containsFunction(String)
++ String getDate()
++ String getTime()
++ void updateTime()
+- String newTime()
++ String toString()
+}
+
+
+class digital.boline.callAssistant.llm.prompt.FieldsMatcher {
+}
+enum digital.boline.callAssistant.llm.prompt.SpecialSectionTitle {
++  METADATA
++  CONSTANTS
++  VARIABLES
++ String getName()
+}
+
+
+class digital.boline.callAssistant.llm.prompt.PromptsParser {
+-  REGEX_VAR
+-  REGEX_CONST
+-  REGEX_LINE_COMMENT
+-  REGEX_BLOCK_COMMENT
+-  INNER_BLOCK_COMMENT
+-  REGEX_SPACES
+-  FIELD_SEPARATOR
+-  REGEX_FIELDS
+-  REGEX_SECTION_TITLE
+-  REGREX_SECTION_TITLE_CHECKER
+-  REGEX_FEASIBLE_FUNCTION_NAME
+- void regrexSpecialSectionTitle(String)
++ ParsedPrompts? parse(String)
++ ParsedPrompts? parse(File)
++ ParsedPrompts parse(StringBuilder)
+- ParsedPrompts parseAll(StringBuilder)
+- StringBuilder? loadFileAsText(File)
+- void removeRegrex(StringBuilder,Pattern,(Matcher)->Unit)
+- void removeComments(StringBuilder)
+- void normalizeWhitespace(StringBuilder)
+- void checkTitleFormat(StringBuilder)
+- FieldsMatcher<FieldsMap> parseSpecialSections(StringBuilder,SpecialSectionTitle)
+- FieldsMatcher<List<String>> extractSpecialSection(StringBuilder,String)
+- void checkVariableDefinition(MutableMap<String, String>)
+- void removeSpecialSections(StringBuilder,FieldsMatcher<*>)
+- Map<String, String> parsePrompts(StringBuilder,ParsedPrompts)
+- StringBuilder replaceConstantsPlaceholders(String,ParsedPrompts)
+- MutableMap<String, MutableOccurrences> storeVariablesOccurrences(ParsedPrompts)
+}
+
+
+class digital.boline.callAssistant.llm.prompt.SerializationFiles {
+}
+class digital.boline.callAssistant.llm.prompt.Occurrence {
++ String toString()
+}
+
+class digital.boline.callAssistant.llm.prompt.ParsedPrompts$Companion {
+-  SEPARATOR
+}
+
+class digital.boline.callAssistant.llm.prompt.ParsedPrompts {
++  metadata
++  variables
++  prompts
++  constants
++  variablesDefinition
++ Boolean serializeJson(String)
++ Boolean serializeJson(File)
++ Boolean serializeBinary(String)
++ Boolean serializeBinary(File)
+- Boolean serialize(File,() -> T)
++ PromptsManager getPromptManager()
++ String toString()
+}
+
+
+class digital.boline.callAssistant.llm.prompt.PromptsDeserializer {
++ PromptsManager? fromBytesOrJson(String)
++ PromptsManager? fromBytesOrJson(File)
++ PromptsManager? fromBytes(String)
++ PromptsManager? fromBytes(File)
++ PromptsManager? fromJson(String)
++ PromptsManager? fromJson(File)
+- ParsedPrompts? deserialize(File,(data: T) -> ParsedPrompts)
+}
+
+
+
+digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.prompt.Prompts
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.SimplePrompt
+digital.boline.callAssistant.llm.prompt.Prompts <|.. digital.boline.callAssistant.llm.prompt.SimplePrompt
+digital.boline.callAssistant.llm.prompt.TypedPrompts +.. digital.boline.callAssistant.llm.prompt.TypedPrompts$Companion
+digital.boline.callAssistant.llm.prompt.SimplePrompt <|-- digital.boline.callAssistant.llm.prompt.TypedPrompts
+digital.boline.callAssistant.llm.prompt.PromptsManager +.. digital.boline.callAssistant.llm.prompt.PromptsManager$Companion
+digital.boline.callAssistant.llm.prompt.TypedPrompts <|-- digital.boline.callAssistant.llm.prompt.PromptsManager
+digital.boline.callAssistant.llm.prompt.PromptsManager <|-- digital.boline.callAssistant.llm.prompt.PromptsManagerImpl
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.VariablesFunction
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.PromptsParser
+digital.boline.callAssistant.llm.prompt.ParsedPrompts +.. digital.boline.callAssistant.llm.prompt.ParsedPrompts$Companion
+digital.boline.callAssistant.llm.prompt.TypedPrompts <|-- digital.boline.callAssistant.llm.prompt.ParsedPrompts
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.PromptsDeserializer
+@enduml

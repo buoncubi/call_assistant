@@ -10,11 +10,8 @@
  * @author Luca Buoncompagni © 2025
  */
 
-package llmInterface.prompt
+package digital.boline.callAssistant.llm.prompt
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import ch.qos.logback.classic.Level
 import kotlinx.coroutines.Dispatchers
 import sun.misc.Signal
 import kotlinx.coroutines.*
@@ -22,23 +19,19 @@ import java.io.File
 import java.util.*
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.core.config.Configurator
+
 
 
 // Constants
 private const val DEFAULT_JSON_FILE_EXTENSION = ".json"
 private const val DEFAULT_BINARY_FILE_EXTENSION = ".bytes"
 private const val DEFAULT_BASE_PATH = "src/main/resources/prompts"
-private const val DEFAULT_LOGGING_LEVEL = "info"
+private val DEFAULT_LOGGING_LEVEL = Level.INFO
 
 // Input Stream
 private val scanner = Scanner(System.`in`)
-
-// Set logging level using Logback
-private fun setLogger(loggingLevel: String = DEFAULT_LOGGING_LEVEL) {
-    // TODO set logger properly and use input parameter from arguments
-    val root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as ch.qos.logback.classic.Logger
-    root.level = Level.valueOf(loggingLevel.uppercase())
-}
 
 
 /**
@@ -322,6 +315,7 @@ fun validateAndStore() {
     // Parse the prompt file and check outcomes.
     val promptFile = askForPromptFile(workingDirectory)
     println("----------------------------------------------------")
+
     val parsedPrompt = PromptsParser.parse(promptFile)
     if (parsedPrompt == null) {
         println("ERROR: PROMPT FILE IS NOT VALID! EXITING.")
@@ -406,6 +400,10 @@ fun validateAndStore() {
  * For more info see [validateAndStore].
  */
 fun main() = runBlocking{
+
+    Configurator.setLevel(PromptsParser::class.java.packageName, DEFAULT_LOGGING_LEVEL)
+
+
     // Register shutdown hook to gracefully exit on Ctrl+C (not working on IntelliJ).
     Signal.handle(Signal("INT")) {
         println("\nPrompts validator closed unexpectedly.")
@@ -416,7 +414,6 @@ fun main() = runBlocking{
     // Launch a coroutine to read user input
     val job = launch(Dispatchers.IO) {
         try {
-            setLogger()
             validateAndStore()
             exitProcess(0)
         } catch (ex: Exception) {

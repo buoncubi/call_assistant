@@ -1,12 +1,11 @@
-package llmInterface.prompt
+package digital.boline.callAssistant.llm.prompt
 
-import ch.qos.logback.classic.Level
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.core.config.Configurator
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.lang.Thread.sleep
 import kotlin.system.measureNanoTime
 
@@ -37,9 +36,7 @@ class ParsedPromptsTest {
         @JvmStatic
         @BeforeAll
         fun setupLogging() {
-            // Set logging level using Logback
-            val root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as ch.qos.logback.classic.Logger
-            root.level = Level.INFO
+            Configurator.setLevel(PromptsParser::class.java.packageName, Level.WARN)
         }
 
         // Assert the correctness of parsed data from the test file.
@@ -53,16 +50,12 @@ class ParsedPromptsTest {
             assertEquals(
                 parsed?.variables,
                 mapOf(
-                    "Context" to ArrayList<Occurrence>(
-                        listOf(
-                            Occurrence("getDate", 65, 74),
-                            Occurrence("getTime", 78, 85)
-                        )
+                    "Context" to listOf(
+                        Occurrence("getDate", 65, 74),
+                        Occurrence("getTime", 78, 85)
                     ),
-                    "Role" to MutableOccurrences(
-                        listOf(
-                            Occurrence("getDate", 101, 110)
-                        )
+                    "Role" to listOf(
+                        Occurrence("getDate", 101, 110)
                     )
                 ),
                 "Error while getting `variablesOccurrences` on fields retrieval !!!"
@@ -326,19 +319,15 @@ class ParsedPromptsTest {
         assertEquals(
             parsed.variables,
             mapOf(
-                "Title 1" to MutableOccurrences(
-                    listOf(
-                        Occurrence("getDate", 45, 54),
-                        Occurrence("getTime", 58, 69)
-                    )
+                "Title 1" to listOf(
+                    Occurrence("getDate", 45, 54),
+                    Occurrence("getTime", 58, 69)
                 ),
-                "Title 2" to MutableOccurrences(
-                    listOf(
-                        Occurrence("getDate", 31, 40),
-                        Occurrence("getTime", 44, 55),
-                        Occurrence("getTime", 93, 104),
-                        Occurrence("getDate", 106, 115)
-                    )
+                "Title 2" to listOf(
+                    Occurrence("getDate", 31, 40),
+                    Occurrence("getTime", 44, 55),
+                    Occurrence("getTime", 93, 104),
+                    Occurrence("getDate", 106, 115)
                 )
             ),
             "Error while getting `variablesOccurrences` on fields retrieval !!!"
@@ -370,7 +359,7 @@ class ParsedPromptsTest {
             |2nd section's content.
             |
             |
-            |${TAB}${TAB}__   Title3__
+            |$TAB${TAB}__   Title3__
             |3rd section's content.
             |
             | ! __Title4   __  //'!' generates an error.
@@ -542,6 +531,51 @@ class ParsedPromptsTest {
         // Assert deserialization correctness
         printResults(promptsManager)
         assertPromptFile(promptsManager)
+    }
+
+
+    @Test
+    fun `test prompt formatting`() {
+        println("\tTest prompts formatting.")
+
+        // Parse the prompts from file and get the prompt manager.
+        val manager = PromptsParser.parse(TEST_PROMPT_FILE_PATH)!!.getPromptManager()
+
+        // Set previous summarized messages (see `MessagesInterface` from more)
+        manager.messageSummary = "Previously the user asked for help."
+
+        val minimalisticFormat = manager.formatPrompts(listOf("Action","Context"),
+            includeTitle = false, includeSummary = false)
+        println("----------------------")
+        println(minimalisticFormat)
+        println("----------------------")
+
+        val extendedFormat = manager.formatPrompts(listOf("Action","Context"),
+            includeTitle = true, includeSummary = true)
+        println(extendedFormat)
+        println("----------------------")
+
+
+        // Assert
+        val date = VariablesFunction.getDate()
+        val time = VariablesFunction.getTime()
+        val expectedMinimalisticFormat = "  1. Ask for the reason of the call.\n" +
+                "  2. Ask for a phone number to eventually call back who\n" +
+                "     called Mrs. Mario.\n\n" +
+                "Nowadays, spam caller are getting better and better.\n\n" +
+                "Now is the $date at $time."
+        assertEquals(expectedMinimalisticFormat, minimalisticFormat, "Error while formatting minimalistic prompts !!!")
+
+        val expectedExtendedFormat = "**Action:**\n" +
+                "  1. Ask for the reason of the call.\n" +
+                "  2. Ask for a phone number to eventually call back who\n" +
+                "     called Mrs. Mario.\n\n" +
+                "**Context:**\n" +
+                "Nowadays, spam caller are getting better and better.\n\n" +
+                "Now is the $date at $time.\n\n" +
+                "**Previous Dialogue:**\n" +
+                "Previously the user asked for help."
+        assertEquals(expectedExtendedFormat, extendedFormat, "Error while formatting extended prompts !!!")
     }
 
 

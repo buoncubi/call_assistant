@@ -1,31 +1,27 @@
-package awsRunners
+package digital.boline.callAssistant.awsRunners
 
-import ch.qos.logback.classic.Level
-import ch.qos.logback.classic.Logger
-import llmInterface.AwsBedrock
-import org.slf4j.LoggerFactory
+import digital.boline.callAssistant.llm.AwsBedrock
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.core.config.Configurator
 import software.amazon.awssdk.services.bedrockruntime.model.*
 
 
 /**
- * A simple class to run and manually test the AWS Bedrock service to exploit LLM models based
- * on the Streaming Converse API.
+ * A simple class to run and manually test the AWS Bedrock service for LLM models based on the Streaming Converse API.
  *
- * @see `AwsBedrock.kt`, `LlmInterface.kt`
+ * @see AwsBedrock
  *
  * @author Luca Buoncompagni © 2025
  */
 fun main() {
 
-    // TODO Configure logger
-    val logger = LoggerFactory.getLogger("ROOT") as Logger
-    logger.level = Level.INFO
+    Configurator.setRootLevel(Level.WARN)
 
     // Initialize the AWS Bedrock based on the streaming Converse API
     val awsBedrock = AwsBedrock()
     // Add a callback to print responses
     awsBedrock.addCallback { response ->
-        println("Received response: $response")
+        println("Received response: ${response.message}")
     }
     // Start the service
     awsBedrock.start()

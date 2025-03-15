@@ -1,13 +1,13 @@
-package awsRunners
+package digital.boline.callAssistant.awsRunners
 
 import kotlinx.coroutines.delay
 import software.amazon.awssdk.services.transcribestreaming.model.Result
-import speech2text.AwsTranscribeFromMicrophone
+import digital.boline.callAssistant.speech2text.AwsTranscribeFromMicrophone
 
 /**
- * A simple class to run and manually test the AWS Transcribe service for speech-to-text
+ * A simple class to run and manually test the AWS Transcribe service for speech-to-text.
  *
- * @see `AwsTranscribe.kt`, `Speech2TextInterface.kt`
+ * @see AwsTranscribeFromMicrophone
  *
  * @author Luca Buoncompagni © 2025
  */

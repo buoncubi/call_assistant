@@ -20,6 +20,10 @@ out/
 .kotlin
 *.kotlin_metadata
 
+## Configuration ##
+*.env
+!src/main/resources/log_config.env
+
 ### Java ###
 *.hprof
 

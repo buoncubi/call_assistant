@@ -11,6 +11,7 @@
 - version = 1.0 // new line required for each field
 - application name = Call Assistant
 - environment = test
+- *MessageSummaryTitle* = Previous Dialogue
 
     __* Const *__ 
 /* 

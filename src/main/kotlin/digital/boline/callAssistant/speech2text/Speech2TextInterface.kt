@@ -12,9 +12,9 @@ import digital.boline.callAssistant.LoggableInterface
  * This implementation is designed to be used with a not concurrent single callbacks, which should be set when the
  * speech is not being listened.
  *
- * @param O: the type of output text, which represents the recognized speach, and it is provided to the callbacks.
+ * @param O: the type of output text, which represents the recognized speech, and it is provided to the callbacks.
  *
- * @see Speech2TextAsynch
+ * @see Speech2TextAsync
  *
  * @author Luca Buoncompagni © 2025
  */
@@ -72,7 +72,7 @@ interface Speech2TextInterface<O>: LoggableInterface {
  * [Loggable] class.
  *
  * @param I: the type of input stream where the audio signal is provided.
- * @param O: the type of output text, which represents the recognized speach, and it is provided to the callbacks.
+ * @param O: the type of output text, which represents the recognized speech, and it is provided to the callbacks.
  *
  * @property inputStream The input stream where the audio signal is provided (this property is `protected`, and it
  * should be used only by derived classes).
@@ -86,7 +86,7 @@ interface Speech2TextInterface<O>: LoggableInterface {
  *
  * @author Luca Buoncompagni © 2025
  */
-abstract class Speech2TextAsynch<I, O>: Loggable(), Speech2TextInterface<O> {
+abstract class Speech2TextAsync<I, O>: Loggable(), Speech2TextInterface<O> {
 
     /**
      * Represents the input stream used for processing audio data.

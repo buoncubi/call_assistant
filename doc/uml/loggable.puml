@@ -1,0 +1,60 @@
+@startuml
+class digital.boline.callAssistant.LoggableInterface$Factory$Companion {
+-  internalLogger
+- void getLoggerName(Class<*>)
+- Logger getNewLogger(Class<*>)
++ Level? getLevel(Logger)
+- Logger getNewLoggerByName(String)
+}
+
+
+class digital.boline.callAssistant.LoggableInterface$Factory {
++ Logger slf4jLogger
++ <<Create>> Factory(LoggableInterface)
+}
+
+
+class digital.boline.callAssistant.LoggableInterface$Companion {
++ String NEW_LINE
+}
+
+interface digital.boline.callAssistant.LoggableInterface {
++ void loggerFactory()
+}
+
+class digital.boline.callAssistant.CentralizedLogger {
+-  loggerTag
++ <<Create>> CentralizedLogger(Class<out LoggableInterface>,Logger)
++ void trace(String,Any?)
++ void debug(String,Any?)
++ void info(String,Any?)
++ void warn(String,Any?)
++ void error(String,Any?)
+}
+
+
+class digital.boline.callAssistant.Loggable$Companion {
++ String NEW_LINE
+}
+
+class digital.boline.callAssistant.Loggable {
+#  slf4jLogger
+# CentralizedLogger logger
++ <<Create>> Loggable(Class<out LoggableInterface>?)
+# void logTrace(String,Any?)
+# void logDebug(String,Any?)
+# void logInfo(String,Any?)
+# void logWarn(String,Any?)
+# void logError(String,Any?)
+}
+
+
+
+
+digital.boline.callAssistant.Factory +.. digital.boline.callAssistant.Factory$Companion
+digital.boline.callAssistant.LoggableInterface$Factory +.. digital.boline.callAssistant.LoggableInterface$Factory$Companion
+digital.boline.callAssistant.LoggableInterface +.. digital.boline.callAssistant.LoggableInterface$Factory
+digital.boline.callAssistant.LoggableInterface +.. digital.boline.callAssistant.LoggableInterface$Companion
+digital.boline.callAssistant.Loggable +.. digital.boline.callAssistant.Loggable$Companion
+digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.Loggable
+@enduml

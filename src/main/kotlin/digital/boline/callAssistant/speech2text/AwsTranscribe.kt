@@ -1,6 +1,7 @@
 package digital.boline.callAssistant.speech2text
 
 import digital.boline.callAssistant.ApplicationRunner.Companion.AWS_VENV_REGION
+import digital.boline.callAssistant.CentralizedLogger
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
@@ -50,7 +51,7 @@ import javax.sound.sampled.*
  *
  * @author Luca Buoncompagni © 2025
  */
-abstract class AwsTranscribe : Speech2TextAsynch<InputStream?, Result>() {
+abstract class AwsTranscribe : Speech2TextAsync<InputStream?, Result>() {
 
     /** Companion object for the AwsPollyMute class. It defines requires environmental variables. */
     protected companion object {
@@ -105,7 +106,7 @@ abstract class AwsTranscribe : Speech2TextAsynch<InputStream?, Result>() {
      * Initializes an asynchronous AWS Transcribe Streaming client.
      *
      * This method attempts to set up an instance of the AWS [TranscribeStreamingAsyncClient] with default credentials
-     * and the region specified in the [REGION]. If the initialization succeeds, the client instance is returned;
+     * and the region specified in the [AWS_VENV_REGION]. If the initialization succeeds, the client instance is returned;
      * otherwise, an exception is logged and the method returns ´null´.
      *
      * @return A configured instance of [TranscribeStreamingAsyncClient], or `null` if an error occurs during

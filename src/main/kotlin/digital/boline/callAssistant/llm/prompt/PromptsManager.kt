@@ -2,8 +2,7 @@ package digital.boline.callAssistant.llm.prompt
 
 import digital.boline.callAssistant.Loggable
 import digital.boline.callAssistant.LoggableInterface
-import digital.boline.callAssistant.llm.message.MessageManager
-//import digital.boline.callAssistant.llm.message.MessagesInterface // Only used in the documentation.
+import digital.boline.callAssistant.llm.message.MessagesManager // Only used in the documentation.
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -198,7 +197,7 @@ abstract class TypedPrompts : SimplePrompt<String, String, Occurrences>() {
  * @property rawPrompts The raw [prompts] where [variables] placeholder will never be filled with relative values.
  * @property messageSummary The string representing a summary of previous message exchanged between the user and the
  * LLM-based assistant. It should be used to enhance the prompts for giving to the LLM model the context of previous
- * conversation, while minimizing the number of tokens. For more information see [MessageManager].
+ * conversation, while minimizing the number of tokens. For more information see [MessagesManager].
  *
  * @see [Prompts]
  * @see [SimplePrompt]
@@ -206,7 +205,7 @@ abstract class TypedPrompts : SimplePrompt<String, String, Occurrences>() {
  * @see [PromptsDeserializer]
  * @see [ParsedPrompts]
  * @see [Occurrences]
- * @see [MessageManager]
+ * @see [MessagesManager]
  *
  * @author Luca Buoncompagni © 2025
  */

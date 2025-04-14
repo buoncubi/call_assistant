@@ -94,8 +94,8 @@ abstract class AwsPollyMute : Text2SpeechAsync<InputStream>() {
      * Initializes and configures the AWS Polly `client` for use with text-to-speech operations. This function is
      * invoked in the [start] method.
      * 
-     * This method attempts to create a [PollyClient] using the specified AWS [REGION] and default credentials. If an
-     * exception occurs during initialization, the method will print the error message and return `null`.
+     * This method attempts to create a [PollyClient] using the specified AWS [AWS_VENV_REGION] and default credentials.
+     * If an exception occurs during initialization, the method will print the error message and return `null`.
      *
      * @return A properly initialized [PollyClient] instance if successful; `null` in case of an error.
      */

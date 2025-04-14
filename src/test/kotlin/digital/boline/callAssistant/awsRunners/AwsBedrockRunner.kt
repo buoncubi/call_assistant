@@ -27,13 +27,14 @@ fun main() {
     awsBedrock.start()
 
     // Create the prompt for the LLM model
-    val promptMessages = "Always speak in Italian"
+    val promptMessages = "Always speak in Italian."
     val prompts = listOf(SystemContentBlock.fromText(promptMessages))
 
     /*
     // Alternatively, Prompts can be converted from a list of string with:
     val promptMessages = listOf("Always speak in Italian", "...")
     val prompts = promptMessages.map { SystemContentBlock.fromText(it) }
+    // Also, you can use the designed interface to manage prompts.
      */
 
     // Create a sample dialogue. It should start and end with a user message
@@ -52,24 +53,15 @@ fun main() {
         .build()
     val dialogue = listOf(userMessage, assistantMessage, userMessage2) // It must always start with a USER message !!!
 
+
     /*
-    // Alternatively, dialogue can be converted from pairs of role enumerator and string as:
-    enum class Role(val id: String) { // Move the enumerator outside the main function
-        USER("user"), ASSISTANT("assistant" );
-        fun toMessageRole(): ConversationRole = ConversationRole.fromValue(id)
-    }
-    val messages: List<Pair<Role, List<String>>> = listOf(
-        Pair(Role.USER, listOf("Hi")),
-        Pair(Role.ASSISTANT, listOf("I am Antonio")),
-        Pair(Role.USER, listOf("What's your name again?", "Describe yourself in 3 words."))
-    )
-    val dialogue = messages.map { (role, texts) ->
-        Message.builder()
-            .content(texts.map { ContentBlock.fromText(it) })
-            .role(role.toMessageRole())
-            .build()
-    }
-    */
+    // Alternatively, you can manage the dialogue with the designed interface.
+    val messagesManager = buildAwsMessagesManager()
+    messagesManager.addUser("Hi")
+    messagesManager.addAssistant("I am Antonio")
+    messagesManager.addUser(listOf("What's your name again?", "Describe yourself in 3 words."))
+    val dialogue = messagesManager.messages
+     */
 
     // Send the requests
     val job = awsBedrock.makeRequest(dialogue, prompts)

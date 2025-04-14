@@ -63,41 +63,41 @@ internal fun getLoggerTag(clazz: Class<*>) = "[${clazz.simpleName.rightPadOrTrun
  *
  * In particular any class that implements this interface should be defined as:
  * ```
- * class MyClass : MyClass(), Loggable {
- *     protected val logger by lazy { loggerFactory() }
+ * class MyClass : LoggableInterface, AnotherClass() {
+ *     protected val logger = CentralizedLogger(this.javaClass, loggerFactory())
+ *
+ *     // Use here functions like: `logTrace()`, `logDebug()`, `logInfo()`, `logWarn()`, `logError()`.
  * }
  * ```
  * This is enough to assure logging facilities, whcih are private only to the class implementing this interface.
  *
  * For example,`INFO` messages can be logged as shown below (and the same syntax is available for all logging levels):
  * ```
- *  this.logger.info("A message. Do not use string concatenation here!")
- *  this.logger.info("A message concatenate with data structures {} {} efficiently", anyObject1, anyObject2)
- *  this.logger.info("A message with data structures {} {} and a throwable", anyObject1, anyObject2, throwable)
+ *  this.logInfo("A message. Do not use string concatenation here!")
+ *  this.logInfo("A message concatenate with data structures {} {} efficiently", anyObject1, anyObject2)
+ *  this.logInfo("A message with data structures {} {} and a throwable", anyObject1, anyObject2, throwable)
  * ```
  * Where the arguments are:
- *  1. A message string with possible template parameters exprssed as `"{}"`.
+ *  1. A message string with possible template parameters expressed as `"{}"`.
  *  2. A list of objects that have been parametrized in the message. This allows efficient string concatenation without
  *     creating copies string, and without the possibility to lose time generating a log that might never be printed due
- *     to a low logging levell.
+ *     to a low logging level.
  *  3. Eventually, a throwable that is used to log the related error message, cause and stacktrace. The throwable must
  *     be the last element of the object list (introduced in the previous point), and the number of template
  *     parameter `"{}"` should not include the throwable itself.
  *
  * The current implementation uses [org.apache.logging.log4j.Logger] (bridged through [org.slf4j.LoggerFactory]), which
- * assures asynchronous logging behaviour, and it si the recommended implementation for AWS lambda functions
- * .
+ * assures asynchronous logging behaviour, and it is the recommended implementation for AWS lambda functions.
  * This interface assumes that all classes and object defined in the same Kotlin package share the same logger
  * configuration (for more, see [Factory]). This assumption is reflected in the logger configuration file available at
  * `src/main/resources/log4j2.xml`. With this assumption, it is possible to set the logging level of all the
  * implementations belonging to the same Kotlin package in a centralized manner. This approach allows using a file
  * containig environmental variables that defines the logging level for each Kotlin package of this porject; such a
- * file is `src/main/resources/log_config.env` (see also `build.gradle.kts` for more information). Indeed, the latter
+ * file is `src/main/resources/log_config.env` (see also `public.gradle.kts` for more information). Indeed, the latter
  * file constains an environmental variable for each package of this project.
  *
  * @see Loggable
  * @see LoggableInterface.Factory
- * @see Companion
  * @see Logger
  * @see LogManager
  *
@@ -110,14 +110,14 @@ interface LoggableInterface {
      *
      * This class implements the factory patter, and that `clazz` constructor parameter (which should be set to `this`
      * by the class that implements the [LoggableInterface] interface) is only used by [getNewLogger] to retrieve the
-     * package name. Such a name will identify the [logger] used to log messages, which is configured in
+     * package name. Such a name will identify the [slf4jLogger] used to log messages, which is configured in
      * `src/main/resources/log4j2.xml`, and relative logging level is specified through the environmental variables
      * defined in the `src/main/resources/log_config.env` file. For more info see [LoggableInterface].
      *
-     * @property logger The object used to produce logs, which provides facilities as [Logger.trace], [Logger.debug],
+     * @property slf4jLogger The object used to produce logs, which provides facilities as [Logger.trace], [Logger.debug],
      * [Logger.info], [Logger.warn] and [Logger.error].
      *
-     * @constructor Uses [getNewLogger] to initialize the [logger] property with a name equal to the java package
+     * @constructor Uses [getNewLogger] to initialize the [slf4jLogger] property with a name equal to the java package
      * related to the `clazz` given as input. This constructor cannot be used since it is private, but you can access
      * to it thorugh [loggerFactory].
      *
@@ -131,11 +131,10 @@ interface LoggableInterface {
     private class Factory(clazz: LoggableInterface) {
 
         // Documented in the Kotlin doc above.
-        val logger: Logger by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+        val slf4jLogger: Logger by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
             getNewLogger(clazz.javaClass)
         }
 
-        /**  The companion object to contain static singleton functions. */
         companion object {
 
             /**
@@ -206,7 +205,7 @@ interface LoggableInterface {
             /**
              * Uses the [LoggerFactory.getLogger] to returns the reference to a new logger with the specified name.
              *
-             * Note that the type of returned `logger` is based on the dependences set into `build.gradle.kts`, which
+             * Note that the type of returned `logger` is based on the dependences set into `public.gradle.kts`, which
              * is currently set to return an instance of [org.apache.logging.log4j.core.Logger].
              *
              * @param loggerName The name that will identify the new logger instance.
@@ -234,13 +233,82 @@ interface LoggableInterface {
      *
      * @return A private logger instance to produce `TRACE`, `DEBUG`, `INFO`, `WARN`, and `ERROR`, logs.
      */
-    fun LoggableInterface.loggerFactory() = Factory(this).logger
+    fun LoggableInterface.loggerFactory() = Factory(this).slf4jLogger
 
     companion object {
         /**  The constant character of a new line agnostic to the operative system (i.e., '\n' or '\r\n'). */
         public val NEW_LINE: String = System.lineSeparator()
     }
 }
+
+
+
+/**
+ * An helper class design to give the possibility to pass the [Loggable.logger] among different classes. It should
+ * be used only within a class implementing the [LoggableInterface], but it can be use for giving logging
+ * facilities to lambda functions and anonymous classes.
+ *
+ * This class provides logging facilities as [logTrace], [logDebug], [logInfo], [logWarn] and [logError], which
+ * introduce a logging prefix with the name of th class that produces the log (see [getLoggerTag]). Such a
+ * functionalities wraps the relative functionalities of [slf4jLogger].
+ *
+ * @property slf4jLogger The actual logger. It should not be used, if needed, use [Loggable.slf4jLogger] instead.
+ * @property loggerTag The name of the class that produces the log, which will be used as message prefix.
+ *
+ * @constructor it stores the given [slf4jLogger] in the related property, and initialise the [loggerTag].
+ *
+ * @see Loggable
+ *
+ * @author Luca Buoncompagni © 2025
+ */
+class CentralizedLogger(clazz: Class<out LoggableInterface>, private val slf4jLogger: Logger) {
+
+    /**
+     * The logger tag used to identify the class that produces logs. It is used to prefix all the logs.
+     */
+    private val loggerTag = getLoggerTag(clazz)
+
+
+    /**
+     * Logs a message with the `TRACE` level.
+     * @param message the message to be logged with the name of this class as prefix.
+     * @param args data structures to be logged, see [LoggableInterface] for mroe.
+     */
+    fun trace(message: String, vararg args: Any?) = slf4jLogger.info("${loggerTag}$message", *args)
+
+
+    /**
+     * Logs a message with the `DEBUG` level.
+     * @param message the message to be logged with the name of this class as prefix.
+     * @param args data structures to be logged, see [LoggableInterface] for mroe.
+     */
+    fun debug(message: String, vararg args: Any?) = slf4jLogger.debug("${loggerTag}$message", *args)
+
+
+    /**
+     * Logs a message with the `INFO` level.
+     * @param message the message to be logged with the name of this class as prefix.
+     * @param args data structures to be logged, see [LoggableInterface] for mroe.
+     */
+    fun info(message: String, vararg args: Any?) = slf4jLogger.info("${loggerTag}$message", *args)
+
+
+    /**
+     * Logs a message with the `WARNING` level.
+     * @param message the message to be logged with the name of this class as prefix.
+     * @param args data structures to be logged, see [LoggableInterface] for mroe.
+     */
+    fun warn(message: String, vararg args: Any?) = slf4jLogger.warn("${loggerTag}$message", *args)
+
+
+    /**
+     * Logs a message with the `ERROR` level.
+     * @param message the message to be logged with the name of this class as prefix.
+     * @param args data structures to be logged, see [LoggableInterface] for mroe.
+     */
+    fun error(message: String, vararg args: Any?) = slf4jLogger.error("${loggerTag}$message", *args)
+}
+
 
 
 /**
@@ -252,15 +320,35 @@ interface LoggableInterface {
  * [logTrace], [logDebug], [logInfo], [logWarn] and [logError], which are recommended since they introduce the name of
  * the logging class as prefix to the message.
  *
+ * The typical usage example, where you want to give to a class logging facilities is
+ * ```
+ * class MyClass : Logger() {
+ *     // Use here functions like: `logTrace()`, `logDebug()`, `logInfo()`, `logWarn()`, `logError()`.
+ * }
+ * ```
+ *
  * @constructor It uses [loggerFactory] to initialize the [slf4jLogger] property, which is used to initialize the
- * [logger] property and an instance of [CentralizedLogger]. This is done for giving the possibility to pass the [logger] among
- * different classes if required.
+ * [logger] property and an instance of [CentralizedLogger]. This is done for giving the possibility to pass the
+ * [logger] among different classes if required. The constructor takes the `clazz` input parameter, which is used to
+ * manage the name of the class creating the log, which is  used to prefix the log messages. If `clazz` is `null`, the
+ * name of the class is the name of the class that implements the [LoggableInterface] interface (i.e., `this`). For
+ * instance, if you want to generate logs from a companion object you can define
+ * ```
+ * interface A: LoggableInterface {
+ *
+ *     companion object: Loggable(A::class.java) {  // Tho use `this` package name, `A::class.java` can be obmitted.
+ *         fun logSomething() {
+ *             this.logInfo("Something happened!")
+ *         }
+*      }
+ * }
+ * ```
  *
  * @property slf4jLogger The [Logger] instance associated with this class to produce general logs. This is the actual
  * logger, while [logger] is a wrapper of it.
- * @property logger The  [CentralizedLogger] instance associated with this class to produce logs in a centralized manner. It is
- * recommended to use this property instead of the [slf4jLogger] property. Indeed this property is used to implement
- * [logTrace], [logDebug], [logInfo], [logWarn] and [logError] functions.
+ * @property logger The  [CentralizedLogger] instance associated with this class to produce logs in a centralized
+ * manner. It is recommended to use this property instead of the [slf4jLogger] property. Indeed this property is used to
+ * implement [logTrace], [logDebug], [logInfo], [logWarn] and [logError] functions.
  *
  * @see LoggableInterface
  * @see LoggableInterface.Factory
@@ -268,96 +356,19 @@ interface LoggableInterface {
  *
  * @author Luca Buoncompagni © 2025
  */
-open class Loggable : LoggableInterface {
+open class Loggable(clazz: Class<out LoggableInterface>? = null) : LoggableInterface {
 
     // Documented above.
     protected val slf4jLogger by lazy { loggerFactory() }
 
-    protected val logger = CentralizedLogger(this, slf4jLogger)
+    protected val logger: CentralizedLogger
 
-
-    /**
-     * An helper class design to give the possibility to pass the [Loggable.logger] among different classes. It should
-     * be used only within a class implementing the [LoggableInterface], but it can be use for giving logging
-     * facilities to lambda functions and anonymous classes.
-     *
-     * This class provides logging facilities as [logTrace], [logDebug], [logInfo], [logWarn] and [logError], which
-     * introduce a logging prefix with the name of th class that produces the log (see [getLoggerTag]). Such a
-     * functionalities wraps the relative functionalities of [slf4jLogger].
-     *
-     * @property slf4jLogger The actual logger. It should not be used, if needed, use [Loggable.slf4jLogger] instead.
-     * @property loggerTag The name of the class that produces the log, which will be used as message prefix.
-     *
-     * @constructor it stores the given [slf4jLogger] in the related property, and initialise the [loggerTag].
-     *
-     * @see Loggable
-     *
-     * @author Luca Buoncompagni © 2025
-     */
-    protected class CentralizedLogger(clazz: LoggableInterface, private val slf4jLogger: Logger) {
-
-        /**
-         * The logger tag used to identify the class that produces logs. It is used to prefix all the logs.
-         */
-        private val loggerTag = getLoggerTag(clazz::class.java)
-
-
-        /**
-         * Logs a message with the `TRACE` level.
-         * @param message the message to be logged with the name of this class as prefix.
-         * @param args data structures to be logged, see [LoggableInterface] for mroe.
-         */
-        fun trace(message: String, vararg args: Any?) {
-            if (slf4jLogger.isTraceEnabled) // Remove it in production if you do care about trace logs.
-                slf4jLogger.info("${loggerTag}$message", *args)
-        }
-
-
-        /**
-         * Logs a message with the `DEBUG` level.
-         * @param message the message to be logged with the name of this class as prefix.
-         * @param args data structures to be logged, see [LoggableInterface] for mroe.
-         */
-        fun debug(message: String, vararg args: Any?) {
-            if (slf4jLogger.isDebugEnabled) // Remove it in production if you do care about debug logs.
-                slf4jLogger.debug("${loggerTag}$message", *args)
-        }
-
-
-        /**
-         * Logs a message with the `INFO` level.
-         * @param message the message to be logged with the name of this class as prefix.
-         * @param args data structures to be logged, see [LoggableInterface] for mroe.
-         */
-        fun info(message: String, vararg args: Any?) {
-            if (slf4jLogger.isInfoEnabled)  // Remove it in production if you do care about info logs.
-                slf4jLogger.info("${loggerTag}$message", *args)
-        }
-
-
-        /**
-         * Logs a message with the `WARNING` level.
-         * @param message the message to be logged with the name of this class as prefix.
-         * @param args data structures to be logged, see [LoggableInterface] for mroe.
-         */
-        fun warn(message: String, vararg args: Any?) {
-            //if (slf4jLogger.isWarnEnabled)  // Add it in production if you do not care about warning logs.
-            slf4jLogger.warn("${loggerTag}$message", *args)
-        }
-
-
-        /**
-         * Logs a message with the `ERROR` level.
-         * @param message the message to be logged with the name of this class as prefix.
-         * @param args data structures to be logged, see [LoggableInterface] for mroe.
-         */
-        fun error(message: String, vararg args: Any?) {
-            //if (slf4jLogger.isErrorEnabled)  // Add it in production if you do not care about error logs.
-            slf4jLogger.error("${loggerTag}$message", *args)
-        }
-
+    init {
+        if (clazz == null)
+            logger = CentralizedLogger(this.javaClass, slf4jLogger)
+        else
+            logger = CentralizedLogger(clazz, slf4jLogger)
     }
-
 
 
     /**
@@ -365,9 +376,7 @@ open class Loggable : LoggableInterface {
      * @param message the message to be logged with the name of this class as prefix.
      * @param args data structures to be logged, see [LoggableInterface] for mroe.
      */
-    protected fun logTrace(message: String, vararg args: Any?) {
-        logger.trace(message, *args)
-    }
+    protected fun logTrace(message: String, vararg args: Any?) = logger.trace(message, *args)
 
 
     /**
@@ -375,9 +384,7 @@ open class Loggable : LoggableInterface {
      * @param message the message to be logged with the name of this class as prefix.
      * @param args data structures to be logged, see [LoggableInterface] for mroe.
      */
-    protected fun logDebug(message: String, vararg args: Any?) {
-        logger.debug(message, *args)
-    }
+    protected fun logDebug(message: String, vararg args: Any?) = logger.debug(message, *args)
 
 
     /**
@@ -385,9 +392,7 @@ open class Loggable : LoggableInterface {
      * @param message the message to be logged with the name of this class as prefix.
      * @param args data structures to be logged, see [LoggableInterface] for mroe.
      */
-    protected fun logInfo(message: String, vararg args: Any?) {
-        logger.info(message, *args)
-    }
+    protected fun logInfo(message: String, vararg args: Any?) = logger.info(message, *args)
 
 
     /**
@@ -395,9 +400,7 @@ open class Loggable : LoggableInterface {
      * @param message the message to be logged with the name of this class as prefix.
      * @param args data structures to be logged, see [LoggableInterface] for mroe.
      */
-    protected fun logWarn(message: String, vararg args: Any?) {
-        logger.warn(message, *args)
-    }
+    protected fun logWarn(message: String, vararg args: Any?) = logger.warn(message, *args)
 
 
     /**
@@ -405,9 +408,8 @@ open class Loggable : LoggableInterface {
      * @param message the message to be logged with the name of this class as prefix.
      * @param args data structures to be logged, see [LoggableInterface] for mroe.
      */
-    protected fun logError(message: String, vararg args: Any?) {
-        logger.error(message, *args)
-    }
+    protected fun logError(message: String, vararg args: Any?) = logger.error(message, *args)
+
 
     companion object {
         /**  The constant character of a new line agnostic to the operative system (i.e., '\n' or '\r\n'). */

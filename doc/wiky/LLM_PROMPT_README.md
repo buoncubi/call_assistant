@@ -57,7 +57,7 @@ Note that at least one section must be present for the syntax to be valid. There
        programmatically processed as far as prompts data is concerned. An exception is the `*MessageSummaryTitle*`
        field, which value is used while formatting the prompts for the LLM model. Such a value would be the title of a
        section containing the summary of previous messages exchanged between the user and the assistant. For more 
-       information of such a summarization process see the [`message` package documentation](../message/LLM_MESSAGE-README).
+       information of such a summarization process see the [`message` package documentation](../wiky/LLM_MESSAGE-README).
     2. **Constants**: Represent fixed string values that can be referenced in other sections during parsing, enabling 
        prompt parameterization.
     3. **Variables**: Represent dynamic string values generated at runtime. Each variable must be associated with a 
@@ -216,7 +216,7 @@ To define new Kotlin functions that can be used to define custom variables on sp
  1. implement the function into the `VariablesFunction` object, and 
  2. add your implementation to the functions map in `VariablesFunction`. 
 The `VariablesFunction` object is available at the 
-[PromptsManagerImpl.kt](src/main/kotlin/llmInterface/prompt/PromptsManager.kt) file.
+[PromptsManagerImpl.kt](../../src/main/kotlin/digital/boline/callAssistant/llm/prompt/PromptsManager.kt) file.
 
 For example, Let us assume you want to implement a function `myFunc`, which can be used within the prompts syntax as:
 ```
@@ -324,7 +324,7 @@ Previously the user asked for help.
 ```
 Note that the `Previous Dialogue` title has been specified through the `*MessageSummaryTitle*` fields provided in the 
 metadata section, while the related section is given at runtime by the LLM model itself, and the `MessageManager`
-class. For more info about the summarization process see the [`message` package documentation](../message/LLM_MESSAGE-README).
+class. For more info about the summarization process see the [`message` package documentation](../wiky/LLM_MESSAGE-README).
 
 
 For more examples about the prompt syntax and related API, see the
@@ -344,4 +344,4 @@ the [code documentation](../dokka/html/-call-assistant--brain/digital.boline.cal
 ---
 
 **Author** Luca Buoncompagni.  
-© March 2025.
+© 2025.

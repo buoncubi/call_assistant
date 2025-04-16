@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>LoggableInterface</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+            <a class="library-name--link" href="../../../index.html">
+                    CallAssistant-Brain
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+0.1.0        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active=""
+                        data-filter=":/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":/main"
+                                       data-filter=":/main"/>
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                        data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    CallAssistant-Brain
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="CallAssistant-Brain::digital.boline.callAssistant/LoggableInterface///PointingToDeclaration//-251573632">
+  <div class="breadcrumbs"><a href="../../../index.html">CallAssistant-Brain</a><span class="delimiter">/</span><a href="../index.html">digital.boline.callAssistant</a><span class="delimiter">/</span><span class="current">LoggableInterface</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Loggable</span><wbr></wbr><span><span>Interface</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="index.html">LoggableInterface</a></div><p class="paragraph">The interface that provides logging facilities for all the classes of this project.</p><p class="paragraph">If a class does not extend another class, then it should exploit <a href="../-loggable/index.html">Loggable</a> instead of this interface. However, since a class cannot extend two classes, if a class has to extend another class for any reason, then it can implement the LoggerInterface to benefit of logging facilities.</p><p class="paragraph">In particular any class that implements this interface should be defined as:</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">class MyClass : LoggableInterface, AnotherClass() {<br>    protected val logger = CentralizedLogger(this.javaClass, loggerFactory())<br><br>    // Use here functions like: `logTrace()`, `logDebug()`, `logInfo()`, `logWarn()`, `logError()`.<br>}</code></pre><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><p class="paragraph">This is enough to assure logging facilities, whcih are private only to the class implementing this interface.</p><p class="paragraph">For example,<code class="lang-kotlin">INFO</code> messages can be logged as shown below (and the same syntax is available for all logging levels):</p><div class="sample-container"><pre><code class="block lang-kotlin" theme="idea">this.logInfo(&quot;A message. Do not use string concatenation here!&quot;)<br>this.logInfo(&quot;A message concatenate with data structures {} {} efficiently&quot;, anyObject1, anyObject2)<br>this.logInfo(&quot;A message with data structures {} {} and a throwable&quot;, anyObject1, anyObject2, throwable)</code></pre><span class="top-right-position"><span class="copy-icon"></span><div class="copy-popup-wrapper popup-to-left"><span class="copy-popup-icon"></span><span>Content copied to clipboard</span></div></span></div><p class="paragraph">Where the arguments are:</p><ol><li><p class="paragraph">A message string with possible template parameters expressed as <code class="lang-kotlin">&quot;{}&quot;</code>.</p></li><li><p class="paragraph">A list of objects that have been parametrized in the message. This allows efficient string concatenation without     creating copies string, and without the possibility to lose time generating a log that might never be printed due     to a low logging level.</p></li><li><p class="paragraph">Eventually, a throwable that is used to log the related error message, cause and stacktrace. The throwable must     be the last element of the object list (introduced in the previous point), and the number of template     parameter <code class="lang-kotlin">&quot;{}&quot;</code> should not include the throwable itself.</p></li></ol><p class="paragraph">The current implementation uses <span data-unresolved-link="org.apache.logging.log4j/Logger///PointingToDeclaration/">org.apache.logging.log4j.Logger</span> (bridged through <span data-unresolved-link="org.slf4j/LoggerFactory///PointingToDeclaration/">org.slf4j.LoggerFactory</span>), which assures asynchronous logging behaviour, and it is the recommended implementation for AWS lambda functions. This interface assumes that all classes and object defined in the same Kotlin package share the same logger configuration (for more, see <span data-unresolved-link="digital.boline.callAssistant/LoggableInterface.Factory///PointingToDeclaration/">Factory</span>). This assumption is reflected in the logger configuration file available at <code class="lang-kotlin">src/main/resources/log4j2.xml</code>. With this assumption, it is possible to set the logging level of all the implementations belonging to the same Kotlin package in a centralized manner. This approach allows using a file containig environmental variables that defines the logging level for each Kotlin package of this porject; such a file is <code class="lang-kotlin">src/main/resources/log_config.env</code> (see also <code class="lang-kotlin">public.gradle.kts</code> for more information). Indeed, the latter file constains an environmental variable for each package of this project.</p><span class="kdoc-tag"><h4 class="">Author</h4><p class="paragraph">Luca Buoncompagni © 2025</p></span><h4 class="">See also</h4><div class="table"><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-loggable/index.html"><span><span>Loggable</span></span></a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><span data-unresolved-link="digital.boline.callAssistant/LoggableInterface.Factory///PointingToDeclaration/"><span>Loggable</span><wbr></wbr><span>Interface.</span><wbr></wbr><span>Factory</span></span></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><span data-unresolved-link="org.slf4j/Logger///PointingToDeclaration/"><span><span>Logger</span></span></span></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><span>Log</span><wbr></wbr><span><span>Manager</span></span></div></span></div><div></div></div></div></div><h4 class="">Inheritors</h4><div class="table"><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-loggable/index.html">Loggable</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../digital.boline.callAssistant.llm/-llm-streaming-interface/index.html">LlmStreamingInterface</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../digital.boline.callAssistant.llm.message/-llm-message/index.html">LlmMessage</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../digital.boline.callAssistant.llm.message/-llm-message/-builder/index.html">Builder</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../digital.boline.callAssistant.llm.message/-message-wrapper/index.html">MessageWrapper</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../digital.boline.callAssistant.llm.message/-message-wrapper/-builder/index.html">Builder</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../digital.boline.callAssistant.llm.prompt/-prompts/index.html">Prompts</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../digital.boline.callAssistant.speech2text/-speech2-text-interface/index.html">Speech2TextInterface</a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../../digital.boline.callAssistant.text2speech/-text2-speech-interface/index.html">Text2SpeechInterface</a></div></span></div><div></div></div></div></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION,EXTENSION_PROPERTY,EXTENSION_FUNCTION">Members &amp; Extensions</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="TYPE">
+        <h2 class="">Types</h2>
+        <div class="table"><a data-name="1865354077%2FClasslikes%2F-251573632" anchor-label="Companion" id="1865354077%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1865354077%2FClasslikes%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="1227772979%2FFunctions%2F-251573632" anchor-label="loggerFactory" id="1227772979%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="logger-factory.html"><span>logger</span><wbr></wbr><span><span>Factory</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1227772979%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html">LoggableInterface</a><span class="token punctuation">.</span><a href="logger-factory.html"><span class="token function">loggerFactory</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.slf4j/Logger///PointingToDeclaration/">Logger</span></div><div class="brief "><p class="paragraph">It instanciate a new <span data-unresolved-link="digital.boline.callAssistant/LoggableInterface.Factory///PointingToDeclaration/">Factory</span> and provides a reference to the <span data-unresolved-link="org.slf4j/Logger///PointingToDeclaration/">Logger</span> instance, which identifier is associated with the package name of <code class="lang-kotlin">this</code>. Note that this function can only be used by the classes implementing the <a href="index.html">LoggableInterface</a> interface,</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1227772979%2FFunctions%2F-251573632" anchor-label="loggerFactory" id="1227772979%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="logger-factory.html"><span>logger</span><wbr></wbr><span><span>Factory</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1227772979%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="index.html">LoggableInterface</a><span class="token punctuation">.</span><a href="logger-factory.html"><span class="token function">loggerFactory</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.slf4j/Logger///PointingToDeclaration/">Logger</span></div><div class="brief "><p class="paragraph">It instanciate a new <span data-unresolved-link="digital.boline.callAssistant/LoggableInterface.Factory///PointingToDeclaration/">Factory</span> and provides a reference to the <span data-unresolved-link="org.slf4j/Logger///PointingToDeclaration/">Logger</span> instance, which identifier is associated with the package name of <code class="lang-kotlin">this</code>. Note that this function can only be used by the classes implementing the <a href="index.html">LoggableInterface</a> interface,</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>© 2025 Copyright</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

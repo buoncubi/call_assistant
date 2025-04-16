@@ -1,8 +1,10 @@
 package digital.boline.callAssistant
 
+import org.apache.logging.log4j.core.config.Configurator
 import org.slf4j.LoggerFactory
 import org.slf4j.Logger
-import org.slf4j.event.Level
+import org.slf4j.event.Level as SLF4JLevel
+import org.apache.logging.log4j.Level
 
 
 // TODO be sure to wait for logg to be flushed when app is closing
@@ -128,11 +130,11 @@ interface LoggableInterface {
      *
      * @author Luca Buoncompagni © 2025
      */
-    private class Factory(clazz: LoggableInterface) {
+    private class Factory(clazz: Class<out LoggableInterface>) {
 
         // Documented in the Kotlin doc above.
         val slf4jLogger: Logger by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-            getNewLogger(clazz.javaClass)
+            getNewLogger(clazz)
         }
 
         companion object {
@@ -233,7 +235,7 @@ interface LoggableInterface {
      *
      * @return A private logger instance to produce `TRACE`, `DEBUG`, `INFO`, `WARN`, and `ERROR`, logs.
      */
-    fun LoggableInterface.loggerFactory() = Factory(this).slf4jLogger
+    fun LoggableInterface.loggerFactory(clazz: Class<out LoggableInterface>? = null) = Factory(clazz ?: this.javaClass).slf4jLogger
 
     companion object {
         /**  The constant character of a new line agnostic to the operative system (i.e., '\n' or '\r\n'). */
@@ -268,6 +270,24 @@ class CentralizedLogger(clazz: Class<out LoggableInterface>, private val slf4jLo
      */
     private val loggerTag = getLoggerTag(clazz)
 
+    /**
+     * Sets the logging level of this logger. This function should only be used for testing purposes, use environmental
+     * variable on production instead.
+     * @param level The new logging level.
+     */
+    fun setLevel(level: SLF4JLevel) {
+        // Convert SLF4J level to Log4j2 level
+        val log4jLevel = when (level) {
+            SLF4JLevel.ERROR -> Level.ERROR
+            SLF4JLevel.WARN -> Level.WARN
+            SLF4JLevel.INFO -> Level.INFO
+            SLF4JLevel.DEBUG -> Level.DEBUG
+            SLF4JLevel.TRACE -> Level.TRACE
+        }
+        // Set the level using Log4j2 Configurator
+        Configurator.setLevel(slf4jLogger.name, log4jLevel)
+        trace("Logging level set to '{}'.", log4jLevel)
+    }
 
     /**
      * Logs a message with the `TRACE` level.
@@ -345,7 +365,7 @@ class CentralizedLogger(clazz: Class<out LoggableInterface>, private val slf4jLo
  * ```
  *
  * @property slf4jLogger The [Logger] instance associated with this class to produce general logs. This is the actual
- * logger, while [logger] is a wrapper of it.
+ * logger, while [logger] is a wrapper of it. It is recommended to use [logger] instead of this property.
  * @property logger The  [CentralizedLogger] instance associated with this class to produce logs in a centralized
  * manner. It is recommended to use this property instead of the [slf4jLogger] property. Indeed this property is used to
  * implement [logTrace], [logDebug], [logInfo], [logWarn] and [logError] functions.
@@ -359,7 +379,7 @@ class CentralizedLogger(clazz: Class<out LoggableInterface>, private val slf4jLo
 open class Loggable(clazz: Class<out LoggableInterface>? = null) : LoggableInterface {
 
     // Documented above.
-    protected val slf4jLogger by lazy { loggerFactory() }
+    protected val slf4jLogger by lazy { loggerFactory(clazz) }
 
     protected val logger: CentralizedLogger
 
@@ -409,6 +429,15 @@ open class Loggable(clazz: Class<out LoggableInterface>? = null) : LoggableInter
      * @param args data structures to be logged, see [LoggableInterface] for mroe.
      */
     protected fun logError(message: String, vararg args: Any?) = logger.error(message, *args)
+
+    /**
+     * Sets the logging level of this logger. This function should only be used for testing purposes, use environmental
+     * variable on production instead.
+     * @param level The new logging level.
+     */
+    fun setLoggingLevel(level: SLF4JLevel) {
+        logger.setLevel(level)
+    }
 
 
     companion object {

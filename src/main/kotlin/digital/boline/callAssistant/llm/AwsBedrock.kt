@@ -66,7 +66,7 @@ data class AssistantResponse(val message: String,
  *
  * @author Luca Buoncompagni © 2025
  */
-class AwsBedrock : LlmAsynch<List<Message>, List<SystemContentBlock>, AssistantResponse>() {
+class AwsBedrock : LlvmAsync<List<Message>, List<SystemContentBlock>, AssistantResponse>() {
 
 
     /**

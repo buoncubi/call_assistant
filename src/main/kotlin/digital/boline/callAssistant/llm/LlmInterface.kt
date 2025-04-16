@@ -83,7 +83,7 @@ interface LlmStreamingInterface<D, P, O>: LoggableInterface {
 
 
 // extend start and stop and manage isRunning
-abstract class LlmAsynch<D, P, O>: Loggable(), LlmStreamingInterface<D, P, O> {
+abstract class LlvmAsync<D, P, O>: Loggable(), LlmStreamingInterface<D, P, O> {
 
 
     /**
@@ -126,7 +126,7 @@ abstract class LlmAsynch<D, P, O>: Loggable(), LlmStreamingInterface<D, P, O> {
      */
     override fun start(): Boolean {
         if (isRunning()) {
-            logWarn("LLM client already started.",)
+            logWarn("LLM client already started.")
             return false
         }
         return true
@@ -143,7 +143,7 @@ abstract class LlmAsynch<D, P, O>: Loggable(), LlmStreamingInterface<D, P, O> {
      */
     override fun stop(): Boolean {
         if (!isRunning()) {
-            logWarn("LLM client already stopped.",)
+            logWarn("LLM client already stopped.")
             return false
         }
         return true

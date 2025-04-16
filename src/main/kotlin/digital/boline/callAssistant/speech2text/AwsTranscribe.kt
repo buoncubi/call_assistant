@@ -523,7 +523,7 @@ abstract class AwsTranscribe : Speech2TextAsync<InputStream?, Result>() {
             return false
 
         try {
-            // Stop the AWS Transcribe servie and close relative resources
+            // Stop the AWS Transcribe server and close relative resources
             client?.close()  // It also calls SubscriptionImpl.cancel()
             logInfo("AWS transcription client closed successfully.")
             serverListening = false
@@ -572,7 +572,7 @@ class AwsTranscribeFromMicrophone : AwsTranscribe() {
         private const val MIC_AUDIO_CHANNEL: Int = 1
 
         // The sample rate based on AWS Transcribe configuration (it comes from the companion object of `AwsTranscribe`)
-        private val MIC_SAMPLE_RATE: Float = SAMPLE_RATE.toFloat()
+        private const val MIC_SAMPLE_RATE: Float = SAMPLE_RATE.toFloat()
     }
 
     /**

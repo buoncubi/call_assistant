@@ -1,0 +1,247 @@
+@startuml
+class digital.boline.callAssistant.llm.message.AwsMessage$Builder {
++ void public()
+}
+
+class digital.boline.callAssistant.llm.message.AwsMessage$Companion {
++ LlmMessage.Builder<Message> build()
+}
+
+class digital.boline.callAssistant.llm.message.AwsMessage {
+- <<Create>> AwsMessage()
++ Message getRawMessage(MetaRole,List<String>)
+}
+
+class digital.boline.callAssistant.llm.message.DynamoDBMessage {
++ List<Map<String, AttributeValue>> toDynamoDB(List<Map<String, Any?>>)
+- Map<String, AttributeValue> toDynamoDB(Map<String, Any?>)
+- AttributeValue toAttributeValue(Any?)
++ Boolean isNullAttribute(AttributeValue)
+- AttributeValue getErrorAttribute()
+}
+
+class digital.boline.callAssistant.llm.message.MessageData$Companion {
++  SUMMARY_IDS_KEY
++  ATTRIBUTES_KEY
++  DATA_KEY
++  TIMING_KEY
+}
+
+class digital.boline.callAssistant.llm.message.MessageData {
++ List<String>? summaryIds
+- MutableList<MetaAttribute>? mutableAttributes
++ List<MetaAttribute>? attributes
+- MutableMap<String, Any>? mutableData
++ Map<String, Any>? data
+- MutableMap<String, Long>? mutableTiming
++ Map<String, Long>? timing
++ void addAttributes(MetaAttribute)
++ void addData(String,Any)
++ void addTiming(MetaTiming,Long)
++ Map<String, Any?> toMap()
++ void toString()
++ Boolean equals(Any?)
++ void hashCode()
+}
+
+
+class digital.boline.callAssistant.llm.message.MetaMessage$Builder {
++ Builder setRole(MetaRole)
++ Builder addContents(List<String>)
++ MessageWrapper.Builder<M> setId(String)
++ MetaMessage<M> public()
++ void toString()
++ void hashCode()
++ void equals(Any?)
+}
+
+class digital.boline.callAssistant.llm.message.MetaMessage$Companion {
++ MessageWrapper.Builder<M> build(LlmMessage.Builder<M>)
+}
+
+class digital.boline.callAssistant.llm.message.MetaMessage {
+-  mutableContents
++ List<String> contents
++ MetaRole role
++  metadata
++  id
++ M rawMessage
+- <<Create>> MetaMessage(LlmMessage<M>)
++ String toString()
++ Boolean equals(Any?)
++ Int hashCode()
+}
+
+
+class digital.boline.callAssistant.llm.message.MessagesManager$Companion {
++  FAKE_MESSAGE_CONTENTS
+}
+
+class digital.boline.callAssistant.llm.message.MessagesManager {
+-  firstLlmMessageIdx
+-  messageMapIdx
+-  mutableMessages
+-  lastSummaryMessageIdx
++ List<MessageWrapper<M>> metaMessages
++ List<M> messages
++ <<Create>> MessagesManager(() -> MessageWrapper.Builder<M>)
++ String toString()
++ void addUser(List<String>)
++ void addAssistant(List<String>)
++ void addUser(String)
++ void addAssistant(String)
++ MessageWrapper<M>? addMessage(MetaRole,List<String>)
+- MessageWrapper.Builder<M> addFistMessage(MetaRole,List<String>)
+- MessageWrapper.Builder<M> addFollowingMessage(MetaRole,List<String>)
+- MessageWrapper.Builder<M> addNewMessage(MetaRole,List<String>,Int?)
+- Int getLasMessage((MessageWrapper.Builder<M>) -> Boolean)
++ Summarizing getSummaryInfo()
++ void addSummary(String,Summarizing)
++ MessageWrapper<M>? addSummary(List<String>,Summarizing)
++ MessageWrapper<M>? getLastSummary()
++ List<Map<String, Any>> messagesMap(Boolean,Boolean)
+}
+
+
+class digital.boline.callAssistant.llm.message.Summarizing$SummarizingMessage {
++ <<Create>> SummarizingMessage(MetaRole,List<String>,Int,String)
++ <<Create>> SummarizingMessage(MessageWrapper.Builder<*>,Int)
++ String format()
+}
+
+class digital.boline.callAssistant.llm.message.Summarizing$Formatter {
+-  USER_TAG
+-  ASSISTANT_TAG
+-  SUMMARY_TAG
+-  PREFIX
+- (String) -> String TRANSFORMER
+-  SEPARATOR
+-  POSTFIX
+- String SUMMARY_CLOSURE
+- String CLOSURE
++ String userTag
++ String assistantTag
++ String summaryTag
++ String prefix
++ String postfix
++ String summaryClosure
++ String closure
++ String separator
++ (String) -> String transformer
++ void roleTag(MetaRole)
+}
+
+
+class digital.boline.callAssistant.llm.message.Summarizing {
++ <<Create>> Summarizing(List<SummarizingMessage>,SummarizingMessage?)
++ String format()
++ void toString()
++ List<Int> getIndexes()
++ void isEmpty()
+}
+
+enum digital.boline.callAssistant.llm.message.MetaRole {
++  USER
++  ASSISTANT
++  SUMMARY
+}
+
+interface digital.boline.callAssistant.llm.message.LlmMessage$Builder {
++ LlmMessage<M> public()
+}
+
+interface digital.boline.callAssistant.llm.message.LlmMessage {
++ M getRawMessage(MetaRole,List<String>)
+}
+
+enum digital.boline.callAssistant.llm.message.MetaAttribute {
++  FAKE
++  MERGED
++ String toString()
+}
+
+
+enum digital.boline.callAssistant.llm.message.MetaTiming {
++  CREATION
++  PLAY_START
++  PLAY_END
++  LISTEN_START
++  LISTEN_END
++  LLM_START
++  LLM_END
++ String toString()
+}
+
+
+interface digital.boline.callAssistant.llm.message.MetaData {
++ List<String>? summaryIds
++ List<MetaAttribute>? attributes
++ Map<String, Long>? timing
++ Map<String, Any>? data
++ void addTiming(MetaTiming,Long)
++ void addData(String,Any)
++ void addAttributes(MetaAttribute)
++ Map<String, Any?> toMap()
++ String toString()
++ Int hashCode()
++ Boolean equals(Any?)
+}
+
+
+class digital.boline.callAssistant.llm.message.MessageWrapper$Builder$Companion {
++  MAP_ID_KEY
++  MAP_MESSAGE_KEY
++  MAP_ROLE_KEY
++  MAP_CONTENTS_KEY
++  MAP_METADATA_KEY
+}
+
+interface digital.boline.callAssistant.llm.message.MessageWrapper$Builder {
++ Builder<M> setRole(MetaRole)
++ Builder<M> addContents(List<String>)
++ Builder<M> setId(String)
++ MessageWrapper<M> public()
++ Map<String, Any> toMap()
+}
+
+interface digital.boline.callAssistant.llm.message.MessageWrapper {
++ String id
++ MetaRole role
++ List<String> contents
++ M rawMessage
++ MetaData metadata
++ String toString()
++ Int hashCode()
++ Boolean equals(Any?)
+}
+
+
+
+
+digital.boline.callAssistant.llm.message.AwsMessage +.. digital.boline.callAssistant.llm.message.AwsMessage$Builder
+digital.boline.callAssistant.llm.message.Builder <|.. digital.boline.callAssistant.llm.message.AwsMessage$Builder
+digital.boline.callAssistant.llm.message.AwsMessage +.. digital.boline.callAssistant.llm.message.AwsMessage$Companion
+digital.boline.callAssistant.llm.message.LlmMessage <|.. digital.boline.callAssistant.llm.message.AwsMessage
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.AwsMessage
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.DynamoDBMessage
+digital.boline.callAssistant.llm.message.MessageData +.. digital.boline.callAssistant.llm.message.MessageData$Companion
+digital.boline.callAssistant.llm.message.MetaData <|.. digital.boline.callAssistant.llm.message.MessageData
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MessageData
+digital.boline.callAssistant.llm.message.MetaMessage +.. digital.boline.callAssistant.llm.message.MetaMessage$Builder
+digital.boline.callAssistant.llm.message.Builder <|.. digital.boline.callAssistant.llm.message.MetaMessage$Builder
+digital.boline.callAssistant.llm.message.MetaMessage +.. digital.boline.callAssistant.llm.message.MetaMessage$Companion
+digital.boline.callAssistant.llm.message.MessageWrapper <|.. digital.boline.callAssistant.llm.message.MetaMessage
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MetaMessage
+digital.boline.callAssistant.llm.message.MessagesManager +.. digital.boline.callAssistant.llm.message.MessagesManager$Companion
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MessagesManager
+digital.boline.callAssistant.llm.message.Summarizing +.. digital.boline.callAssistant.llm.message.Summarizing$SummarizingMessage
+digital.boline.callAssistant.llm.message.Summarizing +.. digital.boline.callAssistant.llm.message.Summarizing$Formatter
+digital.boline.callAssistant.llm.message.LlmMessage +.. digital.boline.callAssistant.llm.message.LlmMessage$Builder
+digital.boline.callAssistant.llm.message.LoggableInterface <|.. digital.boline.callAssistant.llm.message.LlmMessage$Builder
+digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.message.LlmMessage
+digital.boline.callAssistant.llm.message.Builder +.. digital.boline.callAssistant.llm.message.Builder$Companion
+digital.boline.callAssistant.llm.message.MessageWrapper$Builder +.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder$Companion
+digital.boline.callAssistant.llm.message.MessageWrapper +.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder
+digital.boline.callAssistant.llm.message.LoggableInterface <|.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder
+digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.message.MessageWrapper
+@enduml

@@ -1,0 +1,56 @@
+@startuml
+class digital.boline.callAssistant.llm.AwsBedrockRequest$Companion {
++ List<SystemContentBlock> buildPrompts(List<String>)
++ List<SystemContentBlock> buildPrompts(String)
++ Message buildMessages(ConversationRole,String)
++ Message buildMessages(ConversationRole,List<String>)
++ Message buildUserMessages(String)
++ Message buildUserMessages(List<String>)
++ Message buildAssistantMessages(String)
++ Message buildAssistantMessages(List<String>)
+}
+
+class digital.boline.callAssistant.llm.AwsBedrockRequest {
+}
+class digital.boline.callAssistant.llm.AwsBedrockResponse {
+}
+class digital.boline.callAssistant.llm.AwsBedrock {
+- BedrockRuntimeAsyncClient? client
+- CompletableFuture<Void>? llmJob
+- ConverseStreamResponseHandler? requestHandler
++ void doActivate()
++ void doDeactivate()
+- ConverseStreamResponseHandler buildResponseHandler()
++ void doComputeAsync(AwsBedrockRequest)
++ void doStop()
+}
+
+
+interface digital.boline.callAssistant.llm.LlmRequest {
++ P prompts
++ M messages
++ String modelName
++ Float temperature
++ Float topP
++ Int maxTokens
+}
+
+interface digital.boline.callAssistant.llm.LlmResponse {
++ String message
++ Long responseLatency
++ Int inputToken
++ Int outputToken
+}
+
+abstract class digital.boline.callAssistant.llm.LlmInteract {
++  onResultCallbacks
+}
+
+
+
+digital.boline.callAssistant.llm.AwsBedrockRequest +.. digital.boline.callAssistant.llm.AwsBedrockRequest$Companion
+digital.boline.callAssistant.llm.LlmRequest <|.. digital.boline.callAssistant.llm.AwsBedrockRequest
+digital.boline.callAssistant.llm.LlmResponse <|.. digital.boline.callAssistant.llm.AwsBedrockResponse
+digital.boline.callAssistant.llm.LlmInteract <|-- digital.boline.callAssistant.llm.AwsBedrock
+digital.boline.callAssistant.ReusableService <|-- digital.boline.callAssistant.llm.LlmInteract
+@enduml

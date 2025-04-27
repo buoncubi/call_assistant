@@ -1,0 +1,77 @@
+@startuml
+class digital.boline.callAssistant.speech2text.DesktopMicrophone {
+- Int MIC_SAMPLE_SIZE_IN_BIT
+- Int MIC_AUDIO_CHANNEL
+- Float MIC_SAMPLE_RATE
++ InputStream? build()
+}
+
+
+interface digital.boline.callAssistant.speech2text.Speech2TextStreamBuilder {
++ InputStream? build()
+}
+
+abstract class digital.boline.callAssistant.speech2text.Speech2Text {
++  onResultCallbacks
++ <<Create>> Speech2Text(Speech2TextStreamBuilder)
++ void computeAsync(FrequentTimeout?)
+}
+
+
+class digital.boline.callAssistant.speech2text.AwsTranscribe$Companion {
+-  LANGUAGE_CODE
+-  AUDIO_STREAM_CHUNK_SIZE_IN_BYTES
+-  SAMPLE_RATE
+-  MEDIA_ENCODING
+}
+
+class digital.boline.callAssistant.speech2text.AwsTranscribe {
+- TranscribeStreamingAsyncClient? client
+- StartStreamTranscriptionRequest? request
+- CompletableFuture<Void>? transcribeJob
++ <<Create>> AwsTranscribe(Speech2TextStreamBuilder)
+- TranscribeStreamingAsyncClient initClient()
+- StartStreamTranscriptionRequest initRequest()
++ void doActivate()
++ void doComputeAsync(Unit)
+- void getResponseHandler()
++ void doStop()
++ void doDeactivate()
+}
+
+
+class digital.boline.callAssistant.speech2text.AudioStreamPublisher$Companion {
+- SubscriptionImpl? currentSubscription
+-  mutex
++ void stop()
+}
+
+
+class digital.boline.callAssistant.speech2text.AudioStreamPublisher {
++ <<Create>> AudioStreamPublisher(InputStream,CentralizedLogger)
++ void subscribe(Subscriber<in AudioStream?>)
+}
+
+class digital.boline.callAssistant.speech2text.SubscriptionImpl {
+- ExecutorService executor
+-  demand
+-  isOpen
+- <<Create>> SubscriptionImpl(Subscriber<in AudioStream?>,InputStream,CentralizedLogger)
+- ByteBuffer getNextEvent()
++ void request(Long)
++ void cancel()
++ void stop()
+}
+
+
+
+
+digital.boline.callAssistant.speech2text.Speech2TextStreamBuilder <|.. digital.boline.callAssistant.speech2text.DesktopMicrophone
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.speech2text.DesktopMicrophone
+digital.boline.callAssistant.ReusableService <|-- digital.boline.callAssistant.speech2text.Speech2Text
+digital.boline.callAssistant.speech2text.AwsTranscribe +.. digital.boline.callAssistant.speech2text.AwsTranscribe$Companion
+digital.boline.callAssistant.speech2text.Speech2Text <|-- digital.boline.callAssistant.speech2text.AwsTranscribe
+digital.boline.callAssistant.speech2text.AudioStreamPublisher +.. digital.boline.callAssistant.speech2text.AudioStreamPublisher$Companion
+org.reactivestreams.Publisher <|.. digital.boline.callAssistant.speech2text.AudioStreamPublisher
+org.reactivestreams.Subscription <|.. digital.boline.callAssistant.speech2text.SubscriptionImpl
+@enduml

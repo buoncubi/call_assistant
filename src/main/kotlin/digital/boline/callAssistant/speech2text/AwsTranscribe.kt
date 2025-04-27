@@ -1,60 +1,287 @@
 package digital.boline.callAssistant.speech2text
 
+import digital.boline.callAssistant.*
 import digital.boline.callAssistant.ApplicationRunner.Companion.AWS_VENV_REGION
-import digital.boline.callAssistant.CentralizedLogger
+import kotlinx.coroutines.*
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.core.SdkBytes
-import software.amazon.awssdk.core.exception.SdkClientException
-import software.amazon.awssdk.core.exception.SdkException
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.transcribestreaming.TranscribeStreamingAsyncClient
 import software.amazon.awssdk.services.transcribestreaming.model.*
-import java.io.IOException
-import java.io.InputStream
-import java.io.UncheckedIOException
+import java.io.*
 import java.nio.ByteBuffer
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import javax.sound.sampled.*
 
+
 // TODO activate AWS transcribe only if there is some voice (reduce cost on silence calls)
-// TODO restart transcribe if it gets close where there are more than 15 seconds of silence
+
 
 /**
- * It is a class implementing the [Speech2TextInterface] based on AWS Transcribe Streaming service for real-time audio
- * transcription. It parametrises the audio input as [InputStream], while the outputs are AWS [Result]. However, this
- * class is not instantiable since it proves a more abstract implementation, which is agonist by the type actual source
- * of input stream.
- * 
- * See `AwsTranscribeRunner.kt` in the test src folder, for an example of how to use this class.
+ * The class implementing [Speech2Text] based on AWS Transcribe Streaming service for real-time audio streaming
+ * transcription.
  *
- * This class requires (i.e., default values are not given) the following virtual environment variables:
+ * This class requires an [Speech2TextStreamBuilder], which instantiate an input stream that contains the audio to be
+ * converted into text. It also requires these virtual environment variables:
  *  - `AWS_TRANSCRIBE_LANGUAGE`: see [LANGUAGE_CODE],
  *  - `AWS_TRANSCRIBE_AUDIO_STREAM_CHUNK_SIZE`: see [AUDIO_STREAM_CHUNK_SIZE_IN_BYTES],
  *  - `AWS_REGION`: see [AWS_VENV_REGION],
- *  - `AWS_ACCESS_KEY_ID`:  see `AWS_ACCESS_KEY_ID`, and [DefaultCredentialsProvider],
- *  - `AWS_SECRET_ACCESS_KEY`: see `AWS_SECRET_ACCESS_KEY`, and [DefaultCredentialsProvider].
+ *  - variables for AWS credential, i.e., `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN`.
  *
- * @property serverListening Boolean
- * @property callbacks MutableSet<Function1<Result, Unit>>
- * @property client TranscribeStreamingAsyncClient?
- * @property request StartStreamTranscriptionRequest?
- * @property responseHandler StartStreamTranscriptionResponseHandler
+ * This class performs computation asynchronously based on [ReusableService], which allow defining timeout and
+ * callbacks. Here it follows a usage example:
+ * ```
+ *    // Instantiate the service with the ability to read `InputStream` from the microphone.
+ *    val transcriber = AwsTranscribe (DesktopMicrophone)
  *
- * @see Speech2TextInterface
- * @see AwsTranscribeFromMicrophone
+ *     // Set the callback invoked when a not final transcription has been provided by AWS Transcribe
+ *     transcriber.onResultCallbacks.add { result: Result ->
+ *         println("Callback -> ${result.alternatives()[0].transcript()}")
+ *     }
  *
- * @author Luca Buoncompagni © 2025
+ *     // Set the callback invoked when an error occurred.
+ *     transcriber.onErrorCallbacks.add { se: ServiceError ->
+ *         println("Error during transcription: ('${se.errorSource}') ${se.throwable.message}")
+ *     }
+ *
+ *     // Initialize the AWS Transcribe resources.
+ *     transcriber.activate()
+ *
+ *     // Define the timeout with its callback
+ *     val timeoutSpec = FrequentTimeout(timeout = 5000, checkPeriod = 50) {
+ *         println("Computation timeout reached!") // This is called when timeout occurs.
+ *         // Note that this timeout is reset  everytime some audio is converted into text.
+ *     }
+ *
+ *     // Start asynchronous listener for the microphone (the timeout is optional).
+ *     transcriber.computeAsync(timeoutSpec)
+ *
+ *     // Eventually, wait for the computation to finish (the timeout is optional).
+ *     transcriber.wait(Timeout(timeout = 20000) {
+ *         println("Waiting timeout reached!")
+ *     })
+ *
+ *     // You might want to stop the transcription service.
+ *     transcriber.stop()
+ *
+ *     // Here you can use `computeAsync` again (together with `wait` or `stop`)...
+ *
+ *     // Always remember to close the service resources.
+ *     transcriber.deactivate()
+ *
+ *     // You can re-activate the service and make more computation...
+ * ```
+ *
+ * @property client The AWS Transcribe client initialized with [activate], and closed with [deactivate]. This property
+ * is `null` if the service is not active, and it is `private`.
+ * @property request The configuration of the AWS Transcribe client it is instantiated with [activate]. This property is
+ * `null` if the service is not active, and it is `private`.
+ * @property transcribeJob The asynchronous job that is launched by [computingJob], it is used to implement the [stop]
+ * and [wait] methods. This property is `null` if the service is not computing, and it is `private`.
+ * @property streamBuilder The object providing the input audio stream to process. However, this is a `private`
+ * property.
+ * @property onResultCallbacks The callback manager for the text transcription results.
+ * @property onErrorCallbacks The object providing the output audio stream to process.
+ * @property isActive Whether the service resources have been initialized or not.
+ * @property isComputing Whether the service is currently computing or not.
+ *
+ * @see ReusableService
+ * @see Speech2Text
+ * @see Speech2TextStreamBuilder
+ * @see DesktopMicrophone
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
-abstract class AwsTranscribe : Speech2TextAsync<InputStream?, Result>() {
+class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<Result>(inputStreamBuilder) {
 
-    /** Companion object for the AwsPollyMute class. It defines requires environmental variables. */
-    protected companion object {
+    // See documentation above.
+    private var client: TranscribeStreamingAsyncClient? = null
+    private var request: StartStreamTranscriptionRequest? = null
+    private var transcribeJob: CompletableFuture<Void>? = null
+
+
+    /**
+     * Initialize the AWS Transcribe client. It is invoked by [activate] to store the returned value in the [client]
+     * property.
+     *
+     * This method requires these environmental variables: `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+     * and `AWS_SESSION_TOKEN`.
+     *
+     * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
+     * [onErrorCallbacks] with `errorSource` set to [ErrorSource.ACTIVATING].
+     *
+     * @return The AWS transcribe client.
+     */
+    private fun initClient(): TranscribeStreamingAsyncClient =
+        TranscribeStreamingAsyncClient.builder()
+            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO adjust credential provider
+            .region(Region.of(AWS_VENV_REGION))
+            /*.httpClient( // TODO to use?
+                // It is faster with respect to Netty (default) httpClient but less stable
+                // It requires `implementation("software.amazon.awssdk:aws-crt-client")` as gradle dependence
+                AwsCrtAsyncHttpClient.builder()
+                //.connectionTimeout(Duration.ofSeconds(1))
+                .build()
+            )*/
+            .build()
+
+
+    /**
+     * Configure the AWS Transcribe. It is invoked by [activate] to store the returned value in the [request] property.
+     *
+     * This method requires these environmental variables: [LANGUAGE_CODE], [MediaEncoding], and [SAMPLE_RATE].
+     *
+     * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
+     * [onErrorCallbacks] with `errorSource` set to [ErrorSource.ACTIVATING].
+     *
+     * @return The request configuration for the AWS transcribe client.
+     */
+    private fun initRequest(): StartStreamTranscriptionRequest =
+        StartStreamTranscriptionRequest.builder()
+                .languageCode(LANGUAGE_CODE)
+                .mediaEncoding(MEDIA_ENCODING)
+                .mediaSampleRateHertz(SAMPLE_RATE)
+                .build()
+
+
+    /**
+     * Activate the service by initializing the AWS Transcribe [client] with its configuration [request] based on
+     * [initClient] and [initRequest]. This method is invoked by [activate].
+     *
+     * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
+     * [onErrorCallbacks] with `errorSource` set to [ErrorSource.ACTIVATING].
+     */
+    override fun doActivate() {
+        client = initClient()
+        request = initRequest()
+        // The `activate` method will return `false` in case of exceptions.
+    }
+
+
+    /**
+     * Perform asynchronous computation that listen to the input stream given by [streamBuilder] and produce text that
+     * can be obtained with [onResultCallbacks]. This function is invoked by [computeAsync].
+     *
+     * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
+     * [onErrorCallbacks] with `errorSource` set to [ErrorSource.COMPUTING].
+     *
+     * @param input This method takes nothing as input parameter. Thus, this parameter is not used.
+     */
+    override suspend fun doComputeAsync(input: Unit) { // Runs on a separate thread
+        // Start AWS transcribe service
+        // Get input stream (e.g., from microphone).
+        val inputStream: InputStream = streamBuilder.build()
+            ?: throw IOException("Cannot build input stream") // This exception is cached by `doThrow`.
+        // Instantiate the publisher for AWS Transcribe.
+        val audioPublisher = AudioStreamPublisher(inputStream, logger)
+        // Instantiate the object that handle the AWS response.
+        val handler = getResponseHandler()
+        // Start the AWS Transcription stream
+        transcribeJob = client?.startStreamTranscription(request, audioPublisher, handler)
+        transcribeJob?.join()
+    }
+
+
+    /**
+     * Returns the object that handle the AWS response. This method is invoked by [doComputeAsync].
+     *
+     * The returned object implement several functionalities of [StartStreamTranscriptionResponseHandler] which are
+     * called by AWS Transcribe during the speech-to-text transcription process:
+     * - [StartStreamTranscriptionResponseHandler.Builder.onResponse]: Triggered when the AWS Transcribe service sends
+     *   an initial response, indicating successful initialization of the session. Currently, this method only produces
+     *   log.
+     * - [StartStreamTranscriptionResponseHandler.Builder.onError]: Invoked when any exceptions are encountered during
+     *   the transcription process. Error handling is made by the mean of [doThrow], which invokes the
+     *   [onErrorCallbacks] with `errorSource` set to [ErrorSource.COMPUTING]. When an error occurs, [stop] is invoked.
+     * - [StartStreamTranscriptionResponseHandler.Builder.onComplete]: Executed when the transcription stream is
+     *   successfully completed, either by finishing audio input or stopping the service explicitly. Currently, this
+     *   method only produces log.
+     * - [StartStreamTranscriptionResponseHandler.Builder.subscriber]: Processes [TranscriptResultStream] events from
+     *   AWS Transcribe, extracting and formatting transcribed text data, and invoking [onResultCallbacks] with
+     *   finalized results when available. This method is also used to invoke [resetTimeout] when some text has been
+     *   transcribed.
+     *
+     * @return The object that handle the AWS response.
+     */
+    private fun getResponseHandler() =
+        StartStreamTranscriptionResponseHandler.builder()
+            .onResponse {
+                // It is called as soon as the AWS Transcribe client starts.
+                logDebug("Ready to use AWS Transcribe client.")
+            }
+            .onError { ex: Throwable ->
+                stop()
+                if (doThrow(ex, ErrorSource.COMPUTING) == true) throw ex
+            }
+            .onComplete {
+                // Called if the audio is finished or if the AWS Transcribe client is closed with `stopListening`.
+                logDebug("AWS Transcribe client completed its stream.")
+            }
+            .subscriber { event: TranscriptResultStream ->
+                // Get transcribed text for AWS.
+                val results = (event as TranscriptEvent).transcript().results()
+                if (results.isNotEmpty()) {
+                    val result: Result = results[0]
+                    if (result.alternatives()[0].transcript().isNotEmpty()) {
+                        logTrace(
+                            "AWS Transcribe realtime recognition: '{}' ...",
+                            results[0].alternatives()[0].transcript()
+                        )
+                        resetTimeout()
+
+                        if (!result.isPartial) {
+                            val transcribed = result.alternatives()
+                            logDebug(
+                                "AWS Transcribe sentence recognised {} alternative(s): '{}'",
+                                transcribed.size, transcribed[0].transcript()
+                            )
+                            onResultCallbacks.invoke(result)
+                        }
+                    }
+                }
+            }
+            .build()
+
+
+    /**
+     * Stop the service while it is computing and sets [transcribeJob] to `null`.
+     *
+     * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
+     * [onErrorCallbacks] with `errorSource` set to [ErrorSource.STOPPING].
+     */
+    override fun doStop() {
+        AudioStreamPublisher.stop() // It makes transcribeJob finishing
+        transcribeJob?.cancel(true)
+        transcribeJob = null
+        super.doStop()
+    }
+
+
+    /**
+     * Deactivate the service by closing the AWS Transcribe client [client] and set it, as well as [request], to `null`.
+     * This method is invoked by [deactivate].
+     *
+     * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
+     * [onErrorCallbacks] with `errorSource` set to [ErrorSource.DEACTIVATING].
+     */
+    override fun doDeactivate() {
+        // Stop the AWS Transcribe server and close relative resources.
+        client?.close() // It takes 2 seconds with Natty HTTP-client (see other commented client, i.e., AwsCrt).
+        client = null
+        request = null
+        // The `activate` method will return `false` in case of exceptions.
+    }
+
+
+    companion object {
+        // TODO make var configurable from API
 
         /**
          * The language code for the transcription, e.g., `it-IT`. This value is required from the
@@ -62,11 +289,15 @@ abstract class AwsTranscribe : Speech2TextAsync<InputStream?, Result>() {
          */
         private val LANGUAGE_CODE = System.getenv("AWS_TRANSCRIBE_LANGUAGE") // ?: "it-IT"
 
+
         /**
          * The size of the audio buffer in bytes, e.g., 1024. This value is required from the environmental variable
          * `AWS_TRANSCRIBE_AUDIO_STREAM_CHUNK_SIZE` as an integer.
+         *
+         * It is suggested to set it as `chunk_size_in_bytes = chunk_duration_in_millisecond / 1000 * audio_sample_rate * 2`
          */
-        private val AUDIO_STREAM_CHUNK_SIZE_IN_BYTES = System.getenv("AWS_TRANSCRIBE_AUDIO_STREAM_CHUNK_SIZE").toInt() //orNull() ?:1024
+        internal val AUDIO_STREAM_CHUNK_SIZE_IN_BYTES =
+            System.getenv("AWS_TRANSCRIBE_AUDIO_STREAM_CHUNK_SIZE").toInt() //orNull() ?:1024
 
 
         /**
@@ -76,6 +307,7 @@ abstract class AwsTranscribe : Speech2TextAsync<InputStream?, Result>() {
          * .
          */
         internal const val SAMPLE_RATE = 16000
+
 
         /**
          * The audio encoding format. This value is required from the environmental variable
@@ -87,543 +319,217 @@ abstract class AwsTranscribe : Speech2TextAsync<InputStream?, Result>() {
          *  - `ogg-opus`: Compressed, low quality and low latency as well.
          */
         private val MEDIA_ENCODING = MediaEncoding.PCM
-
     }
 
+}
+
+
+
+/**
+ * A [Publisher] implementation responsible for providing audio data from an [InputStream] to the AWS stream Transcribe
+ * client. This handles audio events, implementing backpressure management and subscription lifecycle.
+ *
+ * This class supports only a single active subscriber at a time and facilitates audio event-driven communication by
+ * reading data from the provided audio stream.
+ *
+ * @constructor Takes an [InputStream] as its source for audio data and make it available to AWS Transcribe by the mean
+ * of [SubscriptionImpl].
+ *
+ * @param inputStream The input stream source for audio data. It must remain open and available during the
+ * subscription lifecycle. Such an input stream is given by [AwsTranscribe.streamBuilder]. This property is `private`.
+ * @param logger A logger instance associated within the [AwsTranscribe] class. This property is `private`.
+ *
+ * @see AwsTranscribe
+ * @see Speech2TextStreamBuilder
+ * @see DesktopMicrophone
+ * @see SubscriptionImpl
+ * @see Speech2Text
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
+ */
+private class AudioStreamPublisher(private val inputStream: InputStream,
+                                   private val logger: CentralizedLogger)
+        : Publisher<AudioStream?> {
 
     /**
-     * Provides an AWS Transcribe Streaming asynchronous client for real-time transcription operations.
-     * 
-     * This property lazily initializes the AWS [TranscribeStreamingAsyncClient] instance. During initialization,
-     * it uses the `[DefaultCredentialsProvider]` and configures the client for a specific AWS region.
-     * 
-     * If an error occurs during the initialization it returns a `null` client.
+     * Subscribes a [Subscriber] to the audio stream. This method establishes a subscription based on [SubscriptionImpl]
+     * and, if it already exists, it closes the previous one before to open a new subscription.
+     *
+     * Note that in case of exceptions, they are propagated to [AwsTranscribe.doThrow].
+     *
+     * @param subscriber The object to be subscribed to the audio stream.
      */
-    private val client: TranscribeStreamingAsyncClient? = initAwsClient()
-
-
-    /**
-     * Initializes an asynchronous AWS Transcribe Streaming client.
-     *
-     * This method attempts to set up an instance of the AWS [TranscribeStreamingAsyncClient] with default credentials
-     * and the region specified in the [AWS_VENV_REGION]. If the initialization succeeds, the client instance is returned;
-     * otherwise, an exception is logged and the method returns ´null´.
-     *
-     * @return A configured instance of [TranscribeStreamingAsyncClient], or `null` if an error occurs during
-     * initialization.
-     */
-    private fun initAwsClient(): TranscribeStreamingAsyncClient? {
-        try {
-            // Create a new AWS client with login credentials.
-            logInfo("Initializing AWS Transcribe client...")
-            return TranscribeStreamingAsyncClient.builder()
-                .credentialsProvider(DefaultCredentialsProvider.create())
-                .region(Region.of(AWS_VENV_REGION))
-                .build()
-        } catch (ex: Exception) {
-            logError("Error initializing the AWS Transcribe Client", ex)
-            return null
-        }
-    }
-
-
-    /**
-     * Provides a lazily initialized [StartStreamTranscriptionRequest] for AWS Transcribe service.
-     * 
-     * This property constructs and returns a new transcription request with predefined language, encoding, and sample
-     * rate settings. If an error occurs during the request creation, it logs the specific error and returns `null`.
-     */
-    private val request: StartStreamTranscriptionRequest? = initAwsRequest()
-
-
-    /**
-     * Initializes and constructs an AWS StartStreamTranscriptionRequest instance with the appropriate audio
-     * configuration for AWS Transcribe Streaming.
-     *
-     * The method handles the creation of the request, setting necessary parameters such as language code, media
-     * encoding, and sample rate. If an error occurs during the request creation process, it logs the specific error
-     * and returns `null`.
-     *
-     * @return A [StartStreamTranscriptionRequest] instance configured for AWS Transcribe Streaming, or `null` if an
-     * error occurs during the initialization process.
-     */
-    private fun initAwsRequest(): StartStreamTranscriptionRequest? {
-        try {
-            // Create a new AWS request with audio configuration
-            logInfo("Creating AWS Transcribe request...")
-            return StartStreamTranscriptionRequest.builder()
-                .languageCode(LANGUAGE_CODE)
-                .mediaEncoding(MEDIA_ENCODING)
-                .mediaSampleRateHertz(SAMPLE_RATE)
-                .build()
-        } catch (ex: Exception) {
-            val errorMessage = when (ex) {
-                is IllegalArgumentException ->
-                    "Invalid AWS Transcribe request parameters"
-                else ->
-                    "Generic error on AWS Transcribe request"
-            }
-            logError(errorMessage, ex)
-            return null
-        }
-    }
-
-
-    /**
-     * Starts the AWS Transcribe service to process audio input for speech-to-text conversion.
-     * 
-     * This method initializes the process required to stream audio data using AWS Transcribe Streaming. It ensures that
-     * both the client and the request are properly initialized before attempting to start the transcription service.
-     * If the service is already in a listening state or an error occurs during the start process, it handles the
-     * corresponding cases and provides feedback through logging. A successful start sets the [serverListening] flag to
-     * `true`.
-     *
-     * @return `true` if the service was started successfully and is actively listening, `false` otherwise.
-     */
-    override fun startListening(): Boolean {
-        if (!super.startListening())
-            // Do not start listening a service that did not stop listening.
-            return false
-
-        try {
-            if (client == null || request == null) {
-                logWarn("Cannot start AWS Transcribe client since client or request is not initialized.")
-                return false
-            }
-
-            // Start AWS transcribe service
-            logInfo("Starting AWS Transcribe client.")
-            val audioPublisher = AudioStreamPublisher(this.inputStream, logger)
-            client.startStreamTranscription(request, audioPublisher, responseHandler)
-            serverListening = true
-            return true
-
-        } catch (ex: Exception) {
-            val errorMessage = when(ex) {
-                is BadRequestException,
-                is LimitExceededException,
-                is InternalFailureException,
-                is ConflictException,
-                is ServiceUnavailableException,
-                is SdkClientException,
-                is TranscribeStreamingException,
-                is SdkException,
-                is IllegalStateException,
-                is IOException ->
-                    "Error starting the AWS Transcribe client"
-                else ->
-                    "Generic error on starting the AWS Transcribe client"
-            }
-            logError(errorMessage, ex)
-            client?.close()
-            return false
-        }
-    }
-
-
-    /**
-     * A [Publisher] implementation responsible for providing audio data from an [InputStream] to a [Subscriber]. This
-     * is designed as part of a reactive stream framework to handle processing and delivering audio events, implementing
-     * backpressure management and subscription lifecycle.
-     *
-     * This class supports only a single active subscriber at a time and facilitates audio event-driven communication by
-     * reading data from the provided audio stream.
-     *
-     * @constructor Takes an [InputStream] as its source for audio data. If `null` is provided, the publisher will
-     * notify subscribers of an error.
-     *
-     * @param inputStream The input stream source for audio data. It must remain open and available during the
-     * subscription lifecycle.
-     * @param logger A logger instance associated with the [AwsTranscribe] class.
-     *
-     * @see AwsTranscribe
-     *
-     * @author Luca Buoncompagni © 2025
-     */
-    private class AudioStreamPublisher(val inputStream: InputStream?, val logger: CentralizedLogger) : Publisher<AudioStream?> {
-
-        /**
-         * Represents the current active subscription for the [AudioStreamPublisher].
-         * 
-         * This variable holds a reference to a [Subscription] object, which is used to manage the flow of audio data
-         * from the [inputStream] to a [Subscriber].
-         * 
-         * - Stores the subscription created during the [subscribe] method, allowing the publisher to manage the
-         *   subscriber and related resources.
-         * - Supports only a single subscriber. If a new subscriber is added, any existing subscription is cancelled
-         *   before the new one is registered.
-         * - Managed and cleared during lifecycle operations such as subscription updates or resource cleanup (e.g.,
-         *   via the [Subscription.cancel] method).
-         *
-         * It can be `null` if no active subscription exists.
-         */
-        private var currentSubscription: Subscription? = null
-
-        /**
-         * Subscribes a [Subscriber] to the audio stream. This method establishes a subscription to the `inputStream` if
-         * available, allowing the `Subscriber` to receive audio data.
-         *
-         * @param subscriber The object to be subscribed to the audio stream. It will receive audio data or error
-         * notifications in case of failures.
-         */
-        override fun subscribe(subscriber: Subscriber<in AudioStream?>) {
-            // Add a subscriber to the `inputStream`
+    override fun subscribe(subscriber: Subscriber<in AudioStream?>) {
+        synchronized(mutex) {
             try {
-                if (inputStream != null) {
-                    // If it is not null, cancel its task before to overwrite with a new `SubscriptionImpl`
-                    currentSubscription?.cancel()
+                logger.debug("AWS Transcribe subscribing to audio stream.")
+                if (currentSubscription == null) {
                     currentSubscription = SubscriptionImpl(subscriber, inputStream, logger)
-                    subscriber.onSubscribe(currentSubscription)
-                    logger.info("Subscribed to audio input stream for speech recognition.")
                 } else {
-                    subscriber.onError(RuntimeException("Failed to access the audio input stream."))
-                    currentSubscription?.cancel()
+                    currentSubscription!!.cancel()
+                    currentSubscription = SubscriptionImpl(subscriber, inputStream, logger)
                 }
+                subscriber.onSubscribe(currentSubscription)
             } catch (ex: Exception) {
-                val errorMessage = when(ex) {
-                    is SecurityException -> "Subscription failure due to audio input stream access. ({})"
-                    is LineUnavailableException -> "Audio input stream unavailable for subscription. ({})"
-                    else -> "Generic error during subscription to audio input stream. ({})"
-                }
-                logger.error(errorMessage, ex.message)
-                subscriber.onError(ex)
-                currentSubscription?.cancel()
-            }
-        }
-
-        /**
-         * Implementation of the Subscription interface that facilitates stream-based communication of audio data to a
-         * subscriber. This class manages the lifecycle of a subscription, including handling requests for data,
-         * managing backpressure, and cleaning up resources upon cancellation.
-         * 
-         * Handles fetching audio data from a provided input stream, delivering it in manageable chunks to an associated
-         * subscriber, and managing the backpressure based on demands from the subscriber.
-         *
-         * @param subscriber The subscriber that will receive events representing audio data.
-         * @param inputStream The input stream from which audio data is read.
-         *
-         * @see AudioStreamPublisher
-         * @see AwsTranscribe
-         *
-         * @author Luca Buoncompagni © 2025
-         */
-        class SubscriptionImpl(
-            private val subscriber: Subscriber<in AudioStream?>,
-            private val inputStream: InputStream,
-            private val logger: CentralizedLogger
-        ) : Subscription {
-
-            /**  ExecutorService responsible for managing the execution of  a single asynchronous tasks. */
-            private val executor: ExecutorService = Executors.newFixedThreadPool(1)
-
-            /**
-             * Represents the current demand for processing audio events in a subscription implementation.
-             * 
-             * This variable tracks the number of requested audio events that need to be processed. It ensures
-             * thread-safe operations for incrementing and decrementing the demand and is primarily used in the
-             * [request] method to handle backpressure in a reactive stream context.
-             * 
-             * A non-negative value indicates the number of events that are yet to be processed, while the value is
-             * decremented as each audio event is successfully processed or completed.
-             */
-            private val demand = AtomicLong(0)
-
-            /**
-             * Represents a ByteBuffer that holds the next chunk of audio data to be consumed. This is a computed
-             * property that attempts to read audio data from an input stream and wraps it in a [ByteBuffer]. If the
-             * read operation fails, `null` is returned.
-             */
-            private val nextEvent: ByteBuffer?
-                get() {
-                    try {
-                        // Put audio data into a buffer.
-                        val audioBytes = ByteArray(AUDIO_STREAM_CHUNK_SIZE_IN_BYTES)
-                        val len: Int = inputStream.read(audioBytes)
-                        val audioBuffer: ByteBuffer? = if (len <= 0) {
-                            ByteBuffer.allocate(0)
-                        } else {
-                            ByteBuffer.wrap(audioBytes, 0, len)
-                        }
-                        return audioBuffer
-                    } catch (ex: Exception) {
-                        val errorMessage = when(ex) {
-                            is IOException -> "Failed to read next audio chunk from audio input stream"
-                            else -> "Generic error while reading audio chunk from audio input stream"
-                        }
-                        logger.error(errorMessage, ex)
-                        return null
-                    }
-                }
-
-            /**
-             * Requests a specific number of items to be delivered to the subscriber.
-             * 
-             * If an error occurs, then [StartStreamTranscriptionResponseHandler.Builder.onError] is invoked.
-             *
-             * @param itemsNumber The number of items requested. Must be a positive number; otherwise, an error will be
-             * reported to the subscriber.
-             */
-            override fun request(itemsNumber: Long) {
-                if (itemsNumber <= 0) {
-                    subscriber.onError(IllegalArgumentException("Demand must be positive"))
-                    cancel()
-                    return
-                }
-
-                // Get audio data in chunks and submit it into a thread
-                demand.getAndAdd(itemsNumber)
-                executor.submit {
-                    try {
-                        while (demand.decrementAndGet() >= 0) {
-                            val audioBuffer = nextEvent
-                            if (audioBuffer != null) {
-                                if (audioBuffer.remaining() > 0) {
-                                    val audioEvent = AudioEvent.builder()
-                                        .audioChunk(SdkBytes.fromByteBuffer(audioBuffer))
-                                        .build()
-                                    subscriber.onNext(audioEvent)
-                                } else {
-                                    break
-                                }
-                            }
-                        }
-                        logger.info("Stop requesting next audio event for speech recognition.")
-                    } catch (ex: Exception) {
-                        val errorMessage = when(ex) {
-                            is InterruptedException -> "Interrupted while waiting for next input audio event. ({})"
-                            is UncheckedIOException -> "Failed to read next input audio event. ({})"
-                            is RejectedExecutionException -> "Failed to submit next input audio event. ({})"
-                            else -> "Generic error while reading next input audio event. ({})"
-                        }
-                        logger.error(errorMessage, ex.message)
-                        subscriber.onError(RuntimeException("Task execution failed for next input audio event: ${ex.cause}", ex))
-                        cancel()
-                    }
-                }
-            }
-
-            /**
-             * Cancels the subscription to the audio channel and releases associated resources.
-             * 
-             * This method ensures that any active resources, such as streams or executors, are closed or shut down. It
-             * also notifies the subscriber that the subscription is complete. This function is called by
-             * [stopListening].
-             * 
-             * If an error occurs, then [StartStreamTranscriptionResponseHandler.Builder.onError] is invoked.
-             */
-            override fun cancel() {
-                // This is called by `AwsTranscribe.stopListening()`
-                try {
-                    executor.shutdownNow()
-                    subscriber.onComplete()
-                    inputStream.close()
-                    logger.info("Subscription to input audio stream cancelled.")
-                } catch (ex: Exception) {
-                    val errorMessage = when(ex) {
-                        is SecurityException -> "Error while cancelling subscription to input audio stream. ({})"
-                        is IOException -> "Error while closing input audio stream. ({})"
-                        else -> "Generic error while cancelling subscription to input audio stream. ({})"
-                    }
-                    logger.error(errorMessage, ex.message)
-                    subscriber.onError(RuntimeException("Task execution failed for input audio stream: ${ex.cause}", ex))
-                }
+                logger.error("Error during subscription to audio stream for AWS Transcribe", ex.message)
+                subscriber.onError(ex) // It propagates exceptions to `doThrow`.
             }
         }
     }
 
+    companion object {
 
-    /**
-     * A property representing a response handler for managing AWS Transcribe streaming events.
-     * 
-     * This handler is responsible for:
-     * - Reacting to different stages of the transcription process, such as when the service starts, completes, or
-     *   encounters an error.
-     * - Processing the transcription results and invoking registered callbacks with the final processed transcription
-     *   data.
-     * 
-     * Key components handled by this response handler:
-     * 1. [StartStreamTranscriptionResponseHandler.Builder.onResponse]: Triggered when the AWS Transcribe service sends
-     *   an initial response, indicating successful initialization of the session.
-     *
-     * 2. [StartStreamTranscriptionResponseHandler.Builder.onError]: Invoked when any errors or exceptions are
-     *   encountered during the transcription process. Error handling includes specific messages for known issues such
-     *   as [TranscribeStreamingException] or [IOException].
-     *
-     * 3. [StartStreamTranscriptionResponseHandler.Builder.onComplete]: Executed when the transcription stream is
-     *   successfully completed, either by finishing audio input or stopping the service explicitly.
-     *
-     * 4. [StartStreamTranscriptionResponseHandler.Builder.subscriber]: Processes [TranscriptResultStream] events from
-     *    AWS Transcribe, extracting and formatting transcribed text data, and invoking callbacks with finalized results
-     *    when available.
-     * 
-     * This property dynamically initializes an instance of [StartStreamTranscriptionResponseHandler] using a builder
-     * pattern for managing individual handler events, ensuring modular and reactive handling throughout the
-     * transcription session.
-     */
-    private val responseHandler: StartStreamTranscriptionResponseHandler
-        get() = StartStreamTranscriptionResponseHandler.builder()
-            .onResponse {
-                // It is called as soon as the AWS Transcribe client starts.
-                logInfo("Ready to use AWS Transcribe client.")
-            }
-            .onError { ex: Throwable ->
-                // React to errors during AWS transcription.
-                val errorMessage = when (ex) {
-                    is TranscribeStreamingException -> "AWS Transcribe request failed during transcription"
-                    is IOException -> "AWS Transcribe I/O error during transcription"
-                    is IllegalStateException -> "AWS Transcribe state error during transcription"
-                    else -> "Generic AWS Transcribe error during transcription"
-                }
-                logError(errorMessage, ex)
-            }
-            .onComplete {
-                // Called if the audio is finished or if the AWS Transcribe client is closed with `stopListening`.
-                logInfo("AWS Transcribe client completed its stream.")
-            }
-            .subscriber { event: TranscriptResultStream ->
-                try {
-                    // Get transcribed text for AWS.
-                    val results = (event as TranscriptEvent).transcript().results()
-                    if (results.isNotEmpty()) {
-                        val result = results[0]
-                        if (result.alternatives()[0].transcript().isNotEmpty()) {
-                            logDebug("AWS Transcribe recognition on realtime: '{}' ...",
-                                results[0].alternatives()[0].transcript())
+        /** The audio stream subscription used to provide audio data to AWS Transcribe. */
+        private var currentSubscription: SubscriptionImpl? = null
 
-                            if (!result.isPartial) {
-                                val transcribed = result.alternatives()
-                                logInfo("AWS Transcribe sentence recognised ({} alternatives): '{}'",
-                                    transcribed.size, transcribed[0].transcript())
-                                onCallbackResults(result)
-                            }
-                        }
-                    }
-                } catch (ex: Exception) {
-                    val errorMessage = when(ex) {
-                        is TranscribeStreamingException -> "Error handling result stream from the AWS Transcribe service"
-                        is ClassCastException -> "Error casting transcription result from the AWS Transcribe service"
-                        else -> "Generic error handling result stream from the AWS Transcribe service"
-                    }
-                    logError(errorMessage, ex)
-                }
+        /** A mutex to synchronize [subscribe] and [stop] methods */
+        private val mutex = Any()
+
+        /**  Stops the audio stream subscription, if it exists. This method is invoked by [AwsTranscribe.doStop]. */
+        fun stop() {
+            synchronized(mutex) {
+                currentSubscription?.stop()
+                currentSubscription = null
             }
-            .build()
-
-
-    /**
-     * Stops the AWS Transcribe listening process and cleans up associated resources. This method ensures that the
-     * listening service is stopped only if it is currently running. It attempts to close the AWS Transcribe client, and
-     * handles any exceptions that may occur during this process.
-     *
-     * @return `true` if the listening process was stopped successfully, `false` otherwise.
-     */
-    override fun stopListening(): Boolean {
-        if (!super.stopListening())
-            // Do not stop listening a service that did not start listening.
-            return false
-
-        try {
-            // Stop the AWS Transcribe server and close relative resources
-            client?.close()  // It also calls SubscriptionImpl.cancel()
-            logInfo("AWS transcription client closed successfully.")
-            serverListening = false
-            return true
-        } catch (ex: Exception) {
-            val errorMessage = when(ex) {
-                is IOException -> "I/O error while stopping AWS Transcribe client"
-                else -> "Generic error while stopping AWS Transcribe client"
-            }
-            logError(errorMessage, ex)
-            return false
         }
     }
 }
 
 
+
 /**
- * A class that extends the capabilities of [AwsTranscribe] to support speech-to-text operations using audio captured
- * directly from the system's microphone.
- * 
- * This class handles capturing audio input from the microphone, converting the audio into the appropriate format, and
- * providing an input stream that can be used by the AWS Transcribe service for real-time transcription.
- * 
- * The audio is captured in a linear PCM format with specific configurations including a 16-bit sample size, mono
- * channel, and a sample rate compatible with the service's supported frequencies.
+ * Implementation of the Subscription interface to stream audio data to AWS Transcribe.
  *
- * See `AwsTranscribeRunner.kt` in the test src folder, for an example of how to use this class.
+ * Handles fetching audio data from a provided input stream, delivering it in manageable chunks to an associated
+ * subscriber, and managing the backpressure based on demands from the subscriber.
  *
- * @see Speech2TextInterface
+ * This class run a separate thread, which is not managed through Kotlin coroutine due to issues with the AWS API.
+ *
+ * @param subscriber The subscriber that will receive events representing audio data. It is given by
+ * [AudioStreamPublisher.subscribe]. This property is `private`.
+ * @param inputStream The input stream from which audio data is read. It is given by [AwsTranscribe.streamBuilder].
+ * This property is `private`.
+ * @param logger A logger instance associated within the [AwsTranscribe] class. This property is `private`.
+ *
+ * @see AudioStreamPublisher
  * @see AwsTranscribe
+ * @see Speech2TextStreamBuilder
+ * @see DesktopMicrophone
+ * @see Speech2Text
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
-class AwsTranscribeFromMicrophone : AwsTranscribe() {
+class SubscriptionImpl internal constructor(
+                                            private val subscriber: Subscriber<in AudioStream?>,
+                                            private val inputStream: InputStream,
+                                            private val logger: CentralizedLogger)
+                                            : Subscription {
+
 
     /**
-     * Provides constants used for audio data processing during
-     * speech-to-text operations based on microphone.
+     * The object that manages the execution of a single asynchronous task, where the audio is buffered and provided.
      */
-    companion object {
-
-        // The sample size for audio data. If higher the representation is more precise but bigger.
-        private const val MIC_SAMPLE_SIZE_IN_BIT: Int = 16
-
-        // The audio channel, i..e, 1: Mono, 2: Stereo.
-        private const val MIC_AUDIO_CHANNEL: Int = 1
-
-        // The sample rate based on AWS Transcribe configuration (it comes from the companion object of `AwsTranscribe`)
-        private const val MIC_SAMPLE_RATE: Float = SAMPLE_RATE.toFloat()
-    }
+    private val executor: ExecutorService = Executors.newFixedThreadPool(1)
 
     /**
-     * Provides an `InputStream` to access audio data captured from the system's microphone.
-     * 
-     * This property establishes a connection to the microphone and configures it as a mono audio
-     * input stream with a sample rate of 16kHz and 16-bit sample size, using the PCM format.
-     * 
-     * If the microphone is unavailable, it returns a `null` input stream.
-     * 
-     * The input stream is computed during constructor and used in the request computed by
-     * `startListening()`.
-     */
-    override val inputStream: InputStream? = initStream()
-
-    /**
-     * Initializes and returns an input stream connected to the system's microphone for audio capture.
-     * The audio is captured with a specific format: signed PCM, 16kHz sample rate, 16-bit sample size, and mono channel.
-     * If the microphone is unavailable or another error occurs, this function logs an error and returns null.
+     * Represents the current demand for processing audio events in a subscription implementation.
      *
-     * @return An InputStream for audio data, or null if the initialization fails.
+     * This variable tracks the number of requested audio events that need to be processed. It ensures
+     * thread-safe operations for incrementing and decrementing the demand and is primarily used in the
+     * [request] method to handle backpressure in a reactive stream context.
+     *
+     * A non-negative value indicates the number of events that are yet to be processed, while the value is
+     * decremented as each audio event is successfully processed or completed.
      */
-    private fun initStream(): InputStream? {
-        try {
-            // Signed PCM AudioFormat with 16kHz, 16 bit sample size, mono
-            val format = AudioFormat(MIC_SAMPLE_RATE, MIC_SAMPLE_SIZE_IN_BIT, MIC_AUDIO_CHANNEL, true, false)
-            val info = DataLine.Info(TargetDataLine::class.java, format)
+    private val demand = AtomicLong(0)
 
-            // Check microphone availability.
-            if (!AudioSystem.isLineSupported(info)) {
-                throw LineUnavailableException("Line is not supported for Microphone: $info")
-            }
+    /**
+     * Indicates whether the subscription is open or closed. This flag is used to control the execution of the
+     * subscription's task and to manage the lifecycle of the subscription when it is stopped.
+     */
+    private val isOpen = AtomicBoolean(true)
 
-            // Interface with the microphone and open an `InputStream`
-            val microphoneLine = AudioSystem.getLine(info) as TargetDataLine
-            microphoneLine.open(format)
-            microphoneLine.start()
-            logInfo("Microphone opened successfully for AWS Transcribe client.")
-            return AudioInputStream(microphoneLine)
-        } catch (ex: Exception) {
-            val errorMessage = when(ex) {
-                is LineUnavailableException ->
-                    "Microphone is unavailable for the AWS Transcribe client"
-                is SecurityException ->
-                    "Access to microphone is denied to the AWS Transcribe client"
-                else ->
-                    "Generic error while accessing microphone for the AWS Transcribe client"
+
+    /**
+     * Returns a buffer that holds the next chunk of audio data to be consumed.  Data is wrapped from an `InputStream`
+     * to a `ByteBuffer`. This method relies on `AwsTranscribe.AUDIO_STREAM_CHUNK_SIZE_IN_BYTES` to process the audio
+     * stream.
+     *
+     * If the  read operation fails, `null` is returned. In this case, [AwsTranscribe.stop] in invoked by the mean of
+     * `onError` method of the AWS Transcribe `ResponseHandler`.
+     */
+    private fun getNextEvent(): ByteBuffer {
+        val audioBytes = ByteArray(AwsTranscribe.AUDIO_STREAM_CHUNK_SIZE_IN_BYTES)
+
+        return try {
+            val len = inputStream.read(audioBytes)
+
+            if (len <= 0) {
+                ByteBuffer.allocate(0)
+            } else {
+                ByteBuffer.wrap(audioBytes, 0, len)
             }
-            logError(errorMessage, ex)
+        } catch (e: IOException) {
+            logger.error("Error while reading audio stream for AWS Transcribe.", e)
+            throw UncheckedIOException(e)
         }
-        return null
     }
 
+
+    /**
+     * Requests a specific number of items to be delivered to the subscriber related with AWS Transcribe.
+     * If an error occurs, then [StartStreamTranscriptionResponseHandler.Builder.onError] is invoked.
+     *
+     * @param n The number of items to request.
+     */
+    override fun request(n: Long) {
+        if (n <= 0) {
+            subscriber.onError(IllegalArgumentException("Demand must be positive"))
+            return
+        }
+
+        demand.getAndAdd(n)
+        executor.submit {
+            try {
+                while (isOpen.get() && demand.get() > 0) {
+                    val audioBuffer = getNextEvent()
+                    if (audioBuffer.remaining() > 0) {
+                        val audioEvent = AudioEvent.builder()
+                            .audioChunk(SdkBytes.fromByteBuffer(audioBuffer))
+                            .build()
+                        subscriber.onNext(audioEvent)
+                        logger.trace("AWS Transcribe processed next event.")
+                    } else {
+                        stop()
+                        break
+                    }
+                    demand.decrementAndGet()
+                }
+            } catch (e: Exception) {
+                // It also propagates error in `getNextEvent`.
+                subscriber.onError(RuntimeException("Task execution failed for next input audio event: ${e.cause}", e))
+            }
+        }
+    }
+
+
+    /**
+     * Cancels the subscription and closes the input stream. This method is invoked by the AWS Transcribe API, and it
+     * should not be used directly; ise [stop] instead.
+     */
+    override fun cancel() {
+        executor.shutdown()
+        inputStream.close()
+        logger.debug("Subscription to input audio stream cancelled.")
+    }
+
+
+    /**
+     * Stops the subscription and closes the input stream. This method is invoked by [AudioStreamPublisher.stop], and
+     * it implicitly calls [cancel].
+     */
+    fun stop() {
+        isOpen.set(false)
+        subscriber.onComplete()  // It also calls this.cancel()
+    }
 }

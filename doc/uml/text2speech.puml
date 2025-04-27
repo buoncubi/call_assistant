@@ -1,0 +1,53 @@
+@startuml
+class digital.boline.callAssistant.text2speech.DesktopAudioPlayer {
++  onBeginPlayingCallbacks
++  onEndPlayingCallbacks
+- AdvancedPlayer? player
++ void doComputeAsync(InputStream)
++ void doStop()
+}
+
+
+interface digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface {
++ CallbackManager<C, Unit> onBeginPlayingCallbacks
++ CallbackManager<C, Unit> onEndPlayingCallbacks
+}
+
+abstract class digital.boline.callAssistant.text2speech.Text2SpeechPlayer {
+}
+abstract class digital.boline.callAssistant.text2speech.Text2Speech {
++ <<Create>> Text2Speech(Text2SpeechPlayer<*>)
+# InputStream? fetchAudio(String)
++ void doComputeAsync(String)
++ void doWait()
++ void doStop()
+}
+
+class digital.boline.callAssistant.text2speech.AwsPolly$Companion {
+-  VOICE_NAME
+-  VOICE_TYPE
+-  MAX_TEXT_LENGTH
+}
+
+class digital.boline.callAssistant.text2speech.AwsPolly {
+- PollyClient? client
+- Voice? voice
++ <<Create>> AwsPolly(Text2SpeechPlayer<C>)
+- PollyClient initializeClient()
+- Voice initializeVoice()
++ void doActivate()
++ void doDeactivate()
++ InputStream? fetchAudio(String)
+}
+
+
+
+
+digital.boline.callAssistant.text2speech.Text2SpeechPlayer <|-- digital.boline.callAssistant.text2speech.DesktopAudioPlayer
+digital.boline.callAssistant.text2speech.ServiceInterface <|.. digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface
+digital.boline.callAssistant.text2speech.Service <|-- digital.boline.callAssistant.text2speech.Text2SpeechPlayer
+digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface <|.. digital.boline.callAssistant.text2speech.Text2SpeechPlayer
+digital.boline.callAssistant.text2speech.ReusableService <|-- digital.boline.callAssistant.text2speech.Text2Speech
+digital.boline.callAssistant.text2speech.AwsPolly +.. digital.boline.callAssistant.text2speech.AwsPolly$Companion
+digital.boline.callAssistant.text2speech.Text2Speech <|-- digital.boline.callAssistant.text2speech.AwsPolly
+@enduml

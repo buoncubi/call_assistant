@@ -1,199 +1,117 @@
 package digital.boline.callAssistant.llm
 
-import digital.boline.callAssistant.Loggable
-import digital.boline.callAssistant.LoggableInterface
-import java.util.concurrent.CompletableFuture
+import digital.boline.callAssistant.CallbackManager
+import digital.boline.callAssistant.ReusableService
+import digital.boline.callAssistant.speech2text.AwsTranscribe
+import digital.boline.callAssistant.speech2text.DesktopMicrophone
+import digital.boline.callAssistant.speech2text.Speech2TextStreamBuilder
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
 
 /**
- * Represents a generic interface for handling a streaming-based Large Language Model (LLM) server.
- * 
- * This interface provides methods to manage the lifecycle of the LLM server, including starting
- * and stopping the server, adding and removing callbacks for response handling, and making requests
- * to the server. Generics are used to define the data types specific to the dialogue, prompts, and
- * output handled by the implementation.
+ * Defines the scope in which Coroutine for SpeechToText (i.e., class derived from [LlmInteract]). This scope involves
+ * 3 jobs, one makes WEB based requests, and the other two waits to check timeout.
  *
- * @param D The type representing the dialogue format.
- * @param P The type representing the prompt format.
- * @param O The type representing the output from the LLM server.
- *
- * @see AwsBedrock
- *
- * @author Luca Buoncompagni © 2025
+ * This scope runs on [Dispatchers.Default], which is optimized for CPU-intensive tasks. It also has a [CoroutineName]
+ * that identifies the scope as `Speech2TextScope`. It uses the [SupervisorJob], which ensures that any child coroutine
+ * will be cancelled if the parent scope is cancelled.
  */
-interface LlmStreamingInterface<D, P, O>: LoggableInterface {
+private val llmInteractScope = CoroutineScope(
+    SupervisorJob() + Dispatchers.Default + CoroutineName("LlmInteractScope")
+)
 
 
-    /**
-     * Checks if the LLM server is currently running.
-     *
-     * @return `true` if the server is running, `false` otherwise.
-     */
-    fun isRunning(): Boolean // It is a `fun` instead of a `var` to assure that the flag is private.
 
-
-    /**
-     * Starts the LLM server.
-     *
-     * @return `true` if the server was successfully started, `false` otherwise.
-     */
-    fun start(): Boolean
-
-
-    /**
-     * Stops the LLM server.
-     *
-     * @return `true` if the server was successfully stopped, `false` if the server was not running.
-     */
-    fun stop(): Boolean
-
-
-    /**
-     * Adds a callback function to be executed under certain conditions.
-     *
-     * @param callback The callback function to be added, which accepts a parameter of type [O] and returns nothing.
-     * @return `true` if the callback was successfully added, `false` if the server is already running.
-     */
-    fun addCallback(callback: (O) -> Unit): Boolean
-
-
-    /**
-     * Removes a specified callback function from the list of registered callbacks.
-     *
-     * @param callback The callback function to be removed, which accepts a parameter of type [O] and returns nothing.
-     * @return `true` if the callback was successfully removed, `false` if the server is running or another issue occurs.
-     */
-    fun removeCallback(callback: (O) -> Unit): Boolean
-
-
-    /**
-     * Sends a request to the LLM server with the provided dialogue and prompts.
-     * 
-     * This method should make an asynchronous request and notify the `callbacks` when the results are ready.
-     * Also, it should avoid making requests when the LLM service is not running.
-     *
-     * @param dialogue The dialogue context or data that consists of previous exchanges or conversation history.
-     * @param prompts The prompts or input data that the LLM server will process to generate a response.
-     *
-     * @return A CompletableFuture representing the asynchronous computation of the server's response, or `null`
-     * if the request could not be initiated.
-     */
-    fun makeRequest(dialogue: D, prompts: P): CompletableFuture<*>?
+/**
+ * The base interface defining the request object to be given to the LLM provider. It is basically a data class, and it
+ * is required by [LlmInteract].
+ *
+ * @param M The type of the messages to be given to the LLM provider.
+ * @param P The type of the prompt to be given to the LLM provider.
+ *
+ * @property prompts The prompt to be given to the LLM model.
+ * @property messages The messages to be given to the LLM model.
+ * @property modelName The name of the model to be used by the LLM provider.
+ * @property maxTokens The maximum number of tokens that the LLM can produce.
+ * @property temperature The temperature to configure the LLM model.
+ * @property topP The top-probability to configure the LLM model.
+ *
+ * @see LlmInteract
+ * @see AwsBedrock
+ * @see AwsBedrockRequest
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
+ */
+interface LlmRequest<P, M> {
+    val prompts: P
+    val messages: M
+    val modelName: String
+    val temperature: Float
+    val topP: Float
+    val maxTokens: Int
+    // Other parameter might be possible, e.g., `maxToken`, `stopSequence`, `guardrail`, `tool`, etc.
 }
 
 
-// extend start and stop and manage isRunning
-abstract class LlvmAsync<D, P, O>: Loggable(), LlmStreamingInterface<D, P, O> {
+
+/**
+ * The base interface defining the response object given by the LLM provider. It is basically a data class, and it is
+ * required by [LlmInteract].
+ *
+ * @property message The message response given by the LLM.
+ * @property responseLatency The computation time in milliseconds that the LLM took to produce the `message`. If the
+ * value is undefined, it is `-1`
+ * @property inputToken The number of input tokens given by the LLM provider. If the value is undefined, it is `-1`.
+ * @property outputToken The number of output tokens given by the LLM provider. If the value is undefined, it is `-1`.
+ *
+ * @see LlmInteract
+ * @see AwsBedrock
+ * @see AwsBedrockResponse
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
+ */
+interface LlmResponse {
+    val message: String
+    val responseLatency: Long
+    val inputToken: Int
+    val outputToken: Int
+    // Other parameter might be possible, e.g., `stopReason`, etc.
+}
 
 
-    /**
-     * A flag indicating whether the service is currently running or not.
-     *
-     * This variable is used to track the server's operational state and is updated when the [start] or [stop] methods
-     * are invoked. Ensures that the server is not started or stopped multiple times consecutively, maintaining proper
-     * life-cycle management.
-     */
-    protected var serverRunning = false
 
-
-    /**
-     * A thread-safe collection of callbacks to handle responses from the assistant. Each callback receives an instance
-     * of [AssistantResponse], which encapsulates the details of the assistant's response message, metadata, and token
-     * usage.
-     *
-     * This set is synchronized during addition, removal, and invocation of callbacks to ensure thread safety. Callbacks
-     * are typically invoked during the completion of asynchronous operations such as processing requests in
-     * [makeRequest].
-     */
-    protected val callbacks = mutableSetOf<(O) -> Unit>()
-
-
-    /**
-     * Checks whether the server or system is currently running.
-     *
-     * @return `true` if the server is running, `false` otherwise.
-     */
-    override fun isRunning(): Boolean = serverRunning
-
-
-    /**
-     * Starts the LLM server. Ensures that the server is not already running before starting.
-     *
-     * If the server is already running, an error message is printed, and the operation is aborted. Be aware that this
-     * method be further implemented by derived classes, and it should change the state of [serverRunning].
-     *
-     * @return `true` if the server was successfully started, `false` otherwise.
-     */
-    override fun start(): Boolean {
-        if (isRunning()) {
-            logWarn("LLM client already started.")
-            return false
-        }
-        return true
-    }
-
-
-    /**
-     * Stops the LLM server if it is currently running.
-     *
-     * If the server is not running, an error message is printed, and the operation is aborted. Be aware that this
-     * method be further implemented by derived classes, and it should change the state of [serverRunning].
-     *
-     * @return `true` if the server was successfully stopped, `false` if the server was not running.
-     */
-    override fun stop(): Boolean {
-        if (!isRunning()) {
-            logWarn("LLM client already stopped.")
-            return false
-        }
-        return true
-    }
-
-
-    /**
-     * Adds a not previously registered callback from the assistant response handler. This method ensures thread-safe
-     * addition of the callback from the internal list of registered callbacks (i.e., it exploits
-     * `synchronized(callback)`). Note that if the LLM server is currently running, the removal operation is not
-     * allowed, and a warning is printed.
-     *
-     * @param callback The function to be added, which was not previously registered, to handle [O]. The callback should
-     * define processing logic for the assistant's response.
-     *
-     * @return `true` if the callback was successfully removed, `false` otherwise. Returns `false` if the callback was
-     * not registered or if the operation fails.
-     */
-    override fun addCallback(callback: (O) -> Unit): Boolean {
-        if (isRunning()) {
-            logWarn("Adding a callback to ab LLM client when it is already started.")
-            return false
-        }
-
-        synchronized(callback) {
-            return callbacks.add(callback)
-        }
-    }
-
-
-    /**
-     * Removes a previously registered callback from the assistant response handler. This method ensures thread-safe
-     * removal of the callback from the internal list of registered callbacks (i.e., it exploits
-     * `synchronized(callback)`). Note that if the LLM server is currently running, the removal operation is not
-     * allowed, and a warning is printed.
-     *
-     * @param callback The function to be removed, which was previously registered, to handle [O]. The callback should
-     * define processing logic for the assistant's response.
-     *
-     * @return `true` if the callback was successfully removed, `false` otherwise. Returns `false` if the callback was
-     * not registered or if the operation fails.
-     */
-    override fun removeCallback(callback: (O) -> Unit): Boolean {
-        if (isRunning()) {
-            logWarn("Removing a callback from an LLM client already started.")
-            return false
-        }
-
-        synchronized(callback) {
-            return callbacks.remove(callback)
-        }
-    }
+/**
+ * An abstract class that implements the interaction with an LLM model based on [ReusableService].
+ *
+ * A [ReusableService] need to be [activate] before to perform computation based on [computeAsync], which allow defining
+ * a timeout with relative callback. Then, you can decide to [wait] for the computation to be done, with an optional
+ * timeout (and related callback), or you can manually [stop] the computation. Finally, you can perform [computeAsync]
+ * again and, when the service is no longer need, you should use [deactivate]. To allow such a behaviour, this class
+ * implements the [doActivate], [doComputeAsync], [doWait], [doStop] and [doDeactivate] specifically for speech-to-text
+ * processing. Note that all these operations already occur into try-catch blocks managed by the [doThrow] method, which
+ * invokes [onErrorCallbacks]. For more see [ReusableService].
+ *
+ * In this class, [computeAsync] is in charge invoke an LLM model based on the data given through an [LlmRequest]. Then,
+ * it gives back the results through the [onResultCallbacks], which provides an [LlmResponse].
+ *
+ * @param I The type of the request object to be given to the LLM provider.
+ * @param O The type of the response object given by the LLM provider.
+ *
+ * @property onResultCallbacks The object providing the input audio stream to process.
+ * @property onErrorCallbacks The object providing the output audio stream to process.
+ * @property isActive Whether the service resources have been initialized or not.
+ * @property isComputing Whether the service is currently computing or not.
+ *
+ * @see Speech2TextStreamBuilder
+ * @see DesktopMicrophone
+ * @see AwsTranscribe
+ * @see ReusableService
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
+ */
+abstract class LlmInteract<I: LlmRequest<*, *>, O: LlmResponse> : ReusableService<I>(llmInteractScope) {
+    val onResultCallbacks = CallbackManager<O, Unit>(logger)
 }

@@ -1,217 +1,289 @@
 package digital.boline.callAssistant.llm
 
+import digital.boline.callAssistant.*
 import digital.boline.callAssistant.ApplicationRunner.Companion.AWS_VENV_REGION
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
+import software.amazon.awssdk.http.SdkCancellationException
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient
 import software.amazon.awssdk.services.bedrockruntime.model.*
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 
 
 /**
- * Represents the response from an assistant, encapsulating the details of the generated output along with metadata
- * about the interaction.
+ * The implementation of [LlmResponse] for AWS Bedrock, which should be given to [AwsBedrock.computeAsync].
  *
- * This class is created in `AwsBedrock.makeRequest` method, and given as input parameters to its callbacks.
+ * @param prompts The list of prompts.
+ * @param messages The list of messages. Each item in the list encodes the message `role`, and the last item should have
+ * the `USER` role.
+ * @param maxTokens The maximum number of tokens that the LLM model can produce. By default, it is set through the
+ * `AWS_BEDROCK_MAX_TOKENS` environmental variable.
+ * @param temperature The temperature to configure the LLM model. By default, it is set to the `AWS_BEDROCK_TEMPERATURE`
+ * environmental variable.
+ * @param topP The top-probability to configure the LLM model. By default, it is set to the `AWS_BEDROCK_TOP_P`
+ * environmental variable.
+ * @param modelName The LLM model to be used. By default, it is set to the `AWS_BEDROCK_MODEL_NAME` environmental variable.
  *
- * @property message The generated message from the assistant.
- * @property stopReason The reason why the assistant's generation stopped, if applicable.
- * @property role The role of the assistant in the interaction.
- * @property metrics Metrics associated with the assistant's streaming interaction, such as latency or performance
- * details.
- * @property usage Details about token usage during the interaction.
- *
- * @see LlmStreamingInterface
+ * @see LlmRequest
  * @see AwsBedrock
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
-data class AssistantResponse(val message: String,
-                             val stopReason: StopReason?,
-                             val role: ConversationRole?,
-                             val metrics: ConverseStreamMetrics?,
-                             val usage: TokenUsage?
-// There is other data that might be added to this data class through the in the `AwsBedrock.makeResponseHandler` function
-)
+data class AwsBedrockRequest(
+    override val prompts: List<SystemContentBlock>,
+    override val messages: List<Message>,
+    override val maxTokens: Int = System.getenv("AWS_BEDROCK_MAX_TOKENS").toInt(),
+    override val temperature: Float = System.getenv("AWS_BEDROCK_TEMPERATURE").toFloat(),
+    override val topP: Float = System.getenv("AWS_BEDROCK_TOP_P").toFloat(),
+    override val modelName: String = System.getenv("AWS_BEDROCK_MODEL_NAME")
+) : LlmRequest<List<SystemContentBlock>, List<Message>> {
+
+    companion object {
+        /**
+         * Builds the AWS compliant system prompts from a list of string.
+         *
+         * @param prompts The list of prompts as strings.
+         * @return The list of prompts as a list of [SystemContentBlock].
+         */
+        fun buildPrompts(prompts: List<String>): List<SystemContentBlock> =
+            prompts.map { SystemContentBlock.fromText(it) }
+
+        /**
+         * Builds the AWS compliant system prompts from a string.
+         *
+         * @param prompts The prompt as a string.
+         * @return The prompt a list of [SystemContentBlock].
+         */
+        fun buildPrompts(prompts: String): List<SystemContentBlock> =
+            buildPrompts(listOf(prompts))
+
+        /**
+         * Builds the AWS compliant messages from a list of string.
+         *
+         * @param role The role of the messages.
+         * @param message The message as strings.
+         * @return The AWS Bedrock [Message] encoding the input data.
+         */
+        fun buildMessages(role: ConversationRole, message: String): Message =
+            Message.builder().role(role).content(ContentBlock.fromText(message)).build()
+
+        /**
+         * Builds the AWS compliant messages from a list of string.
+         *
+         * @param role The role of the messages.
+         * @param messages The messages as a list of strings.
+         * @return The AWS Bedrock [Message] encoding the input data.
+         */
+        fun buildMessages(role: ConversationRole, messages: List<String>): Message =
+            Message.builder().role(role).content(messages.map { ContentBlock.fromText(it) }).build()
+
+        /**
+         * Builds the AWS compliant messages from a string with the [ConversationRole.USER] role.
+         *
+         * @param message The messages as a strings.
+         * @return The AWS Bedrock [Message] encoding the input data.
+         */
+        fun buildUserMessages(message: String): Message =
+            buildMessages(ConversationRole.USER, message)
+
+        /**
+         * Builds the AWS compliant messages from a list of string with the [ConversationRole.USER] role.
+         *
+         * @param messages The messages as a list of strings.
+         * @return The AWS Bedrock [Message] encoding the input data.
+         */
+        fun buildUserMessages(messages: List<String>): Message =
+            buildMessages(ConversationRole.USER, messages)
+
+        /**
+         * Builds the AWS compliant messages from a string with the [ConversationRole.ASSISTANT] role.
+         *
+         * @param message The messages as a strings.
+         * @return The AWS Bedrock [Message] encoding the input data.
+         */
+        fun buildAssistantMessages(message: String): Message =
+            buildMessages(ConversationRole.ASSISTANT, message)
+
+        /**
+         * Builds the AWS compliant messages from a list of string with the [ConversationRole.ASSISTANT] role.
+         *
+         * @param messages The messages as a list of strings.
+         * @return The AWS Bedrock [Message] encoding the input data.
+         */
+        fun buildAssistantMessages(messages: List<String>): Message =
+            buildMessages(ConversationRole.ASSISTANT, messages)
+    }
+}
+
+
 
 /**
- * Implementation of the [LlmStreamingInterface], providing an interface to the AWS Bedrock Streaming Converse API,
- * which implement a service for streaming-based interactions with a Large Language Model (LLM).
+ * The implementation of [LlmResponse] for AWS Bedrock, which is given by [AwsBedrock.onResultCallbacks].
  *
- * This class manages the lifecycle of the AWS Bedrock client, makes requests to the LLM server, and handles the
- * responses through registered callbacks. It is designed to work in a streaming manner, allowing incremental responses
- * to be handled during the ongoing conversation.
+ * @property message The generated message from the LLM.
+ * @property responseLatency The time in milliseconds that was taken by the LLM to generate the response. If the value
+ * is undefined, it is `-1`.
+ * @property inputToken The number of tokens in the input prompt. If the value is undefined, it is `-1`.
+ * @property outputToken The number of tokens in the output response. If the value is undefined, it is `-1`.
  *
- * The implementation handles LLM configurations such as token limits, response creativity (temperature), and randomness
- * controls (top-p), which is related to environmental variables.
+ * @see LlmResponse
+ * @see AwsBedrock
  *
- * Be aware that the servers should [start] before to make request, and it can [stop]. Results are given asynchronously
- * to the callbacks can be added or removed at runtime.
- *
- * Thread safety in this implementation is achieved by using independent subscribers for incoming LLM responses and
- * synchronized handling for shared resources such as callback management.
- *
- * This class requires (i.e., default values are not given) the following virtual environment variables:
- *  - `AWS_BEDROCK_MODEL_NAME`: see [MODEL_NAME],
- *  - `AWS_BEDROCK_MAX_TOKENS`: see [MAX_TOKENS],
- *  - `AWS_BEDROCK_TEMPERATURE`: see [TEMPERATURE],
- *  - `AWS_BEDROCK_TOP_P`: see [TOP_P],
- *  - `AWS_REGION`: see [AWS_VENV_REGION],
- *  - `AWS_ACCESS_KEY_ID`:  see `AWS_ACCESS_KEY_ID`, and [DefaultCredentialsProvider],
- *  - `AWS_SECRET_ACCESS_KEY`: see `AWS_SECRET_ACCESS_KEY`, and [DefaultCredentialsProvider].
- *
- *
- * @see LlmStreamingInterface
- * @see AssistantResponse
- *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
-class AwsBedrock : LlvmAsync<List<Message>, List<SystemContentBlock>, AssistantResponse>() {
+data class AwsBedrockResponse(
+    override val message: String,
+    override val responseLatency: Long,
+    override val inputToken: Int,
+    override val outputToken: Int,
+) : LlmResponse
 
 
-    /**
-     * Companion object for the [AwsBedrock] class containing constants for configuration and model behavior.
-     *
-     * This object defines default parameters such as the model name, region, and hyperparameters for interacting with
-     * the large language model (LLM) via AWS Bedrock. These values aim to unify and simplify the configuration process
-     * across different instances that work with the same model.
-     *
-     * Constants:
-     *
-     */
-    companion object {
 
-        /**
-         * Specifies the name of the LLM model to be used. This must match the identifier expected by AWS  Bedrock
-         * during requests, e.g., `anthropic.claude-3-haiku-20240307-v1:0`. This value is required from environmental
-         * variable `AWS_BEDROCK_MODEL_NAME`
-         */
-        private val MODEL_NAME = System.getenv("AWS_BEDROCK_MODEL_NAME")
-            // ?: "anthropic.claude-3-haiku-20240307-v1:0"
+/**
+ * The implementation of [LlmInteract] for AWS Bedrock based on the Streaming Converse API.
+ *
+ * It implements a [ReusableService], which provides [activate], [computeAsync], [wait], [stop], and [deactivate]
+ * facilities for managing the lifecycle of the service asynchronously. It also provides logging, service's state
+ * management, timeout handling, and error as well as result callbacks.
+ *
+ * For using the LLM model, this class requires [AwsBedrockRequest] (which has default value defined through
+ * environmental variables) and provides [AwsBedrockResponse]. Also, this class requires these environmental variables:
+ * `AWS_REGION`, `AWS_ACCESS_KEY_ID`, and `AWS_ACCESS_KEY_ID`.
+ *
+ * It follows an example for using this class
+ * ```
+ *     val bedrock = AwsBedrock()
+ *
+ *     // Set the callback for errors within AwsBedrock.
+ *     bedrock.onErrorCallbacks.add { se: ServiceError ->
+ *         logError("Got LLM Bedrock error: ('${se.errorSource}') ${se.throwable}")
+ *     }
+ *
+ *     // Set the callback for results within AwsBedrock.
+ *     bedrock.onResultCallbacks.add { response: AwsBedrockResponse ->
+ *         logInfo("Got LLM Bedrock response: $response")
+ *    }
+ *
+ *     // Initialize the AWS Bedrock service.
+ *     bedrock.activate()
+ *
+ *     // Define the request to the LLM model.
+ *     val prompts: List<SystemContentBlock> = AwsBedrockRequest.buildPrompts("My prompt")
+ *     val message: Message = AwsBedrockRequest.buildMessages(ConversationRole.USER,"My message")
+ *     // Note that `request` allow defining other parameter (e.g., temperature, top_p, etc.)
+ *     val request: AwsBedrockRequest = AwsBedrockRequest(prompts, listOf(message))
+ *     // Optionally define a computation timeout (which is reset every time a part of the LLM response is received).
+ *     val timeoutSpec = FrequentTimeout(200, 20) {
+ *         logInfo("Time out occurred!")
+ *     }
+ *     // Make the request to the LLM model
+ *     bedrock.computeAsync(request, timeoutSpec)
+ *
+ *     // Wait for the response from the LLM model with an optional timeout.
+ *     val waitTimeout = Timeout(20000) {
+ *         logInfo("Waiting timeout occurred!")
+ *     }
+ *     bedrock.wait(waitTimeout)
+ *     // Or stop the computation.
+ *     bedrock.stop()
+ *
+ *     // Eventually, make new computations...
+ *
+ *     // Finally, always remember to release the AWS Bedrock resources when it is no longer needed.
+ *     bedrock.deactivate()
+ *
+ *     // You might want to `activate` the Bedrock service again and start new computation.
+ * ```
+ *
+ * @property client The AWS Bedrock client. It is `null` when the service is not activated. This property is `private`.
+ * @property llmJob The job of the LLM computation. It is `null` when the service is not running. This property is
+ * `private` and it is used to implement stopping mechanisms.
+ * @property requestHandler The handler of the AWS Bedrock streaming event. It is `null` when the service is not
+ * running. This property is `private` and it is used to implement stopping mechanisms.
+ * @property onResultCallbacks The list of callbacks invoked when the LLM is producing a response.
+ * @property onErrorCallbacks The list of callbacks invoked when an error occurs.
+ * @property isActive Whether the service resources have been initialized or closed.
+ * @property isComputing Whether the service is currently computing a request from the LLM.
+ *
+ * @see ReusableService
+ * @see LlmInteract
+ * @see AwsBedrockRequest
+ * @see AwsBedrockResponse
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
+ */
+class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
 
-        /**
-         * The max number of tokens that the LLM model can produce, after that the response will be truncated. Max value
-         * depends on the model, e.g., fo 'anthropic.claude-3-haiku' is 200K tokens of context windows and 4096 output
-         * tokens (see more at https://docs.anthropic.com/en/docs/about-claude/models/all-models).
-         *
-         * This value is required from environmental variable `AWS_BEDROCK_MAX_TOKENS` as an integer.
-         */
-        private val MAX_TOKENS = System.getenv("AWS_BEDROCK_MAX_TOKENS").toInt() // OrNull() ?: 512
-
-        /**
-         * Configures the randomness or "creativity" of the model's output. Higher values produce more  diverse results,
-         * while lower values ensure more deterministic responses.
-         *
-         * The temperature (in [0,1]) is associated to the creativity.  Increasing it for more randomness to the output,
-         * making it more imaginative but potentially less coherent.
-         *
-         * This value is required from environmental variable `AWS_BEDROCK_TEMPERATURE` as a float.
-         */
-        private val TEMPERATURE = System.getenv("AWS_BEDROCK_TEMPERATURE").toFloat() // OrNull() ?: 0.3F
-
-        /**
-         * Limits the model's vocabulary scope to decrease randomness. Smaller values restrict the vocabulary, making
-         * outputs more focused.
-         *
-         * The topP (in [0,1]) is associated with model's vocabulary set. Increasing it to narrow down such a set and,
-         * therefore, reduce randomness.
-         *
-         * The value is required from environmental variable `AWS_BEDROCK_TOP_P` as a float.
-         */
-        private val TOP_P = System.getenv("AWS_BEDROCK_TOP_P").toFloat() //OrNull() ?: 0.1F
-    }
-
-    /**
-     * Represents a client for interacting with the AWS Bedrock runtime asynchronously.
-     *
-     * This variable is initialized when the [start] method is successfully executed, setting up the necessary
-     * configurations for connecting to the Bedrock service. It is set to `null` when the service is not running or has
-     * been stopped. The client is employed in making requests to the Bedrock service, handling communication, and
-     * managing the lifecycle of the connection.
-     *
-     * The variable is managed internally within the [AwsBedrock] class, ensuring proper initialization and cleanup
-     * during the start and stop phases of the service lifecycle. Access to this variable should be appropriately
-     * synchronized as needed when used across multiple threads, although it is thread-safe by design.
-     */
+    // See documentation above.
     private var client: BedrockRuntimeAsyncClient? = null
+    private var llmJob: CompletableFuture<Void>? = null
+    private var requestHandler: ConverseStreamResponseHandler? = null
+
 
     /**
-     * Starts the AWS Bedrock server by initializing the client and setting the system status to running.
-     * This function ensures the server is not already running before proceeding with the start operation.
-     *
-     * @return `true` if the server starts successfully, `false` otherwise.
+     * Acquire the resources required by the AWS Bedrock server by initializing the [client] property. This method is
+     * called by [activate]. It runs in a try-catch block that handle any exceptions, and it invokes the
+     * [onErrorCallbacks] with [ErrorSource.ACTIVATING].
      */
-    override fun start(): Boolean {
-        if (!super.start()) {
-            return false // Do not start twice.
-        }
-        try {
-            // Initialise the client and start the connecting with AWS Bedrock based on the Streaming Converse API.
-            client  = BedrockRuntimeAsyncClient.builder()
-                .credentialsProvider(DefaultCredentialsProvider.create())
-                .region(Region.of(AWS_VENV_REGION))
+    override fun doActivate() {
+        client = BedrockRuntimeAsyncClient.builder()
+            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO manage credential on production
+            .region(Region.of(AWS_VENV_REGION))
+            /*.httpClient( // TODO to use?
+                // It is faster with respect to Netty (default) httpClient but less stable
+                // It requires `implementation("software.amazon.awssdk:aws-crt-client")` as gradle dependence
+                AwsCrtAsyncHttpClient.builder()
+                //.connectionTimeout(Duration.ofSeconds(1))
                 .build()
-
-            serverRunning = true
-            logInfo("Bedrock client started.")
-            return true
-        } catch (ex: Exception) {
-            logError("Error while starting Bedrock server.", ex)
-            return false
-        }
+            )*/
+            .build()
     }
+
 
     /**
-     * Stops the AWS Bedrock server and releases any associated resources. This function attempts to close the client
-     * connection and update the server status.
-     *
-     * @return `true` if the server stops successfully, `false` otherwise.
+     * Release the resources required by the AWS Bedrock server by closing the [client] property and setting it to
+     * `null`. This method is called by [deactivate]. It runs in a try-catch block that handle any exceptions, and
+     * it invokes the [onErrorCallbacks] with [ErrorSource.DEACTIVATING].
      */
-    override fun stop(): Boolean {
-        if (!super.stop()) {
-            return false
-        } // else: `isRunning` is necessary `true`
-
-        try {
-            // Stop the connection with the AWS Bedrock service
-            client!!.close()    // if ``isRunning` is `true` than  `client` is not `null`
-            //client = null
-
-            serverRunning = false
-            logInfo("Bedrock client stopped.")
-            return true
-        } catch (ex: Exception) {
-            logError("Error while stopping Bedrock client.", ex)
-            return false
-        }
+    override fun doDeactivate() {
+        // Stop the connection with the AWS Bedrock service
+        client!!.close() // It takes 2 seconds with Natty HTTP-client (see other commented client, i.e., AwsCrt).
+        client = null
     }
+
 
     /**
      * Creates and returns a [ConverseStreamResponseHandler] instance for handling responses from a conversational LLM
-     * stream. The response handler processes various events emitted during the streaming operation, such as message
-     * start, content updates, metadata retrieval, and stream completion.
+     * stream. It encompasses several event of the stream, i.e.,
+     *  - `onMessageStart`: Called when an incoming message occurs.
+     *  - `onContentBlockStart`: Called when a new response block starts being evaluated.
+     *  - `onContentBlockDelta`: Called when a new response is available.
+     *  - `onContentBlockStop`: Called when a new response block stops being evaluated.
+     *  - `onMessageStop`: Called when the message stops.
+     *  - `onMetadata`: Called when metadata is available.
+     *  - `onComplete`: Called when the stream completes.
+     *  - `onDefault`: Called when either an unknown or an unhandled event occurs.
+     *  - `onError`: Called when an error occurs during the stream. It invokes the [onErrorCallbacks] with
+     *  [ErrorSource.COMPUTING].
      *
      * The handler accumulates incremental content responses into a complete message, tracks metadata such as token
-     * usage and metrics, and processes the stop reason of the conversation. Once the stream completes, it constructs an
-     * [AssistantResponse] object encapsulating the processed information, and invokes all the registered callbacks with
-     * the generated response.
-     *
-     * It is thread safe by design since each request to AWS Bedrock made through [makeRequest] exploits a new
-     * subscriber returned by `buildResponseHandler`. This allows to disregard waiting and synchronization, but it might
-     * create to many subscriber.
+     * usage and metrics, etc. Once the stream completes, it constructs an [AwsBedrockResponse] object encapsulating the
+     * processed information, and invokes all the registered callbacks with the generated response. Note that this
+     * handler is designed to reset the timeout every time a part of the LLM response is obtained.
      *
      * @return A [ConverseStreamResponseHandler] capable of processing and handling a response stream from an LLM, and
-     * used by the [makeRequest] method.
+     * used by the [computeAsync] method.
      */
     private fun buildResponseHandler(): ConverseStreamResponseHandler {
 
         // Initialise the data that will be encoded in a `AssistantResponse` instance
         // and provided to the callback when the results are ready
         val responseMessage = StringBuilder()
-        var responseStopReason: StopReason? = null
-        var responseRole: ConversationRole? = null
-        var responseMetrics: ConverseStreamMetrics? = null
-        var responseUsage: TokenUsage? = null
+        var inputToken: Int = -1
+        var outputToken: Int = -1
+        var responseLatency: Long = -1
 
         // Build and the return a new subscribe for the AWS Bedrock request that will be called back
         // asynchronously by the Converse Streaming API.
@@ -221,7 +293,7 @@ class AwsBedrock : LlvmAsync<List<Message>, List<SystemContentBlock>, AssistantR
                 ConverseStreamResponseHandler.Visitor.builder()
                     .onMessageStart { startEvent ->  // Called when an incoming message occurs?
                         logDebug("Bedrock client responded to incoming messages.")
-                        responseRole = startEvent.role()
+                        // responseRole = startEvent.role()
                     }
                     .onContentBlockStart { // Called when a new response block starts being evaluated?
                         logTrace("Bedrock client got a response block...")
@@ -231,6 +303,7 @@ class AwsBedrock : LlvmAsync<List<Message>, List<SystemContentBlock>, AssistantR
                         //chunk.delta().type() // will always be `text` since images or other are not used.
                         val chunkText = chunk.delta().text()
                         responseMessage.append(chunkText)
+                        resetTimeout()
                         logTrace("Bedrock client got a response chunk: {}.", chunkText)
                     }
                     .onContentBlockStop {  // Called when a new response block stops being evaluated?
@@ -240,92 +313,105 @@ class AwsBedrock : LlvmAsync<List<Message>, List<SystemContentBlock>, AssistantR
                         logTrace("Bedrock client conversation complete due to '{}'",
                             stopEvent.stopReasonAsString())
                         //it.additionalModelResponseFields() // It will always be `null` since no documents are requested to the LLM model.
-                        responseStopReason = stopEvent.stopReason()
+                        // responseStopReason = stopEvent.stopReason()
+                        // Stop reason might be:
+                        //    "end_turn" -> // Normal completion
+                        //    "max_tokens" -> // Reached token limit
+                        //    "tool_use" -> // Model requested to use a tool
+                        //    "content_filtered" -> // Content was filtered
+                        //    "stop_sequence"
+                        //    "guardrail_intervened"
+                        //    UNKNOWN_TO_SDK_VERSION((String)null);
                     }
                     .onMetadata { metadata -> // Called when metadata of the response is ready, it occurs when the response is ready.
-                        responseMetrics = metadata.metrics()
-                        responseUsage = metadata.usage()
+                        responseLatency = metadata.metrics().latencyMs()
+                        inputToken = metadata.usage().inputTokens()
+                        outputToken = metadata.usage().outputTokens()
                         // In the current implementation they are always null
                         //metadata.trace().guardrail()
                         //metadata.performanceConfig()
-                        logTrace("Bedrock client completed conversation step with latency: '{}' ms, and tokens: {}.",
-                            responseMetrics, responseUsage)
+                        logTrace("Bedrock client completed conversation step with latency: {}ms, input tokens: {}, and output tokens: {}.",
+                            responseLatency, inputToken, outputToken)
                     }
                     .onDefault { streamOutput -> // Called when either an unknown event, or an unhandled event occurs.
                         logWarn("Unknown Bedrock streaming state: {}.", streamOutput)
                     }
                     .build()
             )
-            .onError {
+            .onError { e: Throwable ->
                 // Called if the AWS Bedrock Streaming Converse API generate an error.
-                logError("Bedrock client gor ane error during request", it)
+                if (e.cause !is CancellationException && e !is CancellationException && e !is SdkCancellationException) {
+                    logError("Bedrock client got an error during request", e)
+                    onErrorCallbacks.invoke(ServiceError(e, ErrorSource.COMPUTING))
+                } else {
+                    logTrace("AWS Bedrock client cancelled with exception: ", e) // TODO make log depending on serviceName
+                }
             }
             .onComplete {
                 // Called when the result of the LLM model is final.
 
                 // Construct object for the callbacks.
                 // There are other possible data that can be associated with the `AssistantResponse`.
-                val assistantResponse = AssistantResponse(
+                val assistantResponse = AwsBedrockResponse(
                     message=responseMessage.toString(),
-                    stopReason=responseStopReason,
-                    role=responseRole,
-                    metrics=responseMetrics,
-                    usage=responseUsage,
+                    responseLatency = responseLatency,
+                    inputToken = inputToken,
+                    outputToken = outputToken,
                 )
 
                 // Invokes all the callbacks in a thread safe manner.
-                synchronized(callbacks) {
-                    callbacks.forEach {it(assistantResponse) }
-                }
+                if (llmJob != null) // If it is null, it means that the request has been cancelled.
+                    onResultCallbacks.invoke(assistantResponse)
 
-                logInfo("Bedrock client completed streaming request (and sent callbacks notified) with results: {}.",
-                    assistantResponse)
+                //logInfo("Bedrock client completed streaming request (and sent callbacks notified) with results: {}.",
+                //    assistantResponse)
             }
             .build()
     }
 
+
     /**
-     * Sends an asynchronous request to the AWS Bedrock server using the provided dialogue and system prompts. If the
-     * server is not running, the method returns `null`. Otherwise, it initiates a streaming conversation request and
-     * processes the response using a response handler. Results of the AWS Bedrock requests trigger the call of the
-     * `callbacks` associated with this class.
+     * Sends an asynchronous request to the AWS Bedrock server using the provided [AwsBedrockRequest]. This function
+     * is called by [computeAsync] and it invokes [onResultCallbacks] when the LLM provide a response.
      *
-     * @param dialogue A list of `Message` objects representing the conversational dialogue to be sent.
-     * @param prompts A list of `SystemContentBlock` objects defining the system-specific prompts or configuration.
+     * Note that this function run in a try-catch block that handle any exceptions, and it invokes the
+     * [onErrorCallbacks] with [ErrorSource.COMPUTING].
      *
-     * @return A `CompletableFuture` instance that represents the asynchronous operation for the streaming conversation,
-     *         or `null` if the server is not running or an error occurs during the interaction.
+     * @param input An `AwsBedrockRequest` object containing the necessary information for the request.
      */
-    override fun makeRequest(dialogue: List<Message>, prompts: List<SystemContentBlock>): CompletableFuture<*>? {
-        if(!isRunning()) {
-            // Avoid making request if the AWS Bedrock service is stopped.
-            logError("Cannot make a request with a not running Bedrock client.")
-            return null
-        } // else: `client` is necessary `true`
+    override suspend fun doComputeAsync(input: AwsBedrockRequest) {
+        // Ask something to the LLM model and wait for their response through callback
+        requestHandler = buildResponseHandler()
+        llmJob = client?.converseStream(
+            { requestBuilder ->
+                requestBuilder.modelId(input.modelName)
+                    .system(input.prompts)
+                    .messages(input.messages)
+                    .inferenceConfig { configBuilder ->
+                        configBuilder
+                            .maxTokens(input.maxTokens)
+                            .temperature(input.temperature)
+                            .topP(input.topP)
+                            // .stopSequences("stop1", "stop2")
+                    }
+            },
+            requestHandler
+        )
+    }
 
 
-        try {
-            // Ask something to the LLM model and wait for their response through callback
-            val job = client!!.converseStream(
-                { requestBuilder ->
-                    requestBuilder.modelId(MODEL_NAME)
-                        .system(prompts)
-                        .messages(dialogue)
-                        .inferenceConfig { configBuilder ->
-                            configBuilder
-                                .maxTokens(MAX_TOKENS)
-                                .temperature(TEMPERATURE)
-                                .topP(TOP_P)
-                                // .stopSequences("stop1", "stop2")
-                        }
-                },
-                buildResponseHandler()
-            )
-
-            return job
-        } catch (ex: Exception) {
-            logError("Bedrock client got an error during inferences")
-            return null
-        }
+    /**
+     * Stops the current request by cancelling the [llmJob] and invoking `requestHandler.complete`. This method is
+     * called by [stop].
+     *
+     * Note that this function run in a try-catch block that handle any exceptions, and it invokes the
+     * [onErrorCallbacks] with [ErrorSource.STOPPING].
+     */
+    override fun doStop() {
+        val toCancel = llmJob
+        llmJob = null // Used to check if callback should be invoked in requestHandler.complete()
+        requestHandler?.complete() // This might still generate callback results
+        toCancel?.cancel(true) // This produces FutureCancelledException
+        super.doStop()
     }
 }

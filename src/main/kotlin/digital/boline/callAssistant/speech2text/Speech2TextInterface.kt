@@ -1,228 +1,89 @@
 package digital.boline.callAssistant.speech2text
 
-import digital.boline.callAssistant.Loggable
-import digital.boline.callAssistant.LoggableInterface
+import digital.boline.callAssistant.CallbackManager
+import digital.boline.callAssistant.FrequentTimeout
+import digital.boline.callAssistant.ReusableService
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import java.io.InputStream
 
 
 /**
- * Interface representing a Speech-to-Text functionality. This interface allows adding and removing callbacks that
- * handle recognized speech data and provides methods to control the start and stop of the listening process, which
- * should occur asynchronously.
- * 
- * This implementation is designed to be used with a not concurrent single callbacks, which should be set when the
- * speech is not being listened.
+ * Defines the scope in which Coroutine for SpeechToText (i.e., class derived from [Speech2Text]). This scope involves
+ * 3 possible jobs: one makes WEB based requests, the others waits to check timeout. Note that the audio input stream is
+ * managed through thread to assure real-time computations.
  *
- * @param O: the type of output text, which represents the recognized speech, and it is provided to the callbacks.
- *
- * @see Speech2TextAsync
- *
- * @author Luca Buoncompagni © 2025
+ * This scope runs on [Dispatchers.Default], which is optimized for CPU-intensive tasks. It also has a [CoroutineName]
+ * that identifies the scope as `Speech2TextScope`. It uses the [SupervisorJob], which ensures that any child coroutine
+ * will be cancelled if the parent scope is cancelled.
  */
-interface Speech2TextInterface<O>: LoggableInterface {
+private val speech2TextScope = CoroutineScope(
+    SupervisorJob() + Dispatchers.Default + CoroutineName("Speech2TextScope")
+)
+
+
+
+/**
+ * The interface to build `InputStream`, as required by the [Speech2Text] and derived classes.
+ *
+ * @see Speech2Text
+ * @see DesktopMicrophone
+ * @see AwsTranscribe
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
+ */
+interface Speech2TextStreamBuilder {
 
     /**
-     * Checks if the speech-to-text listening process is currently active.
-     *
-     * @return `true` if the instance is currently listening, `false` otherwise.
+     * Instantiates a new input stream for getting audio to be converted into text.
+     * @return Reruns an `InputStream` or `null` in case of error.
      */
-    fun isListening(): Boolean // It is a `fun` instead of a `var` to assure that the flag is private.
-
-
-    /**
-     * Adds a `callback` to the set of callbacks.
-     *
-     * @param callback A function that will be invoked when an event occurs.
-     * @return `True` if the callback was successfully added, `false` if it already exists in the set.
-     */
-    fun addCallback(callback: (O) -> Unit): Boolean
-
-
-    /**
-     * Removes a `callback` from the set of registered callbacks
-     *
-     * @param callback The `callback` to be removed.
-     * @return `true` if the callback was successfully removed, `false` otherwise.
-     */
-    fun removeCallback(callback: (O) -> Unit): Boolean
-
-
-    /**
-     * Starts the speech-to-text listening process asynchronously.
-     *
-     * @return `true` if the instance was stopped successfully, `false` otherwise.
-     */
-    fun startListening(): Boolean
-
-
-    /**
-     * Stops the speech-to-text listening process and close relative resources.
-     *
-     * @return `true` if the instance was stopped successfully, `false` otherwise.
-     */
-    fun stopListening(): Boolean
+    fun build(): InputStream?
 }
 
 
 /**
- * This is the base implementation of the [Speech2TextInterface] interface in an asynchronous manner.
+ * An abstract class that implements the speech-to-text interface based on [ReusableService], which does take nothing
+ * as input parameter for make its computation.
  *
- * It provides a thread sage implementation of a [callbacks] set. Also, it provides the basic implementation of the
- * [serverListening] flag, but it should be further managed by the derived implementations of [startListening] and
- * [stopListening], which are required for the service to work. It also provides logging facilities through the
- * [Loggable] class.
+ * A [ReusableService] need to be [activate] before to perform computation based on [computeAsync], which allow defining
+ * a timeout with relative callback. Then, you can decide to [wait] for the computation to be done, with an optional
+ * timeout (and related callback), or you can manually [stop] the computation. Finally, you can perform [computeAsync]
+ * again and, when the service is no longer need, you should use [deactivate]. To allow such a behaviour, this class
+ * implements the [doActivate], [doComputeAsync], [doWait], [doStop] and [doDeactivate] specifically for speech-to-text
+ * processing. Note that all these operations already occur into try-catch blocks managed by the [doThrow] method, which
+ * invokes [onErrorCallbacks]. For more see [ReusableService].
  *
- * @param I: the type of input stream where the audio signal is provided.
- * @param O: the type of output text, which represents the recognized speech, and it is provided to the callbacks.
+ * In this class, [computeAsync] is in charge to take an audio input stream given by [streamBuilder], and provides the
+ * text transcription of it through the [onResultCallbacks].
  *
- * @property inputStream The input stream where the audio signal is provided (this property is `protected`, and it
- * should be used only by derived classes).
- * @property serverListening A flag to identify if the service is currently listening or not (this property is `protected`,
- * and it should be used only by derived classes).
- * @property callbacks A set of callbacks functions that will be invoked when a recognised text is available (this
- * property is `protected`, and it should be used only by derived classes).
+ * @param R The type of the text transcription results given through [onResultCallbacks].
  *
- * @see Speech2TextInterface
+ * @property streamBuilder The object providing the input audio stream to process.
+ * @property onResultCallbacks The callback manager for the text transcription results.
+ * @property onErrorCallbacks The object providing the output audio stream to process.
+ * @property isActive Whether the service resources have been initialized or not.
+ * @property isComputing Whether the service is currently computing or not.
+ *
+ * @see Speech2TextStreamBuilder
+ * @see DesktopMicrophone
  * @see AwsTranscribe
+ * @see ReusableService
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
-abstract class Speech2TextAsync<I, O>: Loggable(), Speech2TextInterface<O> {
-
-    /**
-     * Represents the input stream used for processing audio data.
-     *
-     * This InputStream is utilized as the source of audio input for the speech-to-text conversion process. It provides
-     * the raw audio data necessary for recognition and transcription.
-     */
-    protected abstract val inputStream: I
+abstract class Speech2Text<R>(protected val streamBuilder:Speech2TextStreamBuilder) : ReusableService<Unit>(speech2TextScope) {
+    val onResultCallbacks = CallbackManager<R, Unit>(logger)
 
 
     /**
-     * Indicates whether the AWS Transcribe-based speech-to-text service is actively listening for audio input. This
-     * property reflects the state of the listening process and is updated as the [startListening] and [stopListening]
-     * methods are executed.
+     * A shorthand for invoking [ReusableService.computeAsync] with no input parameter for computing the server, and
+     * with optional timeout.
      *
-     * If it is `true`, it signifies that the listening session is currently active and audio input is being processed,
-     * while `false` signifies that the service is not listening.
+     * @param timeoutSpec The timeout specification, which also encompass a lambda function.
+     * @return `true` if the text-to-speech computation has been started, `false` otherwise.
      */
-    protected var serverListening: Boolean = false
-
-
-    /**
-     * Checks whether the service is currently in a listening state.
-     *
-     * @return `true` if the service is actively listening, `false` otherwise.
-     */
-    override fun isListening(): Boolean {
-        return serverListening
-    }
-
-
-    /**
-     * A mutable set of `callbacks` that are invoked with a parameter of type [O]. These `callbacks` can be used to
-     * handle events or data emitted by an implementing class.
-     *
-     * Each callback is a function that accepts a single argument of type [O] and has no return value. The set ensures
-     * that a specific callback instance is not registered multiple times.
-     */
-    protected val callbacks: MutableSet<(O) -> Unit> = mutableSetOf()
-
-
-    /**
-     * Adds a `callback` to the set of [callbacks]. This function is thread safe, i.e., it exploits
-     * `synchronized(callbacks)`.
-     *
-     * @param callback A function that will be invoked when an event occurs.
-     * @return `True` if the callback was successfully added, `false` if it already exists in the set.
-     */
-    override fun addCallback(callback: (O) -> Unit): Boolean {
-        if (isListening()) {
-            logWarn("Cannot add a callback on a started service")
-            return false
-        }
-        if (callbacks.contains(callback)) {
-            logWarn("Cannot add an already existing callback")
-            return false
-        }
-
-        synchronized(callbacks) {
-            logInfo("Adding callback '{}'", callback)
-            return callbacks.add(callback)
-        }
-    }
-
-
-    /**
-     * Removes a `callback` from the set of registered [callbacks]. This function is thread safe, i.e., it exploits
-     * `synchronized(callbacks)`.
-     *
-     * @param callback The `callback` to be removed.
-     *
-     * @return `true` if the callback was successfully removed, `false` otherwise.
-     */
-    override fun removeCallback(callback: (O) -> Unit): Boolean {
-        if (isListening()) {
-            logWarn("Cannot removing a callback with a listening service")
-            return false
-        }
-        if (!callbacks.contains(callback)) {
-            logWarn("Cannot removing a not existing callback")
-            return false
-        }
-
-        synchronized(callbacks) {
-            logInfo("Removing callback '{}'.", callback)
-            return callbacks.add(callback)
-        }
-    }
-
-
-    /**
-     * Invokes all registered callbacks in a separate thread, which concurrency is protected by
-     * `synchronized(callbacks)`.
-     *
-     * @param textResults The result of type [O] to be passed to each callback function, i.e., the recognised voice
-     * as a text.
-     */
-    protected fun onCallbackResults(textResults: O) {
-        synchronized(callbacks) {
-            callbacks.forEach { it(textResults) }
-        }
-    }
-
-
-    /**
-     * Starts the speech-to-text listening process asynchronously. It should not try start an instance that is already
-     * listening.
-     *
-     * This implementation already check for [serverListening] flag and returns `false` if it is already listening. However,
-     * be sure to further implement this method on the derived classes and to manage here the [serverListening] flag.
-     *
-     * @return `true` if the instance was stopped successfully, `false` otherwise.
-     */
-    override fun startListening(): Boolean{
-        if (isListening()) {
-            logWarn("Cannot start a client already started")
-            return false
-        }
-        return true
-    }
-
-
-    /**
-     * Stops the speech-to-text listening process and close relative resources. It should not try stop an instance that
-     * is not listening.
-     *
-     * This implementation already check for [serverListening] flag and returns `false` if it is not listening. However,
-     * be sure to further implement this method on the derived classes and to manage here the [serverListening] flag.
-     *
-     * @return `true` if the instance was stopped successfully, `false` otherwise.
-     */
-    override fun stopListening(): Boolean{
-        if (!isListening()) {
-            logWarn("Cannot stop a client already stopped.")
-            return false
-        }
-        return true
-    }
+    fun computeAsync(timeoutSpec: FrequentTimeout? = null) = super.computeAsync(Unit, timeoutSpec)
 }

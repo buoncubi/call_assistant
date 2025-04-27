@@ -19,7 +19,7 @@ import java.util.regex.Pattern
  * @see PromptsParser.normalizeWhitespace
  * @see PromptsParser.extractSpecialSection
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 typealias FieldsMap = MutableMap<String, String>
 
@@ -40,7 +40,7 @@ typealias FieldsMap = MutableMap<String, String>
  * @see PromptsParser.parseSpecialSections
  * @see PromptsParser.extractSpecialSection
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 data class FieldsMatcher<P>(val fields: P, val ranges: List<IntRange>)
 
@@ -55,7 +55,7 @@ data class FieldsMatcher<P>(val fields: P, val ranges: List<IntRange>)
  *
  * @see PromptsParser.parseSpecialSections
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 enum class SpecialSectionTitle(private val id: String) {
     METADATA("Meta"), CONSTANTS("Const"), VARIABLES("Var");
@@ -85,7 +85,7 @@ enum class SpecialSectionTitle(private val id: String) {
  * @see PromptsDeserializer
  * @see Loggable
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 object PromptsParser: Loggable(){
 

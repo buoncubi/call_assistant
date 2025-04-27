@@ -1,10 +1,13 @@
 package digital.boline.callAssistant.llm.message
 
-import digital.boline.callAssistant.LoggableInterface
-import digital.boline.callAssistant.llm.message.MetaAttribute.FAKE
-import digital.boline.callAssistant.llm.message.MetaAttribute.MERGED
 
-
+/**
+ * Extend function to convert a string in the CamelCase convention. It is mainly used to store enumerator on NoSQL
+ * database or jason in a standard format, e.g., [MetaRole], [MetaAttribute], and [MetaTiming].
+ *
+ * @receiver It adds this function to a `String`.
+ * @return The receiver `String` converted into the CamelCase convention.
+ */
 private fun String.toCamelCase(): String {
     return this.lowercase()
         .split('_')
@@ -14,6 +17,7 @@ private fun String.toCamelCase(): String {
         }
         .joinToString("")
 }
+
 
 
 /**
@@ -29,7 +33,7 @@ private fun String.toCamelCase(): String {
  * @param separator A string to be appended within each message's element. By default, it is `", "`.
  * @return Returns a [StringBuilder] with the string representation of the message.
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 internal fun <T> message2string(msg: Collection<T>, toStr: (T) -> String = {it.toString()},
                                 prefix: String = "", postfix: String = "", separator: String = ", ",
@@ -38,6 +42,7 @@ internal fun <T> message2string(msg: Collection<T>, toStr: (T) -> String = {it.t
         msg.joinTo(this, separator = separator, prefix = prefix, postfix = postfix) { toStr(it) }
     }
 }
+
 
 
 /**
@@ -53,13 +58,14 @@ internal fun <T> message2string(msg: Collection<T>, toStr: (T) -> String = {it.t
  * @see LlmMessage
  * @see MessagesManager
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 enum class MetaRole {USER, ASSISTANT, SUMMARY;
     override fun toString(): String {
         return super.toString().toCamelCase() // this is used by  `MetaData.toMap`
     }
 }
+
 
 
 /**
@@ -79,9 +85,10 @@ enum class MetaRole {USER, ASSISTANT, SUMMARY;
  * @see MessagesManager
  * @see AwsMessage
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
-interface LlmMessage<out M> : LoggableInterface {
+interface LlmMessage<out M> {
+    // It does not extend LoggableInterface, since it get logger from building classes.
 
     /**
      * Creates a raw message for the LLM provider.
@@ -132,8 +139,9 @@ interface LlmMessage<out M> : LoggableInterface {
      * @see MessagesManager
      *
      * @author Luca Buoncompagni © 2025
+     * @version 1.0
      */
-    interface Builder<M> : LoggableInterface {
+    interface Builder<M> {
 
         /**
          * Returns the message with a format `M` specific for an LLM provider.
@@ -142,6 +150,7 @@ interface LlmMessage<out M> : LoggableInterface {
         fun public(): LlmMessage<M>
     }
 }
+
 
 
 /**
@@ -161,7 +170,7 @@ interface LlmMessage<out M> : LoggableInterface {
  * @see MessageData
  * @see MessagesManager
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 enum class MetaAttribute{FAKE, MERGED;
 
@@ -169,6 +178,7 @@ enum class MetaAttribute{FAKE, MERGED;
         return super.toString().toCamelCase() // this is used by  `MetaData.toMap`
     }
 }
+
 
 
 /**
@@ -190,7 +200,7 @@ enum class MetaAttribute{FAKE, MERGED;
  * @see MessageData
  * @see MessagesManager
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 enum class MetaTiming{CREATION, PLAY_START, PLAY_END, LISTEN_START, LISTEN_END, LLM_START, LLM_END;
 
@@ -198,6 +208,7 @@ enum class MetaTiming{CREATION, PLAY_START, PLAY_END, LISTEN_START, LISTEN_END, 
         return super.toString().toCamelCase() // this is used by  `MetaData.toMap`
     }
 }
+
 
 
 /**
@@ -215,9 +226,10 @@ enum class MetaTiming{CREATION, PLAY_START, PLAY_END, LISTEN_START, LISTEN_END, 
  * @see MessageWrapper
  * @see MessagesManager
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 interface MetaData {
+    // It does not extend LoggableInterface, since it get logger from building classes.
 
     var summaryIds: List<String>?
     val attributes: List<MetaAttribute>?
@@ -289,6 +301,7 @@ interface MetaData {
 }
 
 
+
 /**
  * Wrapper interface for LLM messages that adds metadata and role information together with the representation of the
  * message itself, which can be specialized for different LLM models based on the [LlmMessage] interface.
@@ -317,9 +330,10 @@ interface MetaData {
  * @see MetaMessage
  * @see MessagesManager
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
-interface MessageWrapper<out M> : LoggableInterface {
+interface MessageWrapper<out M> {
+    // It does not extend LoggableInterface, since it get logger from building classes.
 
     val id: String
     val role: MetaRole
@@ -399,8 +413,9 @@ interface MessageWrapper<out M> : LoggableInterface {
      * @see MessagesManager
      *
      * @author Luca Buoncompagni © 2025
+     * @version 1.0
      */
-    interface Builder<M> : LoggableInterface {
+    interface Builder<M> {
 
         /**
          * Set the [MessageWrapper.role], this is only done by [MessagesManager], and it is not done while constructing
@@ -477,6 +492,7 @@ interface MessageWrapper<out M> : LoggableInterface {
                 MAP_METADATA_KEY to public().metadata.toMap(),
             )
         }
+
 
         companion object {
 

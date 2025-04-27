@@ -22,9 +22,6 @@ class ApplicationRunner: Loggable() {
 
     companion object {
         val AWS_VENV_REGION: String = System.getenv("AWS_REGION")
-        //val AWS_ACCESS_KEY_ID: String = System.getenv("AWS_ACCESS_KEY_ID")
-        //val AWS_SECRET_ACCESS_KEY: String = System.getenv("AWS_SECRET_ACCESS_KEY")
-        //val AWS_SESSION_TOKEN: String = System.getenv("AWS_SESSION_TOKEN")
     }
 }
 

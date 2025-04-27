@@ -1,5 +1,6 @@
 package digital.boline.callAssistant.llm.message
 
+import digital.boline.callAssistant.CentralizedLogger
 import digital.boline.callAssistant.Loggable
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.bedrockruntime.model.ContentBlock
@@ -11,17 +12,25 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 /**
  * Build a new [MessagesManager] based on [AwsMessage]. In particular, it returns:
  * ```
- * MessagesManager { MetaMessage.build(AwsMessage.build()) }
+ * MessagesManager { logger -> MetaMessage.build(AwsMessage.build(logger), logger) }
  * ```
  * @return A new [MessagesManager] for AWS.
  */
-fun buildAwsMessagesManager():  MessagesManager<Message> = MessagesManager { MetaMessage.build(AwsMessage.build()) }
+fun buildAwsMessagesManager():  MessagesManager<Message> = MessagesManager {logger -> MetaMessage.build(AwsMessage.build(logger), logger) }
 
 
 /**
  * Build a new [MessageWrapper] based on [AwsMessage]. In is mainly used for testing purposes, and it returns:
  * ```
- * MetaMessage.build(AwsMessage.build()).setRole(role).addContents(contents).public()
+ * MetaMessage.build(AwsMessage.build(logger), logger).setRole(role).addContents(contents).public()
+ * ```
+ *
+ * If you need to retrieve a logger in a class you can just extend `Loggable` or, if you need it in a function, you can
+ * define:
+ * ```
+ *  object DummyLogger: Loggable(){
+ *      val publicLogger = logger
+ *  }
  * ```
  *
  * Note that the returned object also provides an instance of the associated [LlmMessage] by the
@@ -29,29 +38,40 @@ fun buildAwsMessagesManager():  MessagesManager<Message> = MessagesManager { Met
  *
  * @param role The role of the message.
  * @param contents The contents of the message.
+ * @param logger The logger to be used by the [AwsMessage] and [MetaMessage] classes.
  * @return A new [MessageWrapper] for AWS.
  */
-fun buildAwsMetaMessage(role: MetaRole, contents: List<String>, id: String? = null): MessageWrapper<Message> =
-    if (id == null)
-        MetaMessage.build(AwsMessage.build()).setRole(role).addContents(contents).public()
-    else
-        MetaMessage.build(AwsMessage.build()).setRole(role).addContents(contents).setId(id).public()
+fun buildAwsMetaMessage(role: MetaRole, contents: List<String>, id: String? = null, logger: CentralizedLogger): MessageWrapper<Message> {
+    val awsMessage = AwsMessage.build(logger)
+
+    val metaMessage = MetaMessage.build(awsMessage, logger)
+        .setRole(role)
+        .addContents(contents)
+
+    if (id != null)
+        metaMessage.setId(id)
+
+    return metaMessage.public()
+}
 
 
 /**
  * AWS-specific implementation of [LlmMessage] that creates Bedrock-compatible [Message].
  *
  * @constructor This class is constructed through the [AwsMessage.Builder], which is based on [LlmMessage.Builder], and
- * the [build] factory. See [LlmMessage] for more.
+ * the [build] factory. See [LlmMessage] for more. This constructor also sets the [logger], which is given by the
+ * [MessagesManager].
+ *
+ * @property logger A `private` logger that is given from [MessagesManager].
  *
  * @see AwsMessage.Builder
  * @see LlmMessage
  * @see LlmMessage.Builder
  * @see MessagesManager
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
-class AwsMessage private constructor() : LlmMessage<Message>, Loggable() {
+class AwsMessage private constructor(private val logger: CentralizedLogger) : LlmMessage<Message> {
 
     // See documentation on `LlmMessage`
     override fun getRawMessage(role: MetaRole, contents: List<String>): Message {
@@ -60,7 +80,7 @@ class AwsMessage private constructor() : LlmMessage<Message>, Loggable() {
             MetaRole.USER -> ConversationRole.USER
             MetaRole.ASSISTANT -> ConversationRole.ASSISTANT
             else -> {
-                logError("A raw LLM message cannot be of type '{}'.", role)
+                logger.error("A raw LLM message cannot be of type '{}'.", role)
                 throw IllegalArgumentException("A raw LLM message cannot be of type '$role'.")
             }
         }
@@ -69,6 +89,7 @@ class AwsMessage private constructor() : LlmMessage<Message>, Loggable() {
         val awsContents = contents.mapTo(ArrayList()) { ContentBlock.fromText(it) }
         return Message.builder().role(awsRole).content(awsContents).build()
     }
+
 
     /**
      * The class instantiated by [MessagesManager], which defines private functionality related to [AwsMessage], and has
@@ -80,6 +101,7 @@ class AwsMessage private constructor() : LlmMessage<Message>, Loggable() {
      * @see MessagesManager
      *
      * @author Luca Buoncompagni © 2025
+     * @version 1.0
      */
     private inner class Builder : LlmMessage.Builder<Message> {
 
@@ -91,9 +113,10 @@ class AwsMessage private constructor() : LlmMessage<Message>, Loggable() {
 
         /**
          * Implementation of the [LlmMessage] factory.
+         * @param logger The logger assigned to the instantiated message that gets returned.
          * @return A new [AwsMessage] with both public and private functionalities.
          */
-        fun build(): LlmMessage.Builder<Message> = AwsMessage().Builder()
+        fun build(logger: CentralizedLogger): LlmMessage.Builder<Message> = AwsMessage(logger).Builder()
     }
 }
 
@@ -105,7 +128,7 @@ class AwsMessage private constructor() : LlmMessage<Message>, Loggable() {
  * @see MessageData.toMap
  * @see MetaMessage.Builder.toMap
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 object DynamoDBMessage: Loggable() {
 

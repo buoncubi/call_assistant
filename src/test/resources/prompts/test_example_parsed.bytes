@@ -4,7 +4,9 @@
 "
 application nameCall Assistant
 
-environmenttest'
+environmenttest
+*
+*MessageSummaryTitle*Previous Dialogue'
 Context
 getDateAJ
 getTimeNU

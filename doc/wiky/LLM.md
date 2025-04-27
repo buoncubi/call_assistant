@@ -7,7 +7,7 @@ based on the AWS Bedrock service.
 ## Software Architecture
 
 As shown in the UML diagram below, the LLM-based interaction is interfaced by 
-`LlmInteract<I: LlmRequest<*, *>, O: LlmResponse>`, where `LllmRequest<P,M>` and `LlmResponse` are data classes that 
+`LlmService<I: LlmRequest<*, *>, O: LlmResponse>`, where `LllmRequest<P,M>` and `LlmResponse` are data classes that 
 contains specific data for each LLM provider.
 
 In particular, `LlmRequest` encompasses: system prompts, user and assistant messages, the LLM temperature, the LLM
@@ -27,47 +27,50 @@ some of its fields based on the environmental variables: `AWS_BEDROCK_MAX_TOKENS
 It follows an example on how to use `AwsBedrock`
 
 ```kotlin
-val bedrock = AwsBedrock()
+      val bedrock = AwsBedrock()
 
-// Set the callback for errors within AwsBedrock.
-bedrock.onErrorCallbacks.add { se: ServiceError ->
-    logError("Got LLM Bedrock error: ('${se.errorSource}') ${se.throwable}")
-}
+      // Set the callback for errors within AwsBedrock.
+      bedrock.onErrorCallbacks.add { se: ServiceError ->
+          println("Got LLM Bedrock error: ('${se.source}', ${se.sourceTag}) ${se.throwable}")
+      }
 
-// Set the callback for results within AwsBedrock.
-bedrock.onResultCallbacks.add { response: AwsBedrockResponse ->
-    logInfo("Got LLM Bedrock response: $response")
-}
+      // Set the callback for results within AwsBedrock.
+      bedrock.onResultCallbacks.add { response: AwsBedrockResponse ->
+          println("Got LLM Bedrock response: $response")
+      }
 
-// Initialize the AWS Bedrock service.
-bedrock.activate()
+      // Initialize the AWS Bedrock service.
+      bedrock.activate()
 
-// Define the request to the LLM model.
-val prompts: List<SystemContentBlock> = AwsBedrockRequest.buildPrompts("My prompt")
-val message: Message = AwsBedrockRequest.buildMessages(ConversationRole.USER,"My message")
-// Note that `request` allow defining other parameter (e.g., temperature, top_p, etc.)
-val request: AwsBedrockRequest = AwsBedrockRequest(prompts, listOf(message))
-// Optionally define a computation timeout (which is reset every time a part of the LLM response is received).
-val timeoutSpec = FrequentTimeout(200, 20) {
-    logInfo("Time out occurred!")
-}
-// Make the request to the LLM model
-bedrock.computeAsync(request, timeoutSpec)
+      // Define the request to the LLM model.
+      val prompts: List<SystemContentBlock> = AwsBedrockRequest.buildPrompts("My prompt")
+      val message: Message = AwsBedrockRequest.buildMessages(ConversationRole.USER,"My message")
+      // Note that `request` allow defining other parameter (e.g., temperature, top_p, etc.)
+      val request: AwsBedrockRequest = AwsBedrockRequest(prompts, listOf(message))
+      // Optionally define a computation timeout (which is reset every time a part of the LLM response is received).
+      val timeoutSpec = FrequentTimeout(200, 20) {
+          println("Time out occurred!")
+      }
+      // Make the request to the LLM model
+      bedrock.computeAsync(request, timeoutSpec, "MySourceTag")
 
-// Wait for the response from the LLM model with an optional timeout.
-val waitTimeout = Timeout(20000) {
-    logInfo("Waiting timeout occurred!")
-}
-bedrock.wait(waitTimeout)
-// Or stop the computation.
-bedrock.stop()
+      // Wait for the response from the LLM model with an optional timeout.
+      val waitTimeout = Timeout(20000) { sourceTag ->
+          println("Waiting timeout occurred! ($sourceTag)") 
+      }
+      bedrock.wait(waitTimeout, "MyTimeoutSourceTag")
+      // Or stop the computation.
+      bedrock.stop()
 
-// Eventually, make new computations...
+      // Eventually, make new computations...
 
-// Finally, always remember to release the AWS Bedrock resources when it is no longer needed.
-bedrock.deactivate()
+      // Finally, always remember to release the AWS Bedrock resources when it is no longer needed.
+      bedrock.deactivate()
 
-// You might want to `activate` the Bedrock service again and start new computation.
+      // You might want to `activate` the Bedrock service again and start new computation.
+
+      // Cancel the scope and all related jobs. After this the service cannot be activated again.
+      bedrock.cancelScope()
 ```
 
 ![localImage](../uml/llm.svg)
@@ -76,7 +79,7 @@ For more info see the [Service Interface](SERVICE).
 For more implementation details check out the
 [documented code](../dokka/html/-call-assistant--brain/digital.boline.callAssistant.llm/index.html).  
 For more examples checkout
-[DummyLlmInteract.kt](../../src/test/kotlin/digital/boline/callAssistant/llm/DummyLlmInteract.kt) and
+[DummyLlmService.kt](../../src/test/kotlin/digital/boline/callAssistant/llm/DummyLlmService.kt) and
 [AwsBedrockRunner.kt](../../src/test/kotlin/digital/boline/callAssistant/llm/AwsBedrockRunner.kt).
 
 ---

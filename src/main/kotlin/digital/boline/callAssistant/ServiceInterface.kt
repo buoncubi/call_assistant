@@ -18,6 +18,13 @@ import kotlin.time.measureTime
  * [stop] and [wait]. See [ReusableServiceInterface] for services that need to initialize and close resources only once
  * for all computations over time.
  *
+ * This service is designed to be used with [CallbackManagerInterface] to provide a callback mechanisms (e.g., on error
+ * or result), and with [FrequentTimeout] and [Timeout] to provide a timeout mechanisms. It also provides mechanism to
+ * propagate to the callbacks and timeouts lambda-functions an identifier from the class that requested the asynchronous
+ * service. Such identifier is the `sourceTag`, which is a String set to [UNKNOWN_SOURCE_TAG] (i.e., empty) by default.
+ * Note that `sourceTag` is not used by this class (so it can have any value), but just propagated among callbacks and
+ * functions.
+ *
  * @param I The data type required to compute the service (i.e., required by [computeAsync]).
  *
  * @property isComputing The flag indicating if the service is currently computing or not, in asynchronous manner. It is
@@ -31,7 +38,7 @@ import kotlin.time.measureTime
  * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
  * @see digital.boline.callAssistant.text2speech.Text2Speech
  * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmInteract
+ * @see digital.boline.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -42,14 +49,23 @@ interface ServiceInterface<I> : LoggableInterface {
 
 
     /**
+     * Checks if the service is in a state that allows to run [computeAsync].
+     * @return `true` if the service state allows for computation.
+     */
+    fun canCompute(): Boolean
+
+
+    /**
      * Starts the service computation asynchronously with an optional timeout.
      *
      * @param input The input data required to compute the service.
      * @param timeoutSpec The specification of the timeout (see [FrequentTimeout] for more). If it is `null` (which is
      * the default value), not timeout policy will be applied.
+     * @param sourceTag An identifier that will be propagated to lambda function associated with this method, e.g.,
+     * on result callbacks, on error callbacks, and timeout callbacks. By default, it is empty.
      * @return `true` if the service computation was started successfully.
      */
-    fun computeAsync(input: I, timeoutSpec: FrequentTimeout? = null): Boolean
+    fun computeAsync(input: I, timeoutSpec: FrequentTimeout? = null, sourceTag: String = UNKNOWN_SOURCE_TAG): Boolean
 
 
     /**
@@ -58,16 +74,32 @@ interface ServiceInterface<I> : LoggableInterface {
      *
      * @param timeoutSpec The specification of the timeout (see [Timeout] for more). If it is `null` (which is the
      * default value), no timeout policy will be applied.
+     * @param sourceTag An identifier that will be propagated to lambda function associated with this method, e.g.,
+     * on error callbacks, and timeout callbacks. By default, it is empty.
      * @return `true` if the service computation was completed successfully.
      */
-    suspend fun wait(timeoutSpec: Timeout? = null): Boolean
+    suspend fun wait(timeoutSpec: Timeout? = null, sourceTag: String = UNKNOWN_SOURCE_TAG): Boolean
 
 
     /**
      * Immediately stops the current service computation.
+     * @param sourceTag An identifier that will be propagated to lambda function associated with this method, e.g.,
+     * on error callbacks, and timeout callbacks. By default, it is empty.
      * @return `true` if the service computation was stopped successfully.
      */
-    fun stop(): Boolean
+    fun stop(sourceTag: String = UNKNOWN_SOURCE_TAG): Boolean
+
+
+    /**
+     * Cancelling the coroutine scope. After this operation the service cannot be computed again, and a new service
+     * instance is required.
+     */
+    fun cancelScope()
+
+    companion object {
+        /** The default value of the `sourceTag` parameter. By default, it is an empty string. */
+        const val UNKNOWN_SOURCE_TAG = ""
+    }
 }
 
 
@@ -79,9 +111,9 @@ interface ServiceInterface<I> : LoggableInterface {
  *
  * @property timeout The number of milliseconds after which the computation is stopped since timeout is considered
  * expired. Default value is [DEFAULT_TIMEOUT].
- * @property callback A lambda function that is called when the timeout expires. Such a function does not have input
- * parameters and do return nothing. Default value is [DEFAULT_CALLBACK]. If it is set to `null`, the callback is
- * ignored.
+ * @property callback A lambda function that is called when the timeout expires. Such a function takes as input the
+ * `sourceTag`, which is an identifier given as input to the method that generated this timeout and propagated to the
+ * callback. Default value is [DEFAULT_CALLBACK], which is `null`, i.e., the callback is ignored.
  *
  * @see ServiceInterface
  * @see Service
@@ -90,16 +122,15 @@ interface ServiceInterface<I> : LoggableInterface {
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
 open class Timeout(
-    // See property documentation above.
     val timeout: Long = DEFAULT_TIMEOUT,
-    val callback: (() -> Unit)? = DEFAULT_CALLBACK)
+    val callback: ((String) -> Unit)? = DEFAULT_CALLBACK)
 {
     /**
      * Invokes the callback function associated with this timeout specification. If [callback] is `null`, then this
      * function does nothing.
      */
-    fun invokeCallback() {
-        callback?.let { it() }
+    fun invokeCallback(sourceTag: String) {
+        callback?.let { it(sourceTag) }
     }
 
     /**
@@ -112,7 +143,7 @@ open class Timeout(
 
         /** The default timeout value, which is set to 20 seconds. */
         @JvmStatic
-        protected val DEFAULT_TIMEOUT: Long = 20_000 // TODO set it as environmental variable and make an object with all environmental-based configuration.
+        protected val DEFAULT_TIMEOUT: Long = 20_000
 
         /** The default callback function, which is to `null`, i.e., it does nothing. */
         @JvmStatic
@@ -131,7 +162,7 @@ open class Timeout(
          * @return The string representation of [timeout].
          */
         @JvmStatic
-        protected fun callbackToString(callback: (() -> Unit)?) =
+        protected fun callbackToString(callback: ((String) -> Unit)?) =
             if (callback != null) "with callback" else "without callback"
     }
 }
@@ -148,9 +179,9 @@ open class Timeout(
  * expired. Default value is [Timeout.DEFAULT_TIMEOUT].
  * @property checkPeriod The delay in milliseconds between each checks of timeout expiration. Default value is
  * [DEFAULT_CHECK_PERIOD].
- * @property callback A lambda function that is called when the timeout expires. Such a function does not have input
- * parameters and do return nothing. Default value is [Timeout.DEFAULT_CALLBACK]. If it is set to `null`, the callback
- * ignored.
+ * @property callback A lambda function that is called when the timeout expires. Such a function takes as input the
+ * `sourceTag`, which is an identifier given as input to the method that generated this timeout and propagated to the
+ * callback. Default value is [Timeout.DEFAULT_CALLBACK], which is `null`, i.e., the callback is ignored.
  *
  * @see ServiceInterface
  * @see Service
@@ -160,7 +191,8 @@ open class Timeout(
 class FrequentTimeout (
     timeout: Long = DEFAULT_TIMEOUT,
     val checkPeriod: Long = DEFAULT_CHECK_PERIOD,
-    callback: (() -> Unit)? = DEFAULT_CALLBACK) : Timeout(timeout, callback)
+    callback: ((String) -> Unit)? = DEFAULT_CALLBACK
+) : Timeout(timeout, callback)
 {
 
     /**
@@ -213,20 +245,28 @@ enum class ErrorSource(val errorLog: String){
 /**
  * A data class that encompasses the `throwable` to handle, and the `experiencedError`, which identify the function
  * producing the error (see [ErrorSource] for more). This class is used as input parameter to [Service.doThrow],
- * which manages all try-catch block of [Service] and [ReusableService]. See [Service.doThrow] for
- * more.
+ * which manages all try-catch block of [Service] and [ReusableService], and as input parameter to related callbacks as
+ * set in [Service.onErrorCallbacks]. See [Service.doThrow] for more.
  *
  * @property throwable The exception to handle
  * @property source An enumerator that identifies the calling function and relative logs, see
  * [ErrorSource] for more.
+ * @param sourceTag  an identifier given as input to the method that generated this error and propagated to the
+ * callbacks available in the [Service.onErrorCallbacks] manager.
  *
  * @see Service
  * @see ReusableService
  * @see ErrorSource
+ * @see CallbackManager
+ * @see CallbackManagerInterface
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
-data class ServiceError(val throwable: Throwable, val source: ErrorSource)
+data class ServiceError(
+    val throwable: Throwable,
+    val source: ErrorSource,
+    override val sourceTag: String
+) : CallbackInput
 
 
 
@@ -239,13 +279,16 @@ data class ServiceError(val throwable: Throwable, val source: ErrorSource)
  * actual logic since logging, exceptions and service states are handled by this class. This class also implements the
  * timeout policies and the coroutine-based methods for waiting or stopping asynchronous jobs.
  *
+ * Note that the [ServiceInterface] allow defining callbacks involving: on results, on error and timeouts. The classes
+ * tha calls the service's functionalities can specify a `sourceTag` that is propagated to the relative callbacks. Note
+ * that `sourceTag` is not used by this class (thus, it can have any value), but it is just propagated among functions
+ * and callbacks. Its purpose is to be used by the class using this service. See also [ServiceInterface] for more info.
+ *
  * @param I The data type required to compute the service (i.e., required by [computeAsync]).
  *
  * @property isComputing The flag indicating if the service is currently computing or not, in asynchronous manner. It is
  * set by [computeAsync] and reset by [stop] and [wait].
- * @property serviceName A `protected` property that represents the name of this service, which is used for logging
- * purposes.
- * @property scope A `private` property that defines where the coroutines used by this service will run. It is
+ * @property scope A `protected` property that defines where the coroutines used by this service will run. It is
  * initialized during object construction.
  * @property computingJob A `private` property that represents the coroutine job for the computation, which is started
  * with [computeAsync]. It is `null` when the service is not computing (i.e., when [isComputing] is false).
@@ -257,6 +300,8 @@ data class ServiceError(val throwable: Throwable, val source: ErrorSource)
  * through [resetTimeout]. It is `null` when the service is not computing (i.e., when [isComputing] is false), or when
  * no timeout has been set.
  * @property onErrorCallbacks A set of callbacks that are called in case of exceptions. See [doThrow] for more.
+ * @property isScopeCancelled A `private` property that is set to `true` when [cancelScope] is invoked. When the scope
+ * is cancelled, this class cannot be used anymore to perform further computation.
  *
  * @constructor Requires the [scope].
  *
@@ -267,10 +312,7 @@ data class ServiceError(val throwable: Throwable, val source: ErrorSource)
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
-abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I>, Loggable() {
-
-    // See documentation above.
-    protected val serviceName: String = this.javaClass.simpleName
+abstract class Service<I>(protected val scope: CoroutineScope): ServiceInterface<I>, Loggable() {
 
     // See documentation above.
     private var computingJob: Job? = null
@@ -280,6 +322,9 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
 
     // See documentation above.
     private var timeoutStart: AtomicLong? = null
+
+    // See documentation above.
+    protected var isScopeCancelled = false
 
     // See documentation above.
     val onErrorCallbacks = CallbackManager<ServiceError, Unit>(logger)
@@ -298,17 +343,31 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
      * `expectedComputingState` given as input. Otherwise, it returns `false` and logs a warning with a message given
      * as input through the `errorLog` parameter.
      *
+     * Note that if [isScopeCancelled] is `true` this function will always return `false`.
+     *
      * @param expectedComputingState The expected value of the [isComputing] flag.
      * @param warningLog A string used only for logging purposes when [isComputing] is not as expected.
      * @return `true` if [isComputing] is as expected, `false` otherwise.
      */
     protected open fun checkComputingState(expectedComputingState: Boolean, warningLog: String): Boolean {
+        if (isScopeCancelled) {
+            logWarn("The service has a cancelled scope and cannot be used anymore!", warningLog)
+            return false
+        }
+
         if (isComputing.get() != expectedComputingState) {
-            logWarn("Service '{}' {}.", serviceName, warningLog)
+            logWarn("Service {}.", warningLog)
             return false
         }
         return true
     }
+
+
+    /**
+     * Check if the service can run [computeAsync].
+     * @return `true` if [isComputing] and [isScopeCancelled] are both `false`. Otherwise, returns `false`.
+     */
+    override fun canCompute(): Boolean = !isComputing.get() && !isScopeCancelled
 
 
     /**
@@ -324,15 +383,17 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
      * which is implemented by [doCheckTimeoutAsync].
      *
      * Note that [computingJob] and [timeoutJob] run inside a try-catch block, and the related exceptions are handled
-     * by [doThrow] called with [ErrorSource.COMPUTING] or [ErrorSource.TIMEOUT] respectively.
+     * by [doThrow] called with [ErrorSource.COMPUTING] or [ErrorSource.TIMEOUT] respectively. Note that [doThrow]
+     * invokes the [onErrorCallbacks].
      *
      * @param input The input for the service computation, which is given to [doComputeAsync].
-     * @param timeoutSpec The timeout specifications, which is given to [doCheckTimeoutAsync]. If it is `null`, then
-     * the [timeoutJob] will not run.
-     *
+     * @param timeoutSpec The timeout specifications (that might include a callback), which is given to
+     * [doCheckTimeoutAsync]. If it is `null`, then the [timeoutJob] will not run.
+     * @param sourceTag An identifier that will be propagated to the function associated with this method, e.g.,
+     * on result callbacks, on error callbacks, timeout callbacks, and [doComputeAsync]. By default, it is empty.
      * @return `true` if the service computation successfully started; `false` otherwise.
      */
-    final override fun computeAsync(input: I, timeoutSpec: FrequentTimeout?): Boolean {
+    final override fun computeAsync(input: I, timeoutSpec: FrequentTimeout?, sourceTag: String): Boolean {
         // Check if the computation should start or not.
         if (!checkComputingState(false, "is already computing")) return false
 
@@ -340,10 +401,10 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
         isComputing.set(true)
 
         if (timeoutSpec != null)
-            logInfo("Service '{}' start computing with input: '{}', and timeout specifications: '{}'.",
-                serviceName, input, timeoutSpec)
+            logInfo("Service starts computing with input: '{}', and timeout specifications: '{}'.",
+                input, timeoutSpec)
         else
-            logInfo("Service '{}' start computing with input: '{}' (without timeout).", serviceName, input)
+            logInfo("Service starts computing with input: '{}' (without timeout).", input)
 
         // Start the service computation on a coroutine, which cannot have multiple runs.
         computingJob = scope.launch {
@@ -351,11 +412,11 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
             try {
                 // Invoke the actual service computation.
                 val computingTime = measureTime {
-                    doComputeAsync(input)
+                    doComputeAsync(input, sourceTag)
                 }
-                logInfo("Service '{}' finished computing normally (it took {}).", serviceName, computingTime)
+                logInfo("Service finished computing normally (it took {}).", computingTime)
             } catch (ex: Exception) {
-                if (doThrow(ex, ErrorSource.COMPUTING) == true) throw ex
+                if (doThrow(ex, ErrorSource.COMPUTING, sourceTag) == true) throw ex
             }
 
             // Reset the computation flag and related job.
@@ -373,9 +434,9 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
 
                 try {
                     // Invoke the actual timeout checker.
-                    doCheckTimeoutAsync(timeoutSpec)
+                    doCheckTimeoutAsync(timeoutSpec, sourceTag)
                 } catch (ex: Exception) {
-                    if (doThrow(ex, ErrorSource.TIMEOUT) == true) throw ex
+                    if (doThrow(ex, ErrorSource.TIMEOUT, sourceTag) == true) throw ex
                 }
 
                 // Reset the timeout checker.
@@ -383,8 +444,7 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
                 timeoutJob = null
             }
 
-            logDebug("Service '{}' activates timeout checker with specifications: '{}'.",
-                serviceName, timeoutSpec)
+            logDebug("Service activates timeout checker with specifications: '{}'.", timeoutSpec)
 
         }
         return true
@@ -399,9 +459,13 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
      * Note that this functions runs in a try-catch block that catches and reacts to all exception based on the
      * [doThrow] method called with [ErrorSource.COMPUTING].
      *
+     * This method should invoke some callback to notify the results, and it should pass the `sourceTag` to them.
+     *
      * @param input The input required for the service's computation, as given to [computeAsync].
+     * @param sourceTag An identifier that should be propagated to lambda function associated with this method, e.g.,
+     * on result callbacks. By default, it is empty, as given to [computeAsync].
      */
-    protected abstract suspend fun doComputeAsync(input: I)
+    protected abstract suspend fun doComputeAsync(input: I, sourceTag: String)
 
 
     /**
@@ -417,14 +481,17 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
      * reset through [resetTimeout].
      *
      * When this methods stop looping due to timeout, it invokes [stop] (which terminates the service's computation) and
-     * [FrequentTimeout.callback] (if a callback is specified).
+     * [FrequentTimeout.callback] (if a callback is specified). Note that the callback will receive th `sourceTag`
+     * provided to this function.
      *
      * Note that this functions runs in a try-catch block that catches and reacts to all exception based on the
      * [doThrow] method called with [ErrorSource.TIMEOUT].
      *
      * @param timeoutSpec The timeout specifications, as given to [computeAsync].
+     * @param sourceTag An identifier that will be propagated to the timeout-based lambda function associated with this
+     * method. By default, it is empty, as given to [computeAsync].
      */
-    private suspend fun doCheckTimeoutAsync(timeoutSpec: FrequentTimeout) {
+    private suspend fun doCheckTimeoutAsync(timeoutSpec: FrequentTimeout, sourceTag: String) {
         // Loop until the main job (i.e., `computingJob`) is computing.
         while (computingJob?.isCompleted == false) {
 
@@ -434,19 +501,16 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
             // Check if the computation time is timed-out.
             if (computationTime > timeoutSpec.timeout) {
                 // Stop the main and this jobs.
-                stop()
+                stop(sourceTag)
                 // Invoke the callback if it exists.
-                timeoutSpec.invokeCallback()
+                timeoutSpec.invokeCallback(sourceTag)
 
-                logInfo(
-                    "Computation for service {} has been timed out after {} ms.",
-                    serviceName, computationTime
-                )
+                logInfo("Service computation has been timed out after {} ms.", computationTime)
 
             } else {
                 logTrace(
-                    "Checking timeout for service. Remaining time: '{}'.",
-                    serviceName, timeoutSpec.timeout - computationTime
+                    "Checking service timeout, remaining time: '{}'.",
+                     timeoutSpec.timeout - computationTime
                 )
             }
 
@@ -464,9 +528,9 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
         if (timeoutStart != null) {
             // If timeout is set, which only occurs if the service is computing.
             timeoutStart!!.set(System.currentTimeMillis())
-            logTrace("Service '{}' timeout has been reset.", serviceName)
+            logTrace("Service timeout has been reset.")
         } else
-            logWarn("Service '{}' has not computation timeout to set.", serviceName)
+            logTrace("Service has not computation timeout to set.")
     }
 
 
@@ -481,43 +545,48 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
      * Also note that this functions runs in a try-catch block that catches and reacts to all exception based on the
      * [doThrow] method called with [ErrorSource.WAITING].
      *
+     * This method propagates the `sourceTag` to the callback associated with `timeoutSpec`, if provided. Also, since
+     * it might invoke [doThrow] and [stop], ot propagates the `sourceTag` to them as well. Finally, it propagates it
+     * also to [doWait].
+     *
      * @param timeoutSpec The timeout specifications. If it is `null`, then the wait will not be timed-out. If it
      * defines a callback, then it will be invoked if the timeout occurs.
+     * @param sourceTag An identifier that will be propagated to the timeout-based lambda function  associated with this
+     * method, or to the [onErrorCallbacks] in case of an exception. By default, it is empty.
      * @return `true` if the asynchronous service computation launched with [computeAsync] successfully finished;
      * `false` otherwise.
      */
-    final override suspend fun wait(timeoutSpec: Timeout?): Boolean {
+    final override suspend fun wait(timeoutSpec: Timeout?, sourceTag: String): Boolean {
 
         // Check if the wait should start or not, i.e., if the service is computing or not.
-        if (!checkComputingState(true, "cannot wait since there is not computation")) return false
+        if (!checkComputingState(true, "cannot wait since there is no computations")) return false
 
         try {
             val waitingTime = measureTime {
 
                 if (timeoutSpec != null) {
                     // Wait with timeout.
-                    logInfo("Service '{}' is waiting for computation to finish with timeout '{}'...", serviceName, timeoutSpec)
+                    logDebug("Service is waiting for computation to finish with timeout '{}'...", timeoutSpec)
                     withTimeout(timeoutSpec.timeout) {
-                        doWait()
+                        doWait(sourceTag)
                     }
                 } else {
                     // Wait without timeout.
-                    logInfo("Service '{}' is waiting for computation to finish...", serviceName)
-                    doWait()
+                    logDebug("Service is waiting for computation to finish...")
+                    doWait(sourceTag)
                 }
             }
-            logInfo("Service '{}' finish waiting (it waited for {}).",
-                serviceName, waitingTime)
+            logInfo("Service finished waiting (it waited for {}).", waitingTime)
 
         } catch (ex: Exception) {
             if (ex is TimeoutCancellationException) {
                 // If timeout occurred stop the service and invoke the callback.
-                logWarn("Service '{}' has been waited for too long (timeout!).", serviceName)
-                stop()
-                timeoutSpec?.invokeCallback()
+                logWarn("Service has been waited for too long (timeout!).")
+                stop(sourceTag)
+                timeoutSpec?.invokeCallback(sourceTag)
             } else {
                 // Manage other exception, such as cancellation, etc.
-                if (doThrow(ex, ErrorSource.WAITING) == true) throw ex
+                if (doThrow(ex, ErrorSource.WAITING, sourceTag) == true) throw ex
             }
         }
 
@@ -534,8 +603,11 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
      *
      * Note that this functions runs in a try-catch block that catches and reacts to all exception based on the
      * [doThrow] method called with [ErrorSource.WAITING].
+     *
+     * @param sourceTag The source tag as given to the [wait] method by the class that wants to wait for the computation
+     * to end.
      */
-    protected open suspend fun doWait() = computingJob?.join()
+    protected open suspend fun doWait(sourceTag: String) = computingJob?.join()
 
 
     /**
@@ -550,21 +622,26 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
      * `null`.
      *
      * Note that the actual stop implementation is defined by [doStop], and you can override it to change its behaviour.
-     * Also, note that this functions runs in a try-catch block that catches and reacts to all exception based on the
-     * [doThrow] method called with [ErrorSource.STOPPING].
+     * This function propagates to the [doStop] method the provided `sourceTag`.
      *
+     * Also, note that this functions runs in a try-catch block that catches and reacts to all exception based on the
+     * [doThrow] method called with [ErrorSource.STOPPING]. If a not ignored exception occurs, [doThrow] calls the
+     * [onErrorCallbacks], which receives the given `sourceTag` as input parameter.
+     *
+     * @param sourceTag An identifier that will be propagated to [doStop], and to the [onErrorCallbacks] in case of an
+     * exception. By default, it is empty.
      * @return `true` if the asynchronous service computation launched with [computeAsync] successfully stopped; `false`
      * otherwise.
      */
-    final override fun stop(): Boolean {
+    final override fun stop(sourceTag: String): Boolean {
         // Check if there is something to stop.
         if (!checkComputingState(true, "has already stop computing")) return false
 
-        logDebug("Service '{}' is stopping computation...", serviceName)
+        logDebug("Service is stopping computation...")
         try {
             val stoppingTime = measureTime {
                 // Call the actual stopping logic.
-                doStop()
+                doStop(sourceTag)
 
                 // Reset all properties
                 isComputing.set(false)
@@ -572,10 +649,10 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
                 timeoutJob = null
                 timeoutStart = null
             }
-            logInfo("Service '{}' computation has been stopped (it took {}).", serviceName, stoppingTime)
+            logInfo("Service computation has been stopped (it took {}).", stoppingTime)
 
         } catch (ex: Exception) {
-            if (doThrow(ex, ErrorSource.STOPPING) == true) throw ex
+            if (doThrow(ex, ErrorSource.STOPPING, sourceTag) == true) throw ex
         }
 
         return true
@@ -590,8 +667,11 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
      *
      * Note that this functions runs in a try-catch block that catches and reacts to all exception based on the
      * [doThrow] method called with [ErrorSource.STOPPING].
+     *
+     * @param sourceTag An identifier given to [stop] from the class that wants to stop the computation. By default, it
+     * is an empty string.
      */
-    protected open fun doStop() = computingJob?.cancel()
+    protected open fun doStop(sourceTag: String) = computingJob?.cancel()
 
 
     /**
@@ -600,11 +680,13 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
      * @param throwable The exception to handle
      * @param errorSource An enumerator that identifies the calling function and relative logs, see
      * [ErrorSource] for more.
+     * @param sourceTag An identifier given by the class that uses this service. It is not used by this class, but just
+     * propagated to the lambda function while invoking the [onErrorCallbacks].
      * @return It returns `true` if the exception should be propagated with `throw`, `false` if it should only be
      * logged, and `null` if the exception should be ignored.
      */
-    protected fun doThrow(throwable: Throwable, errorSource: ErrorSource) =
-        doThrow(ServiceError(throwable, errorSource))
+    protected fun doThrow(throwable: Throwable, errorSource: ErrorSource, sourceTag: String) =
+        doThrow(ServiceError(throwable, errorSource, sourceTag))
 
 
     /**
@@ -617,7 +699,9 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
      *  - log other exceptions, and
      *  - do not propagate any exceptions with `throw`.
      * If an exception is not ignored, then this class invokes the [onErrorCallbacks] by passing to them the
-     * `serviceError` input parameter.
+     * `serviceError` input parameter. In addition, the `serviceError` parameter will encode the `sourceTag` as provided
+     * to this class. The `sourceTag` is not used by this class, but just propagated to the lambda function while
+     * invoking the [onErrorCallbacks] (and to other callbacks in general, including on result callbacks, and timeout).
      *
      * If you are explicitly catching exceptions, remember to throw again such exception for make the error callbacks
      * aware of it.
@@ -633,7 +717,7 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
 
         // Do not react to cancellation exceptions
         if (throwable is CancellationException || throwable.cause is CancellationException || throwable is SdkCancellationException) {
-            logTrace("Service '{}' cancelled with source '{}'", serviceName, serviceError.source)
+            logTrace("Service cancelled with source '{}'", serviceError.source)
             return null
         }
 
@@ -641,10 +725,22 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
         onErrorCallbacks.invoke(serviceError)
 
         // Log the type of error
-        logError("Service '{}' experienced '{}'.", serviceName, experiencedErrorLog, throwable)
+        logError("Service experienced '{}'.", experiencedErrorLog, throwable)
         return false
 
         // Never returns `true`, i.e., never propagate the error with `throw`.
+    }
+
+
+    /**
+     * Cancelling the coroutine [scope]. After this operation the service cannot be computed again, and a new service
+     * instance is required.
+     */
+    override fun cancelScope() {
+        val message = "Cancelling scope $scope."
+        scope.cancel(message)
+        logInfo(message)
+        isScopeCancelled = true
     }
 }
 
@@ -657,6 +753,12 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
  * This interface defines the [activate] and [deactivate] functions that initialise and close resources respectively.
  * Note that if a service is not active, then it cannon perform computations with [computeAsync] (as well as [stop] or
  * [wait]); see [ServiceInterface] for more.
+ *
+ * This service is designed to be used with [CallbackManagerInterface] to provide a callback mechanisms (e.g., on error
+ * or result), and with [FrequentTimeout] and [Timeout] to provide a timeout mechanisms. It also provides mechanism to
+ * propagate to the callbacks and timeouts lambda-functions an identifier from the class that requested the asynchronous
+ * service. Such identifier is the `sourceTag`, which is a String set to empty by default. Note that `sourceTag` is not
+ * used by this class (so it can have any value), but just propagated among callbacks and functions.
  *
  * @param I The data type required to compute the service (i.e., required by [computeAsync]).
  *
@@ -673,7 +775,7 @@ abstract class Service<I>(private val scope: CoroutineScope): ServiceInterface<I
  * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
  * @see digital.boline.callAssistant.text2speech.Text2Speech
  * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmInteract
+ * @see digital.boline.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -682,19 +784,40 @@ interface ReusableServiceInterface<I> : ServiceInterface<I> {
     // See documentation above.
     val isActive: AtomicBoolean
 
+    /**
+     * Checks if the service is in a state that allows to run [activate].
+     * @return `true` if the service state allows for activation; `false` otherwise.
+     */
+    fun canActivate(): Boolean
+
 
     /**
      * Initialise service's resources and set the [isActive] flag.
+     * Note that if you invoke [cancelScope] then the service cannot be activated again.
+     *
+     * @param sourceTag An identifier that will be propagated among functions, but it is not used by this class. By
+     * default, it is empty.
      * @return `true` if the service's resources were initialised successfully.
      */
-    fun activate(): Boolean
+    fun activate(sourceTag: String = ServiceInterface.UNKNOWN_SOURCE_TAG): Boolean
+
+
+    /**
+     * Checks if the service is in a state that allows to run [deactivate].
+     * @return `true` if the service state allows for deactivation; `false` otherwise.
+     */
+    fun canDeactivate(): Boolean
 
 
     /**
      * Close service's resources and reset the [isActive] flag.
+     * Note that if you invoke [cancelScope] then the service cannot be activated again.
+     *
+     * @param sourceTag An identifier that will be propagated among functions, but it is not used by this class. By
+     * default, it is empty.
      * @return `true` if the service's resources were closed successfully.
      */
-    fun deactivate(): Boolean
+    fun deactivate(sourceTag: String = ServiceInterface.UNKNOWN_SOURCE_TAG): Boolean
 }
 
 
@@ -712,6 +835,8 @@ interface ReusableServiceInterface<I> : ServiceInterface<I> {
  *  4. Eventually, start a new computation with [computeAsync] and exploit the [stop] or [wait] method.
  *  5. Finally, use the [deactivate] method to close service's resources
  *  6. Eventually, use [activate] again the service and go through all previous steps.
+ *  7. Use [cancelScope], after this the service cannot be used anymore. If you want to use it again you will require a
+ *     new instance.
  * Note that step 2 cannot be performed if the service is not active, step 3 cannot be performed if the service is not
  * computing (step 2), and step 5 cannot be performed if the service is still computing.
  *
@@ -720,6 +845,10 @@ interface ReusableServiceInterface<I> : ServiceInterface<I> {
  * logging are managed by this class. Eventually you can further customize the behaviour of this class by extending the
  * [doWait], [doStop], and [doThrow] methods, but always remember to call `super` to avoid unexpected behaviour.
  *
+ * Note that the [ServiceInterface] allow defining callbacks involving: on results, on error and timeouts. The classes
+ * tha calls the service's functionalities can specify a `sourceTag` that is propagated to the relative callbacks. See
+ * also [Service] for more info.
+ *
  * @param I The data type required to compute the service (i.e., required by [computeAsync]).
  *
  * @property isActive The flag indicating if the service has initialised its resources. Thus, it can perform
@@ -727,8 +856,6 @@ interface ReusableServiceInterface<I> : ServiceInterface<I> {
  * will be false, and [computingJob], [timeoutJob], and [timeoutStart] will be `null`.
  * @property isComputing The flag indicating if the service is currently computing or not. See [Service.isComputing]
  * for more.
- * @property serviceName A `protected` property that represents the name of this service for logging purposes, as
- * defined by [Service.serviceName].
  * @property scope A `private` property that defines where the coroutines will run. See [Service.scope] for more.
  * @property computingJob A `private` property that represents the coroutine job for the computation. See
  * [Service.computingJob] for more.
@@ -736,6 +863,10 @@ interface ReusableServiceInterface<I> : ServiceInterface<I> {
  * [computingJob]. See [Service.timeoutJob] for more.
  * @property timeoutStart A `private` property that represents the start time of the timeout policy. See
  * [Service.timeoutStart] for more.
+ * @property onErrorCallbacks A set of callbacks that are called in case of exceptions. See [Service.onErrorCallbacks]
+ * for more.
+ * @property isScopeCancelled A `private` property that is set to `true` when [cancelScope] is invoked. When the scope
+ * is cancelled, this class cannot be used anymore to perform further computation.
  *
  * @constructor Requires the [scope], as defined by [Service].
  *
@@ -747,7 +878,7 @@ interface ReusableServiceInterface<I> : ServiceInterface<I> {
  * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
  * @see digital.boline.callAssistant.text2speech.Text2Speech
  * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmInteract
+ * @see digital.boline.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -770,7 +901,7 @@ abstract class ReusableService<I>(scope: CoroutineScope) : ReusableServiceInterf
      */
     final override fun checkComputingState(expectedComputingState: Boolean, warningLog: String): Boolean {
         if (!isActive.get()) {
-            logWarn("Service '{}' cannot computeAsync since it is not active.", serviceName)
+            logWarn("Service cannot computeAsync since it is not active.")
             return false
         }
         return super.checkComputingState(expectedComputingState, warningLog)
@@ -793,14 +924,14 @@ abstract class ReusableService<I>(scope: CoroutineScope) : ReusableServiceInterf
         // If it is called from `deactivate` check if it is computing.
         if (isActive.get()) {
             if (isComputing.get()) {
-                logWarn("Service '{}' cannot be deactivated since it is still computing.", serviceName)
+                logWarn("Service cannot be deactivated since it is still computing.")
                 return false
             }
         }
 
         // Deny if it is active and wants to re-activate, or if it is not active and wants to re-deactivate.
         if (isActive.get() != expectedActiveState) {
-            logWarn("Service '{}' {}.", serviceName, warningLog)
+            logWarn("Service {}.", warningLog)
             return false
         }
 
@@ -810,34 +941,53 @@ abstract class ReusableService<I>(scope: CoroutineScope) : ReusableServiceInterf
 
 
     /**
+     * Check if the service can run [activate].
+     * @return `true` if [isActive] and [isScopeCancelled] are both `false`. Otherwise, returns `false`.
+     */
+    override fun canActivate(): Boolean = !isActive.get() && !isScopeCancelled
+
+
+    /**
      * Initialise service's resources and set the [isActive] flag. This method does nothing if the service has already
      * been activated. This method only manages service state, possible exception and logging, but the current
      * activation is implemented in the [doActivate] method, which is called by this method, and it should be
-     * implemented by derived classes.
+     * implemented by derived classes. Note that [doActivate] will receive the `resourceTag` as given to this method.
      *
      * Note that this functions runs in a try-catch block that catches and reacts to all exception based on the
-     * [doThrow] method called with [ErrorSource.ACTIVATING].
+     * [doThrow] method called with [ErrorSource.ACTIVATING]. In case of an exception not ignored by [doThrow], the
+     * [onErrorCallbacks] will be invoked, and the `sourceTag` will be provided to them.
      *
+     * Note that if you invoke [cancelScope] then the service cannot be activated again.
+     *
+     * @param sourceTag An identifier that will be propagated to [doActivate], and to the [onErrorCallbacks] in case of
+     * an exception. By default, it is empty.
      * @return `true` if the service has been successfully activated, `false` otherwise.
      */
-    final override fun activate(): Boolean {
+    final override fun activate(sourceTag: String): Boolean {
+
+        // Check if the scope has been cancelled.
+        if (isScopeCancelled) {
+            logWarn("Service cannot be activated since the scope has been cancelled.")
+            return false
+        }
+
         // Deny activation if it already activated.
         if (!checkActiveState(false, "has already been activated")) return false
 
         // Activate the service and, if the activation is successfully, manage the `isActive` state.
         try {
-            logDebug("Service '{}' is activating...", serviceName)
+            logDebug("Service is activating...")
             val activationTime = measureTime {
-                doActivate()
+                doActivate(sourceTag)
                 isActive.set(true)
             }
-            logInfo("Service '{}' has been activated (took: {}).", serviceName, activationTime)
+            logInfo("Service has been activated (took: {}).", activationTime)
             return true
         } catch (ex: Exception) {
-            if (doThrow(ex, ErrorSource.ACTIVATING) == true) throw ex
+            if (doThrow(ex, ErrorSource.ACTIVATING, sourceTag) == true) throw ex
         }
 
-        logWarn("Service '{}' did not activated!", serviceName)
+        logWarn("Service did not activated!")
         return false
     }
 
@@ -848,41 +998,55 @@ abstract class ReusableService<I>(scope: CoroutineScope) : ReusableServiceInterf
      * service initialization.
      *
      * Note that this functions runs in a try-catch block that catches and reacts to all exception based on the
-     * [doThrow] method called with [ErrorSource.ACTIVATING].
+     * [doThrow] method called with [ErrorSource.ACTIVATING]. In case of an exception not ignored by [doThrow], the
+     * [onErrorCallbacks] will be invoked, and the `sourceTag` will be provided to them.
+     *
+     * @param sourceTag An identifier propagated from [activate], as given by the class that wants to activate this
+     * service.
      */
-    protected abstract fun doActivate()
+    protected abstract fun doActivate(sourceTag: String)
+
+
+    /**
+     * Check if the service can run [deactivate].
+     * @return `true` if [isActive] is `true` and [isComputing] is `false`. Otherwise, returns `false`.
+     */
+    override fun canDeactivate(): Boolean = isActive.get() && !isComputing.get()
 
 
     /**
      * Close service's resources and reset the [isActive] flag. This method does nothing if the service has already
      * been deactivated. This method only manages service state, possible exception and logging, but the current
      * deactivation is implemented in the [doDeactivate] method, which is called by this method, and it should be
-     * implemented by derived classes.
+     * implemented by derived classes. Note that [doDeactivate] will receive the `resourceTag` as given to this method.
      *
      * Note that this functions runs in a try-catch block that catches and reacts to all exception based on the
-     * [doThrow] method called with [ErrorSource.DEACTIVATING].
+     * [doThrow] method called with [ErrorSource.DEACTIVATING]. In case of an exception not ignored by [doThrow], the
+     * [onErrorCallbacks] will be invoked, and the `sourceTag` will be provided to them.
      *
+     * @param sourceTag An identifier that will be propagated to [doDeactivate], and to the [onErrorCallbacks] in case
+     * of an exception. By default, it is empty.
      * @return `true` if the service has been successfully deactivated, `false` otherwise.
      */
-    final override fun deactivate(): Boolean {
+    final override fun deactivate(sourceTag: String): Boolean {
 
         // Deny deactivation if it is already deactivate or if it is currently computing.
         if (!checkActiveState(true, "has already been deactivated")) return false
 
         // Deactivate the service and, if the deactivation is successfully, manage the `isActive` state.
         try{
-            logDebug("Service '{}' is deactivating...", serviceName)
+            logDebug("Service is deactivating...")
             val deactivationTime = measureTime {
-                doDeactivate()
+                doDeactivate(sourceTag)
                 isActive.set(false)
             }
-            logInfo("Service '{}' has been deactivated (took: {}).", serviceName, deactivationTime)
+            logInfo("Service has been deactivated (took: {}).", deactivationTime)
             return true
         } catch (ex: Exception) {
-            if (doThrow(ex, ErrorSource.DEACTIVATING) == true) throw ex
+            if (doThrow(ex, ErrorSource.DEACTIVATING, sourceTag) == true) throw ex
         }
 
-        logWarn("Service '{}' did not activated!", serviceName)
+        logWarn("Service did not deactivated!")
         return false
     }
 
@@ -893,32 +1057,46 @@ abstract class ReusableService<I>(scope: CoroutineScope) : ReusableServiceInterf
      * releasing the sources that the service initialized with [doActivate].
      *
      * Note that this functions runs in a try-catch block that catches and reacts to all exception based on the
-     * [doThrow] method called with [ErrorSource.DEACTIVATING].
+     * [doThrow] method called with [ErrorSource.DEACTIVATING]. In case of an exception not ignored by [doThrow], the
+     * [onErrorCallbacks] will be invoked, and the `sourceTag` will be provided to them.
      *
+     * @param sourceTag An identifier propagated from [deactivate], as given by the class that wants to deactivate this
+     * service.
      * @return `true` if the service has been successfully activated, `false` otherwise.
      */
-    protected abstract fun doDeactivate()
+    protected abstract fun doDeactivate(sourceTag: String)
 
 }
 
 
+
 /**
- * The base definition of a callbacks manager, which collects lambda functions in a mao and allow invoking them. This
+ * The base definition of a callbacks manager, which collects lambda functions in a map, and allow invoking them. This
  * class should store lambda functions on map with a string-based identifier for each callback. Such a manager is
  * usually used by an implementation or extension of the [ServiceInterface].
+ *
+ * The input type to the callback must be an implementation of [CallbackInput], while the output can be any
+ * class. The [CallbackInput] defines a `sourceTag` that is used for propagating data given while invoking
+ * the features of a [ServiceInterface] to the callbacks. Note that the `sourceTag` is not processed neither by
+ * this class nor by [ServiceInterface]. The `sourceTag` it designed in such a way that the classes that exploit the
+ * functionalities of a [ServiceInterface] (thus, might generate callbacks), can pass data to the callbacks.
+ * If you want to use an empty input, you can rely on the [SimpleCallbackInput].
  *
  * @param I The callbacks input.
  * @param O The callbacks output.
  *
  * @see CallbackManager
+ * @see CallbackManagerInterface
+ * @see SimpleCallbackInput
+ * @see ServiceInterface
  * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
  * @see digital.boline.callAssistant.text2speech.Text2Speech
  * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmInteract
+ * @see digital.boline.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
-interface CallbackManagerInterface<I, O>  {
+interface CallbackManagerInterface<I: CallbackInput, O>  {
     // It does not extend LoggableInterface, since it logs error with the logger of delegate classes.
 
     /**
@@ -928,11 +1106,13 @@ interface CallbackManagerInterface<I, O>  {
      */
     fun add(callback: ((I) -> O)): String
 
+
     /**
      * Removes a callback.
      * @param callback The callback implementation to be removed.
      */
     fun remove(callback: ((I) -> O))
+
 
     /**
      * Removes a callback given its identifier.
@@ -940,8 +1120,10 @@ interface CallbackManagerInterface<I, O>  {
      */
     fun remove(callbackId: String)
 
+
     /**  Removes all the callbacks. */
     fun clear()
+
 
     /**
      * Calls all the added callbacks with the given input parameters and returns associated results.
@@ -949,6 +1131,7 @@ interface CallbackManagerInterface<I, O>  {
      * @return The results of the callbacks.
      */
     fun invoke(callbackInput: I): Map<String, O>
+
 
     /**
      * Returns the callbacks associated with the given identifier.
@@ -959,10 +1142,68 @@ interface CallbackManagerInterface<I, O>  {
 }
 
 
+
+/**
+ * The base definition of the input to the callback managed by [CallbackManager]. It only defines a property that is
+ * neither processed by the [CallbackManager] nor by [ServiceInterface], but it is propagated in such a way that the
+ * classes that exploit the functionalities of a [ServiceInterface] (thus, might generate callbacks), can pass data to
+ * the callbacks.
+ *
+ * @property sourceTag An identifier that will be propagated from the functionalities of [ServiceInterface] to the
+ * callbacks. By default, it is empty.
+ *
+ * @see CallbackManager
+ * @see SimpleCallbackInput
+ * @see ServiceInterface
+ * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
+ * @see digital.boline.callAssistant.text2speech.Text2Speech
+ * @see digital.boline.callAssistant.speech2text.Speech2Text
+ * @see digital.boline.callAssistant.llm.LlmService
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
+ */
+interface CallbackInput {
+    val sourceTag: String
+}
+
+
+
+/**
+ * The simplest implementation of the [CallbackInput] interface. It can be used when the callbacks defined through the
+ * [CallbackManager] do not require data.
+ *
+ * It only implements a property that is neither processed by the [CallbackManager] nor by [ServiceInterface], but it is
+ * propagated in such a way that the classes that exploit the functionalities of a [ServiceInterface] (thus, might
+ * generate callbacks), can pass data to the callbacks.
+ *
+ * @property sourceTag An identifier that will be propagated from the functionalities of [ServiceInterface] to the
+ * callbacks. By default, it is empty.
+ *
+ * @see CallbackManager
+ * @see SimpleCallbackInput
+ * @see ServiceInterface
+ * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
+ * @see digital.boline.callAssistant.text2speech.Text2Speech
+ * @see digital.boline.callAssistant.speech2text.Speech2Text
+ * @see digital.boline.callAssistant.llm.LlmService
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
+ */
+open class SimpleCallbackInput(override val sourceTag: String) : CallbackInput
+
+
+
 /**
  * An implementation of the [CallbackManagerInterface] that collects lambda functions in a map where keys identifies
  * callback based on where they are implemented, i.e., based on [getCallbackIdentifier]. This class is usually used by
  * an implementation or extension of the [ServiceInterface].
+ *
+ * The input type to the callback must be an implementation of [CallbackInput], while the output can be any
+ * class. The [CallbackInput] defines a `sourceTag` that is used for propagating data given while invoking
+ * the features of a [ServiceInterface] to the callbacks. Note that the `sourceTag` is not processed neither by
+ * this class nor by [ServiceInterface]. The `sourceTag` it designed in such a way that the classes that exploit the
+ * functionalities of a [ServiceInterface] (thus, might generate callbacks), can pass data to the callbacks.
+ * If you want to use an empty input, you can rely on the [SimpleCallbackInput].
  *
  * @param I The callbacks input.
  * @param O The callbacks output.
@@ -976,15 +1217,15 @@ interface CallbackManagerInterface<I, O>  {
  * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
  * @see digital.boline.callAssistant.text2speech.Text2Speech
  * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmInteract
+ * @see digital.boline.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
-class CallbackManager<I, O>(private val logger: CentralizedLogger, serviceName: String? = null) : CallbackManagerInterface<I, O> {
+class CallbackManager<I: CallbackInput, O>(private val logger: CentralizedLogger) : CallbackManagerInterface<I, O> {
     // It does not extend Loggable, since it logs error with the logger of delegate classes.
 
     // See documentation above.
-    private val serviceName = serviceName ?: this.javaClass.simpleName
+    private val serviceName = logger.logsFor
 
     // See documentation above.
     private val callbacks: MutableMap<String, ((I) -> O)> = mutableMapOf()
@@ -1017,6 +1258,7 @@ class CallbackManager<I, O>(private val logger: CentralizedLogger, serviceName: 
             val callbackId = getCallbackIdentifier(callback)
 
             if(callbacks.put(callbackId, callback) != null)
+                // TODO add log name for discriminating the type of callback (e.g., onResult, onError, etc.)
                 logger.warn("Replacing callback (with ID: '{}') for service '{}'.", callbackId, serviceName)
             else
                 logger.debug("Adding callback (with ID: '{}') for service '{}'.", callbackId, serviceName)
@@ -1103,7 +1345,7 @@ class CallbackManager<I, O>(private val logger: CentralizedLogger, serviceName: 
                     it.key to invokeWithTimeMeasure(it.key, it.value, callbackInput, computationTime)
                 }.toMap()
             }
-            logger.info("Service '{}' is invoked {} callback(s) (computation times: {}ms, total computation time: {}ms ).",
+            logger.info("Service '{}' invokes {} callback(s) (computation times: {}, total computation time: {} ).",
                 serviceName, callbacks.size, computationTime,  totalComputationTime)
 
             return results

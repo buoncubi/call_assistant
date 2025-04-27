@@ -1,5 +1,5 @@
 
-remember to cite [prompt syntax documentation](src/main/kotlin/digital/boline/callAssistant/llm/prompt/README.md))
+
 
 
 ## Launching
@@ -97,8 +97,10 @@ sensitive information. Here it follows the list of required variables
 
  - `AWS_TRANSCRIBE_LANGUAGE`: The language for speech-to-tex service based on AWS Transcribe, e.g., `it-IT`, see 
    the [list of supported languages](https://docs.aws.amazon.com/transcribe/latest/dg/supported-languages.html).
- - `AWS_TRANSCRIBE_AUDIO_STREAM_CHUNK_SIZE`: The buffer size in byte of the audio signal for speech-to-text convertion
-    as an integer; recommended value, `1024`.
+ - `AWS_TRANSCRIBE_AUDIO_STREAM_CHUNK_SIZE`: The buffer size in byte of the audio signal for speech-to-text conversion
+    as an integer; recommended value, `1024`. It is suggested to set it as 
+    `chunk_size_in_bytes = chunk_duration_in_millisecond / 1000 * audio_sample_rate * 2`, for more info check 
+    [this web page](https://docs.aws.amazon.com/transcribe/latest/dg/streaming.html).
 
 
  - `AWS_POLLY_VOICE_NAME`: The name associated with a Polly's voice for text-to-speech, e.g., `Bianca`, see the 
@@ -120,3 +122,30 @@ sensitive information. Here it follows the list of required variables
    tokens from the probability distribution. For example, a value of 0.9 means the model will consider tokens from the 
    top 90% of the probability distribution, while a value of 0.1 will only consider the most likely tokens that make up 
    the top 10% of the probability distribution, resulting in more focused and deterministic outputs.
+
+## Project Structure
+
+Documentation:
+ - For logging see the code documented in the [Loggable.kt](src/main/kotlin/digital/boline/callAssistant/Loggable.kt) file
+ - For speech-to-text see the README
+ - For text-to-text see the README
+ - For dialogue management see the README
+ - For llm model see the README
+ - For prompt syntax and management see the [README](doc/wiky/LLM_PROMPT.md)
+ - For message management see the [README](doc/wiky/LLM_MESSAGE.md)
+
+todo 
+ - list of packages
+ - llm API
+ - text2speech API
+ - speech2text API
+ - dialogue
+
+
+ TODO update Dokka, UMLs, and refer to wiky
+ 
+_---
+
+**Author** Luca Buoncompagni.  
+© 2025.
+

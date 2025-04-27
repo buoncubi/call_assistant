@@ -4,11 +4,11 @@ class digital.boline.callAssistant.llm.message.AwsMessage$Builder {
 }
 
 class digital.boline.callAssistant.llm.message.AwsMessage$Companion {
-+ LlmMessage.Builder<Message> build()
++ LlmMessage.Builder<Message> build(CentralizedLogger)
 }
 
 class digital.boline.callAssistant.llm.message.AwsMessage {
-- <<Create>> AwsMessage()
+- <<Create>> AwsMessage(CentralizedLogger)
 + Message getRawMessage(MetaRole,List<String>)
 }
 
@@ -33,8 +33,9 @@ class digital.boline.callAssistant.llm.message.MessageData {
 + List<MetaAttribute>? attributes
 - MutableMap<String, Any>? mutableData
 + Map<String, Any>? data
-- MutableMap<String, Long>? mutableTiming
-+ Map<String, Long>? timing
+- MutableMap<MetaTiming, Long>? mutableTiming
++ Map<MetaTiming, Long>? timing
++ <<Create>> MessageData(CentralizedLogger)
 + void addAttributes(MetaAttribute)
 + void addData(String,Any)
 + void addTiming(MetaTiming,Long)
@@ -56,7 +57,7 @@ class digital.boline.callAssistant.llm.message.MetaMessage$Builder {
 }
 
 class digital.boline.callAssistant.llm.message.MetaMessage$Companion {
-+ MessageWrapper.Builder<M> build(LlmMessage.Builder<M>)
++ MessageWrapper.Builder<M> build(LlmMessage.Builder<M>,CentralizedLogger)
 }
 
 class digital.boline.callAssistant.llm.message.MetaMessage {
@@ -66,7 +67,7 @@ class digital.boline.callAssistant.llm.message.MetaMessage {
 +  metadata
 +  id
 + M rawMessage
-- <<Create>> MetaMessage(LlmMessage<M>)
+- <<Create>> MetaMessage(LlmMessage<M>,CentralizedLogger)
 + String toString()
 + Boolean equals(Any?)
 + Int hashCode()
@@ -84,7 +85,7 @@ class digital.boline.callAssistant.llm.message.MessagesManager {
 -  lastSummaryMessageIdx
 + List<MessageWrapper<M>> metaMessages
 + List<M> messages
-+ <<Create>> MessagesManager(() -> MessageWrapper.Builder<M>)
++ <<Create>> MessagesManager((logger: CentralizedLogger) -> MessageWrapper.Builder<M>)
 + String toString()
 + void addUser(List<String>)
 + void addAssistant(List<String>)
@@ -99,7 +100,7 @@ class digital.boline.callAssistant.llm.message.MessagesManager {
 + void addSummary(String,Summarizing)
 + MessageWrapper<M>? addSummary(List<String>,Summarizing)
 + MessageWrapper<M>? getLastSummary()
-+ List<Map<String, Any>> messagesMap(Boolean,Boolean)
++ List<Map<String, Any>> toMessagesMap(Boolean,Boolean)
 }
 
 
@@ -134,7 +135,7 @@ class digital.boline.callAssistant.llm.message.Summarizing$Formatter {
 
 class digital.boline.callAssistant.llm.message.Summarizing {
 + <<Create>> Summarizing(List<SummarizingMessage>,SummarizingMessage?)
-+ String format()
++ String format(String,Boolean)
 + void toString()
 + List<Int> getIndexes()
 + void isEmpty()
@@ -144,7 +145,9 @@ enum digital.boline.callAssistant.llm.message.MetaRole {
 +  USER
 +  ASSISTANT
 +  SUMMARY
++ String toString()
 }
+
 
 interface digital.boline.callAssistant.llm.message.LlmMessage$Builder {
 + LlmMessage<M> public()
@@ -176,7 +179,7 @@ enum digital.boline.callAssistant.llm.message.MetaTiming {
 interface digital.boline.callAssistant.llm.message.MetaData {
 + List<String>? summaryIds
 + List<MetaAttribute>? attributes
-+ Map<String, Long>? timing
++ Map<MetaTiming, Long>? timing
 + Map<String, Any>? data
 + void addTiming(MetaTiming,Long)
 + void addData(String,Any)
@@ -222,26 +225,19 @@ digital.boline.callAssistant.llm.message.AwsMessage +.. digital.boline.callAssis
 digital.boline.callAssistant.llm.message.Builder <|.. digital.boline.callAssistant.llm.message.AwsMessage$Builder
 digital.boline.callAssistant.llm.message.AwsMessage +.. digital.boline.callAssistant.llm.message.AwsMessage$Companion
 digital.boline.callAssistant.llm.message.LlmMessage <|.. digital.boline.callAssistant.llm.message.AwsMessage
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.AwsMessage
 digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.DynamoDBMessage
 digital.boline.callAssistant.llm.message.MessageData +.. digital.boline.callAssistant.llm.message.MessageData$Companion
 digital.boline.callAssistant.llm.message.MetaData <|.. digital.boline.callAssistant.llm.message.MessageData
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MessageData
 digital.boline.callAssistant.llm.message.MetaMessage +.. digital.boline.callAssistant.llm.message.MetaMessage$Builder
 digital.boline.callAssistant.llm.message.Builder <|.. digital.boline.callAssistant.llm.message.MetaMessage$Builder
 digital.boline.callAssistant.llm.message.MetaMessage +.. digital.boline.callAssistant.llm.message.MetaMessage$Companion
 digital.boline.callAssistant.llm.message.MessageWrapper <|.. digital.boline.callAssistant.llm.message.MetaMessage
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MetaMessage
 digital.boline.callAssistant.llm.message.MessagesManager +.. digital.boline.callAssistant.llm.message.MessagesManager$Companion
 digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MessagesManager
 digital.boline.callAssistant.llm.message.Summarizing +.. digital.boline.callAssistant.llm.message.Summarizing$SummarizingMessage
 digital.boline.callAssistant.llm.message.Summarizing +.. digital.boline.callAssistant.llm.message.Summarizing$Formatter
 digital.boline.callAssistant.llm.message.LlmMessage +.. digital.boline.callAssistant.llm.message.LlmMessage$Builder
-digital.boline.callAssistant.llm.message.LoggableInterface <|.. digital.boline.callAssistant.llm.message.LlmMessage$Builder
-digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.message.LlmMessage
 digital.boline.callAssistant.llm.message.Builder +.. digital.boline.callAssistant.llm.message.Builder$Companion
 digital.boline.callAssistant.llm.message.MessageWrapper$Builder +.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder$Companion
 digital.boline.callAssistant.llm.message.MessageWrapper +.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder
-digital.boline.callAssistant.llm.message.LoggableInterface <|.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder
-digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.message.MessageWrapper
 @enduml

@@ -16,8 +16,6 @@ import javax.sound.sampled.*
  */
 object DesktopMicrophone: Speech2TextStreamBuilder, Loggable() {
 
-    // TODO manage constants and make them configurable
-
     /** The sample size for audio data. If higher the representation is more precise but bigger. By default, is `16`. */
     private const val MIC_SAMPLE_SIZE_IN_BIT: Int = 16
 

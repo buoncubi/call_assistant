@@ -1,0 +1,732 @@
+@startuml
+class digital.boline.callAssistant.llm.message.AwsMessage$Builder {
++ void public()
+}
+
+class digital.boline.callAssistant.llm.message.AwsMessage$Companion {
++ LlmMessage.Builder<Message> build()
+}
+
+class digital.boline.callAssistant.llm.message.AwsMessage {
++ Message getRawMessage(MetaRole,List<String>)
+}
+
+class digital.boline.callAssistant.llm.message.DynamoDBMessage {
++ List<Map<String, AttributeValue>> toDynamoDB(List<Map<String, Any?>>)
+- Map<String, AttributeValue> toDynamoDB(Map<String, Any?>)
+- AttributeValue toAttributeValue(Any?)
++ Boolean isNullAttribute(AttributeValue)
+- AttributeValue getErrorAttribute()
+}
+
+class digital.boline.callAssistant.ApplicationRunner$Companion {
++ String AWS_VENV_REGION
+}
+
+class digital.boline.callAssistant.ApplicationRunner {
+- void runApplication()
+}
+
+class digital.boline.callAssistant.llm.AwsBedrockRequest$Companion {
++ List<SystemContentBlock> buildPrompts(List<String>)
++ List<SystemContentBlock> buildPrompts(String)
++ Message buildMessages(ConversationRole,String)
++ Message buildMessages(ConversationRole,List<String>)
++ Message buildUserMessages(String)
++ Message buildUserMessages(List<String>)
++ Message buildAssistantMessages(String)
++ Message buildAssistantMessages(List<String>)
+}
+
+class digital.boline.callAssistant.llm.AwsBedrockRequest {
+}
+class digital.boline.callAssistant.llm.AwsBedrockResponse {
+}
+class digital.boline.callAssistant.llm.AwsBedrock {
+- BedrockRuntimeAsyncClient? client
+- CompletableFuture<Void>? llmJob
+- ConverseStreamResponseHandler? requestHandler
++ void doActivate()
++ void doDeactivate()
+- ConverseStreamResponseHandler buildResponseHandler()
++ void doComputeAsync(AwsBedrockRequest)
++ void doStop()
+}
+
+
+interface digital.boline.callAssistant.speech2text.Speech2TextStreamBuilder {
++ InputStream? build()
+}
+
+abstract class digital.boline.callAssistant.speech2text.Speech2Text {
++  onResultCallbacks
++ void computeAsync(FrequentTimeout?)
+}
+
+
+class digital.boline.callAssistant.text2speech.DesktopAudioPlayer {
++  onBeginPlayingCallbacks
++  onEndPlayingCallbacks
+- AdvancedPlayer? player
++ void doComputeAsync(InputStream)
++ void doStop()
+}
+
+
+enum digital.boline.callAssistant.llm.message.MetaRole {
++  USER
++  ASSISTANT
++  SUMMARY
++ String toString()
+}
+
+
+interface digital.boline.callAssistant.llm.message.LlmMessage$Builder {
++ LlmMessage<M> public()
+}
+
+interface digital.boline.callAssistant.llm.message.LlmMessage {
++ M getRawMessage(MetaRole,List<String>)
+}
+
+enum digital.boline.callAssistant.llm.message.MetaAttribute {
++  FAKE
++  MERGED
++ String toString()
+}
+
+
+enum digital.boline.callAssistant.llm.message.MetaTiming {
++  CREATION
++  PLAY_START
++  PLAY_END
++  LISTEN_START
++  LISTEN_END
++  LLM_START
++  LLM_END
++ String toString()
+}
+
+
+interface digital.boline.callAssistant.llm.message.MetaData {
++ List<String>? summaryIds
++ List<MetaAttribute>? attributes
++ Map<MetaTiming, Long>? timing
++ Map<String, Any>? data
++ void addTiming(MetaTiming,Long)
++ void addData(String,Any)
++ void addAttributes(MetaAttribute)
++ Map<String, Any?> toMap()
++ String toString()
++ Int hashCode()
++ Boolean equals(Any?)
+}
+
+
+class digital.boline.callAssistant.llm.message.MessageWrapper$Builder$Companion {
++  MAP_ID_KEY
++  MAP_MESSAGE_KEY
++  MAP_ROLE_KEY
++  MAP_CONTENTS_KEY
++  MAP_METADATA_KEY
+}
+
+interface digital.boline.callAssistant.llm.message.MessageWrapper$Builder {
++ Builder<M> setRole(MetaRole)
++ Builder<M> addContents(List<String>)
++ Builder<M> setId(String)
++ MessageWrapper<M> public()
++ Map<String, Any> toMap()
+}
+
+interface digital.boline.callAssistant.llm.message.MessageWrapper {
++ String id
++ MetaRole role
++ List<String> contents
++ M rawMessage
++ MetaData metadata
++ String toString()
++ Int hashCode()
++ Boolean equals(Any?)
+}
+
+
+class digital.boline.callAssistant.llm.prompt.Occurrence {
++ String toString()
+}
+
+class digital.boline.callAssistant.llm.prompt.ParsedPrompts$Companion {
+-  SEPARATOR
+}
+
+class digital.boline.callAssistant.llm.prompt.ParsedPrompts {
++  metadata
++  variables
++  prompts
++  constants
++  variablesDefinition
++ Boolean serializeJson(String)
++ Boolean serializeJson(File)
++ Boolean serializeBinary(String)
++ Boolean serializeBinary(File)
+- Boolean serialize(File,() -> T)
++ PromptsManager getPromptManager()
++ String toString()
+}
+
+
+class digital.boline.callAssistant.llm.prompt.PromptsDeserializer {
++ PromptsManager? fromBytesOrJson(String)
++ PromptsManager? fromBytesOrJson(File)
++ PromptsManager? fromBytes(String)
++ PromptsManager? fromBytes(File)
++ PromptsManager? fromJson(String)
++ PromptsManager? fromJson(File)
+- ParsedPrompts? deserialize(File,(data: T) -> ParsedPrompts)
+}
+
+class digital.boline.callAssistant.speech2text.DesktopMicrophone {
+- Int MIC_SAMPLE_SIZE_IN_BIT
+- Int MIC_AUDIO_CHANNEL
+- Float MIC_SAMPLE_RATE
++ InputStream? build()
+}
+
+
+interface digital.boline.callAssistant.llm.prompt.Prompts {
++ Map<K,T> prompts
+}
+
+abstract class digital.boline.callAssistant.llm.prompt.SimplePrompt {
++ Map<K, T> metadata
++ Map<K, O> variables
+# String formatMap2String(Map<*,*>,String,String)
+}
+
+
+class digital.boline.callAssistant.llm.prompt.TypedPrompts$Companion {
+-  SEPARATOR
+}
+
+abstract class digital.boline.callAssistant.llm.prompt.TypedPrompts {
++ String toString()
++ Boolean equals(Any?)
++ Int hashCode()
+}
+
+class digital.boline.callAssistant.llm.prompt.PromptsManager$Companion {
+-  MESSAGE_SUMMARY_TITLE_KEY
+}
+
+abstract class digital.boline.callAssistant.llm.prompt.PromptsManager {
++ Map<String, String> rawPrompts
++ String messageSummary
++ String formatPrompts(List<String>,Boolean,Boolean)
++ void applyVariables()
+}
+
+
+class digital.boline.callAssistant.llm.prompt.PromptsManagerImpl {
++ Map<String, String> prompts
++ void applyVariables()
+}
+
+
+class digital.boline.callAssistant.llm.prompt.VariablesFunction {
+-  functionMap
+- String formattedTime
+- Pair<String, () -> String> addFunction(() -> String)
++ String? invoke(String)
++ Boolean containsFunction(String)
++ String getDate()
++ String getTime()
++ void updateTime()
+- String newTime()
++ String toString()
+}
+
+
+class digital.boline.callAssistant.LoggableInterface$Factory$Companion {
+-  internalLogger
+- void getLoggerName(Class<*>)
+- Logger getNewLogger(Class<*>)
++ Level? getLevel(Logger)
+- Logger getNewLoggerByName(String)
+}
+
+
+class digital.boline.callAssistant.LoggableInterface$Factory {
++ Logger slf4jLogger
+}
+
+class digital.boline.callAssistant.LoggableInterface$Companion {
++ String NEW_LINE
+}
+
+interface digital.boline.callAssistant.LoggableInterface {
++ void loggerFactory(Class<out LoggableInterface>?)
+}
+
+class digital.boline.callAssistant.CentralizedLogger {
+-  loggerTag
++ void setLevel(SLF4JLevel)
++ void trace(String,Any?)
++ void debug(String,Any?)
++ void info(String,Any?)
++ void warn(String,Any?)
++ void error(String,Any?)
+}
+
+
+class digital.boline.callAssistant.Loggable$Companion {
++ String NEW_LINE
+}
+
+class digital.boline.callAssistant.Loggable {
+#  slf4jLogger
+# CentralizedLogger logger
+# void logTrace(String,Any?)
+# void logDebug(String,Any?)
+# void logInfo(String,Any?)
+# void logWarn(String,Any?)
+# void logError(String,Any?)
++ void setLoggingLevel(SLF4JLevel)
+}
+
+
+class digital.boline.callAssistant.llm.prompt.FieldsMatcher {
+}
+enum digital.boline.callAssistant.llm.prompt.SpecialSectionTitle {
++  METADATA
++  CONSTANTS
++  VARIABLES
++ String getName()
+}
+
+
+class digital.boline.callAssistant.llm.prompt.PromptsParser {
+-  REGEX_VAR
+-  REGEX_CONST
+-  REGEX_LINE_COMMENT
+-  REGEX_BLOCK_COMMENT
+-  INNER_BLOCK_COMMENT
+-  REGEX_SPACES
+-  FIELD_SEPARATOR
+-  REGEX_FIELDS
+-  REGEX_SECTION_TITLE
+-  REGREX_SECTION_TITLE_CHECKER
+-  REGEX_FEASIBLE_FUNCTION_NAME
+- void regrexSpecialSectionTitle(String)
++ ParsedPrompts? parse(String)
++ ParsedPrompts? parse(File)
++ ParsedPrompts parse(StringBuilder)
+- ParsedPrompts parseAll(StringBuilder)
+- StringBuilder? loadFileAsText(File)
+- void removeRegrex(StringBuilder,Pattern,(Matcher)->Unit)
+- void removeComments(StringBuilder)
+- void normalizeWhitespace(StringBuilder)
+- void checkTitleFormat(StringBuilder)
+- FieldsMatcher<FieldsMap> parseSpecialSections(StringBuilder,SpecialSectionTitle)
+- FieldsMatcher<List<String>> extractSpecialSection(StringBuilder,String)
+- void checkVariableDefinition(MutableMap<String, String>)
+- void removeSpecialSections(StringBuilder,FieldsMatcher<*>)
+- Map<String, String> parsePrompts(StringBuilder,ParsedPrompts)
+- StringBuilder replaceConstantsPlaceholders(String,ParsedPrompts)
+- MutableMap<String, MutableOccurrences> storeVariablesOccurrences(ParsedPrompts)
+}
+
+
+class digital.boline.callAssistant.llm.message.MessageData$Companion {
++  SUMMARY_IDS_KEY
++  ATTRIBUTES_KEY
++  DATA_KEY
++  TIMING_KEY
+}
+
+class digital.boline.callAssistant.llm.message.MessageData {
++ List<String>? summaryIds
+- MutableList<MetaAttribute>? mutableAttributes
++ List<MetaAttribute>? attributes
+- MutableMap<String, Any>? mutableData
++ Map<String, Any>? data
+- MutableMap<MetaTiming, Long>? mutableTiming
++ Map<MetaTiming, Long>? timing
++ void addAttributes(MetaAttribute)
++ void addData(String,Any)
++ void addTiming(MetaTiming,Long)
++ Map<String, Any?> toMap()
++ void toString()
++ Boolean equals(Any?)
++ void hashCode()
+}
+
+
+class digital.boline.callAssistant.llm.message.MetaMessage$Builder {
++ Builder setRole(MetaRole)
++ Builder addContents(List<String>)
++ MessageWrapper.Builder<M> setId(String)
++ MetaMessage<M> public()
++ void toString()
++ void hashCode()
++ void equals(Any?)
+}
+
+class digital.boline.callAssistant.llm.message.MetaMessage$Companion {
++ MessageWrapper.Builder<M> build(LlmMessage.Builder<M>)
+}
+
+class digital.boline.callAssistant.llm.message.MetaMessage {
+-  mutableContents
++ List<String> contents
++ MetaRole role
++  metadata
++  id
++ M rawMessage
++ String toString()
++ Boolean equals(Any?)
++ Int hashCode()
+}
+
+
+class digital.boline.callAssistant.speech2text.AwsTranscribe$Companion {
+-  LANGUAGE_CODE
+-  AUDIO_STREAM_CHUNK_SIZE_IN_BYTES
+-  SAMPLE_RATE
+-  MEDIA_ENCODING
+}
+
+class digital.boline.callAssistant.speech2text.AwsTranscribe {
+- TranscribeStreamingAsyncClient? client
+- StartStreamTranscriptionRequest? request
+- CompletableFuture<Void>? transcribeJob
+- TranscribeStreamingAsyncClient initClient()
+- StartStreamTranscriptionRequest initRequest()
++ void doActivate()
++ void doComputeAsync(Unit)
+- void getResponseHandler()
++ void doStop()
++ void doDeactivate()
+}
+
+
+class digital.boline.callAssistant.speech2text.AudioStreamPublisher$Companion {
+- SubscriptionImpl? currentSubscription
+-  mutex
++ void stop()
+}
+
+
+class digital.boline.callAssistant.speech2text.AudioStreamPublisher {
++ void subscribe(Subscriber<in AudioStream?>)
+}
+
+class digital.boline.callAssistant.speech2text.SubscriptionImpl {
+- ExecutorService executor
+-  demand
+-  isOpen
+- ByteBuffer getNextEvent()
++ void request(Long)
++ void cancel()
++ void stop()
+}
+
+
+class digital.boline.callAssistant.llm.message.MessagesManager$Companion {
++  FAKE_MESSAGE_CONTENTS
+}
+
+class digital.boline.callAssistant.llm.message.MessagesManager {
+-  firstLlmMessageIdx
+-  messageMapIdx
+-  mutableMessages
+-  lastSummaryMessageIdx
++ List<MessageWrapper<M>> metaMessages
++ List<M> messages
++ String toString()
++ void addUser(List<String>)
++ void addAssistant(List<String>)
++ void addUser(String)
++ void addAssistant(String)
++ MessageWrapper<M>? addMessage(MetaRole,List<String>)
+- MessageWrapper.Builder<M> addFistMessage(MetaRole,List<String>)
+- MessageWrapper.Builder<M> addFollowingMessage(MetaRole,List<String>)
+- MessageWrapper.Builder<M> addNewMessage(MetaRole,List<String>,Int?)
+- Int getLasMessage((MessageWrapper.Builder<M>) -> Boolean)
++ Summarizing getSummaryInfo()
++ void addSummary(String,Summarizing)
++ MessageWrapper<M>? addSummary(List<String>,Summarizing)
++ MessageWrapper<M>? getLastSummary()
++ List<Map<String, Any>> toMessagesMap(Boolean,Boolean)
+}
+
+
+class digital.boline.callAssistant.llm.message.Summarizing$SummarizingMessage {
++ String format()
+}
+
+class digital.boline.callAssistant.llm.message.Summarizing$Formatter {
+-  USER_TAG
+-  ASSISTANT_TAG
+-  SUMMARY_TAG
+-  PREFIX
+- (String) -> String TRANSFORMER
+-  SEPARATOR
+-  POSTFIX
+- String SUMMARY_CLOSURE
+- String CLOSURE
++ String userTag
++ String assistantTag
++ String summaryTag
++ String prefix
++ String postfix
++ String summaryClosure
++ String closure
++ String separator
++ (String) -> String transformer
++ void roleTag(MetaRole)
+}
+
+
+class digital.boline.callAssistant.llm.message.Summarizing {
++ String format(String,Boolean)
++ void toString()
++ List<Int> getIndexes()
++ void isEmpty()
+}
+
+interface digital.boline.callAssistant.llm.LlmRequest {
++ P prompts
++ M messages
++ String modelName
++ Float temperature
++ Float topP
++ Int maxTokens
+}
+
+interface digital.boline.callAssistant.llm.LlmResponse {
++ String message
++ Long responseLatency
++ Int inputToken
++ Int outputToken
+}
+
+abstract class digital.boline.callAssistant.llm.LlmInteract {
++  onResultCallbacks
+}
+
+class digital.boline.callAssistant.llm.prompt.SerializationFiles {
+}
+interface digital.boline.callAssistant.ServiceInterface {
++ AtomicBoolean isComputing
++ Boolean computeAsync(I,FrequentTimeout?)
++ Boolean wait(Timeout?)
++ Boolean stop()
+}
+
+
+class digital.boline.callAssistant.Timeout$Companion {
+# Long DEFAULT_TIMEOUT
+#  DEFAULT_CALLBACK
+# void timeoutToString(Long)
+# void callbackToString((() -> Unit)?)
+}
+
+
+class digital.boline.callAssistant.Timeout {
++ void invokeCallback()
++ void toString()
+}
+
+class digital.boline.callAssistant.FrequentTimeout$Companion {
+- Long DEFAULT_CHECK_PERIOD
+}
+
+class digital.boline.callAssistant.FrequentTimeout {
++ void toString()
+}
+
+enum digital.boline.callAssistant.ErrorSource {
++  ACTIVATING
++  COMPUTING
++  TIMEOUT
++  WAITING
++  STOPPING
++  DEACTIVATING
+}
+
+class digital.boline.callAssistant.ServiceError {
+}
+abstract class digital.boline.callAssistant.Service {
+# String serviceName
+- Job? computingJob
+- Job? timeoutJob
+- AtomicLong? timeoutStart
++  onErrorCallbacks
++  isComputing
+# Boolean checkComputingState(Boolean,String)
++ Boolean computeAsync(I,FrequentTimeout?)
+# void doComputeAsync(I)
+- void doCheckTimeoutAsync(FrequentTimeout)
+# void resetTimeout()
++ Boolean wait(Timeout?)
+# void doWait()
++ Boolean stop()
+# void doStop()
+# void doThrow(Throwable,ErrorSource)
+# Boolean? doThrow(ServiceError)
+}
+
+
+interface digital.boline.callAssistant.ReusableServiceInterface {
++ AtomicBoolean isActive
++ Boolean activate()
++ Boolean deactivate()
+}
+
+
+abstract class digital.boline.callAssistant.ReusableService {
++  isActive
++ Boolean checkComputingState(Boolean,String)
+- Boolean checkActiveState(Boolean,String)
++ Boolean activate()
+# void doActivate()
++ Boolean deactivate()
+# void doDeactivate()
+}
+
+
+interface digital.boline.callAssistant.CallbackManagerInterface {
++ String add(((I) -> O))
++ void remove(((I) -> O))
++ void clear()
++ Map<String, O> invoke(I)
++ ((I) -> O)? getCallbacks(String)
+}
+
+class digital.boline.callAssistant.CallbackManager$Companion {
++ String getCallbackIdentifier(((I) -> O))
+}
+
+class digital.boline.callAssistant.CallbackManager {
+-  serviceName
+- MutableMap<String, ((I) -> O)> callbacks
++ ((I) -> O)? getCallbacks(String)
++ String add(((I) -> O))
++ void remove(((I) -> O))
++ void clear()
++ Map<String, O> invoke(I)
+}
+
+
+interface digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface {
++ CallbackManager<C, Unit> onBeginPlayingCallbacks
++ CallbackManager<C, Unit> onEndPlayingCallbacks
+}
+
+abstract class digital.boline.callAssistant.text2speech.Text2SpeechPlayer {
+}
+abstract class digital.boline.callAssistant.text2speech.Text2Speech {
+# InputStream? fetchAudio(String)
++ void doComputeAsync(String)
++ void doWait()
++ void doStop()
+}
+
+class digital.boline.callAssistant.text2speech.AwsPolly$Companion {
+-  VOICE_NAME
+-  VOICE_TYPE
+-  MAX_TEXT_LENGTH
+}
+
+class digital.boline.callAssistant.text2speech.AwsPolly {
+- PollyClient? client
+- Voice? voice
+- PollyClient initializeClient()
+- Voice initializeVoice()
++ void doActivate()
++ void doDeactivate()
++ InputStream? fetchAudio(String)
+}
+
+
+
+
+digital.boline.callAssistant.llm.message.AwsMessage +.. digital.boline.callAssistant.llm.message.AwsMessage$Builder
+digital.boline.callAssistant.llm.message.Builder <|.. digital.boline.callAssistant.llm.message.AwsMessage$Builder
+digital.boline.callAssistant.llm.message.AwsMessage +.. digital.boline.callAssistant.llm.message.AwsMessage$Companion
+digital.boline.callAssistant.llm.message.LlmMessage <|.. digital.boline.callAssistant.llm.message.AwsMessage
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.AwsMessage
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.DynamoDBMessage
+digital.boline.callAssistant.ApplicationRunner +.. digital.boline.callAssistant.ApplicationRunner$Companion
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.ApplicationRunner
+digital.boline.callAssistant.llm.AwsBedrockRequest +.. digital.boline.callAssistant.llm.AwsBedrockRequest$Companion
+digital.boline.callAssistant.llm.LlmRequest <|.. digital.boline.callAssistant.llm.AwsBedrockRequest
+digital.boline.callAssistant.llm.LlmResponse <|.. digital.boline.callAssistant.llm.AwsBedrockResponse
+digital.boline.callAssistant.llm.LlmInteract <|-- digital.boline.callAssistant.llm.AwsBedrock
+digital.boline.callAssistant.ReusableService <|-- digital.boline.callAssistant.speech2text.Speech2Text
+digital.boline.callAssistant.text2speech.Text2SpeechPlayer <|-- digital.boline.callAssistant.text2speech.DesktopAudioPlayer
+digital.boline.callAssistant.llm.message.LlmMessage +.. digital.boline.callAssistant.llm.message.LlmMessage$Builder
+digital.boline.callAssistant.llm.message.LoggableInterface <|.. digital.boline.callAssistant.llm.message.LlmMessage$Builder
+digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.message.LlmMessage
+digital.boline.callAssistant.llm.message.Builder +.. digital.boline.callAssistant.llm.message.Builder$Companion
+digital.boline.callAssistant.llm.message.MessageWrapper$Builder +.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder$Companion
+digital.boline.callAssistant.llm.message.MessageWrapper +.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder
+digital.boline.callAssistant.llm.message.LoggableInterface <|.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder
+digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.message.MessageWrapper
+digital.boline.callAssistant.llm.prompt.ParsedPrompts +.. digital.boline.callAssistant.llm.prompt.ParsedPrompts$Companion
+digital.boline.callAssistant.llm.prompt.TypedPrompts <|-- digital.boline.callAssistant.llm.prompt.ParsedPrompts
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.PromptsDeserializer
+digital.boline.callAssistant.speech2text.Speech2TextStreamBuilder <|.. digital.boline.callAssistant.speech2text.DesktopMicrophone
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.speech2text.DesktopMicrophone
+digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.prompt.Prompts
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.SimplePrompt
+digital.boline.callAssistant.llm.prompt.Prompts <|.. digital.boline.callAssistant.llm.prompt.SimplePrompt
+digital.boline.callAssistant.llm.prompt.TypedPrompts +.. digital.boline.callAssistant.llm.prompt.TypedPrompts$Companion
+digital.boline.callAssistant.llm.prompt.SimplePrompt <|-- digital.boline.callAssistant.llm.prompt.TypedPrompts
+digital.boline.callAssistant.llm.prompt.PromptsManager +.. digital.boline.callAssistant.llm.prompt.PromptsManager$Companion
+digital.boline.callAssistant.llm.prompt.TypedPrompts <|-- digital.boline.callAssistant.llm.prompt.PromptsManager
+digital.boline.callAssistant.llm.prompt.PromptsManager <|-- digital.boline.callAssistant.llm.prompt.PromptsManagerImpl
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.VariablesFunction
+digital.boline.callAssistant.Factory +.. digital.boline.callAssistant.Factory$Companion
+digital.boline.callAssistant.LoggableInterface$Factory +.. digital.boline.callAssistant.LoggableInterface$Factory$Companion
+digital.boline.callAssistant.LoggableInterface +.. digital.boline.callAssistant.LoggableInterface$Factory
+digital.boline.callAssistant.LoggableInterface +.. digital.boline.callAssistant.LoggableInterface$Companion
+digital.boline.callAssistant.Loggable +.. digital.boline.callAssistant.Loggable$Companion
+digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.Loggable
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.PromptsParser
+digital.boline.callAssistant.llm.message.MessageData +.. digital.boline.callAssistant.llm.message.MessageData$Companion
+digital.boline.callAssistant.llm.message.MetaData <|.. digital.boline.callAssistant.llm.message.MessageData
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MessageData
+digital.boline.callAssistant.llm.message.MetaMessage +.. digital.boline.callAssistant.llm.message.MetaMessage$Builder
+digital.boline.callAssistant.llm.message.Builder <|.. digital.boline.callAssistant.llm.message.MetaMessage$Builder
+digital.boline.callAssistant.llm.message.MetaMessage +.. digital.boline.callAssistant.llm.message.MetaMessage$Companion
+digital.boline.callAssistant.llm.message.MessageWrapper <|.. digital.boline.callAssistant.llm.message.MetaMessage
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MetaMessage
+digital.boline.callAssistant.speech2text.AwsTranscribe +.. digital.boline.callAssistant.speech2text.AwsTranscribe$Companion
+digital.boline.callAssistant.speech2text.Speech2Text <|-- digital.boline.callAssistant.speech2text.AwsTranscribe
+digital.boline.callAssistant.speech2text.AudioStreamPublisher +.. digital.boline.callAssistant.speech2text.AudioStreamPublisher$Companion
+org.reactivestreams.Publisher <|.. digital.boline.callAssistant.speech2text.AudioStreamPublisher
+org.reactivestreams.Subscription <|.. digital.boline.callAssistant.speech2text.SubscriptionImpl
+digital.boline.callAssistant.llm.message.MessagesManager +.. digital.boline.callAssistant.llm.message.MessagesManager$Companion
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MessagesManager
+digital.boline.callAssistant.llm.message.Summarizing +.. digital.boline.callAssistant.llm.message.Summarizing$SummarizingMessage
+digital.boline.callAssistant.llm.message.Summarizing +.. digital.boline.callAssistant.llm.message.Summarizing$Formatter
+digital.boline.callAssistant.ReusableService <|-- digital.boline.callAssistant.llm.LlmInteract
+digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.ServiceInterface
+digital.boline.callAssistant.Timeout +.. digital.boline.callAssistant.Timeout$Companion
+digital.boline.callAssistant.FrequentTimeout +.. digital.boline.callAssistant.FrequentTimeout$Companion
+digital.boline.callAssistant.Timeout <|-- digital.boline.callAssistant.FrequentTimeout
+digital.boline.callAssistant.ServiceInterface <|.. digital.boline.callAssistant.Service
+digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.Service
+digital.boline.callAssistant.ServiceInterface <|.. digital.boline.callAssistant.ReusableServiceInterface
+digital.boline.callAssistant.ReusableServiceInterface <|.. digital.boline.callAssistant.ReusableService
+digital.boline.callAssistant.Service <|-- digital.boline.callAssistant.ReusableService
+digital.boline.callAssistant.CallbackManager +.. digital.boline.callAssistant.CallbackManager$Companion
+digital.boline.callAssistant.CallbackManagerInterface <|.. digital.boline.callAssistant.CallbackManager
+digital.boline.callAssistant.text2speech.ServiceInterface <|.. digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface
+digital.boline.callAssistant.text2speech.Service <|-- digital.boline.callAssistant.text2speech.Text2SpeechPlayer
+digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface <|.. digital.boline.callAssistant.text2speech.Text2SpeechPlayer
+digital.boline.callAssistant.text2speech.ReusableService <|-- digital.boline.callAssistant.text2speech.Text2Speech
+digital.boline.callAssistant.text2speech.AwsPolly +.. digital.boline.callAssistant.text2speech.AwsPolly$Companion
+digital.boline.callAssistant.text2speech.Text2Speech <|-- digital.boline.callAssistant.text2speech.AwsPolly
+@enduml

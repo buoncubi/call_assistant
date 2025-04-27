@@ -11,18 +11,23 @@ class digital.boline.callAssistant.llm.AwsBedrockRequest$Companion {
 }
 
 class digital.boline.callAssistant.llm.AwsBedrockRequest {
++ <<Create>> AwsBedrockRequest(List<SystemContentBlock>,List<Message>,Int,Float,Float,String)
 }
+
 class digital.boline.callAssistant.llm.AwsBedrockResponse {
++ <<Create>> AwsBedrockResponse(String,Long,Int,Int,String)
 }
+
 class digital.boline.callAssistant.llm.AwsBedrock {
 - BedrockRuntimeAsyncClient? client
 - CompletableFuture<Void>? llmJob
 - ConverseStreamResponseHandler? requestHandler
-+ void doActivate()
-+ void doDeactivate()
++ String sourceTag
++ void doActivate(String)
++ void doDeactivate(String)
 - ConverseStreamResponseHandler buildResponseHandler()
-+ void doComputeAsync(AwsBedrockRequest)
-+ void doStop()
++ void doComputeAsync(AwsBedrockRequest,String)
++ void doStop(String)
 }
 
 
@@ -40,9 +45,10 @@ interface digital.boline.callAssistant.llm.LlmResponse {
 + Long responseLatency
 + Int inputToken
 + Int outputToken
++ String sourceTag
 }
 
-abstract class digital.boline.callAssistant.llm.LlmInteract {
+abstract class digital.boline.callAssistant.llm.LlmService {
 +  onResultCallbacks
 }
 
@@ -51,6 +57,7 @@ abstract class digital.boline.callAssistant.llm.LlmInteract {
 digital.boline.callAssistant.llm.AwsBedrockRequest +.. digital.boline.callAssistant.llm.AwsBedrockRequest$Companion
 digital.boline.callAssistant.llm.LlmRequest <|.. digital.boline.callAssistant.llm.AwsBedrockRequest
 digital.boline.callAssistant.llm.LlmResponse <|.. digital.boline.callAssistant.llm.AwsBedrockResponse
-digital.boline.callAssistant.llm.LlmInteract <|-- digital.boline.callAssistant.llm.AwsBedrock
-digital.boline.callAssistant.ReusableService <|-- digital.boline.callAssistant.llm.LlmInteract
+digital.boline.callAssistant.llm.LlmService <|-- digital.boline.callAssistant.llm.AwsBedrock
+digital.boline.callAssistant.CallbackInput <|.. digital.boline.callAssistant.llm.LlmResponse
+digital.boline.callAssistant.ReusableService <|-- digital.boline.callAssistant.llm.LlmService
 @enduml

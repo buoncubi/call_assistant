@@ -1,9 +1,15 @@
 @startuml
+class digital.boline.callAssistant.ServiceInterface$Companion {
++  UNKNOWN_SOURCE_TAG
+}
+
 interface digital.boline.callAssistant.ServiceInterface {
 + AtomicBoolean isComputing
-+ Boolean computeAsync(I,FrequentTimeout?)
-+ Boolean wait(Timeout?)
-+ Boolean stop()
++ Boolean canCompute()
++ Boolean computeAsync(I,FrequentTimeout?,String)
++ Boolean wait(Timeout?,String)
++ Boolean stop(String)
++ void cancelScope()
 }
 
 
@@ -11,13 +17,13 @@ class digital.boline.callAssistant.Timeout$Companion {
 # Long DEFAULT_TIMEOUT
 #  DEFAULT_CALLBACK
 # void timeoutToString(Long)
-# void callbackToString((() -> Unit)?)
+# void callbackToString(((String) -> Unit)?)
 }
 
 
 class digital.boline.callAssistant.Timeout {
-+ <<Create>> Timeout(Long,(() -> Unit)?)
-+ void invokeCallback()
++ <<Create>> Timeout(Long,((String) -> Unit)?)
++ void invokeCallback(String)
 + void toString()
 }
 
@@ -26,7 +32,7 @@ class digital.boline.callAssistant.FrequentTimeout$Companion {
 }
 
 class digital.boline.callAssistant.FrequentTimeout {
-+ <<Create>> FrequentTimeout(Long,Long,(() -> Unit)?)
++ <<Create>> FrequentTimeout(Long,Long,((String) -> Unit)?)
 + void toString()
 }
 
@@ -42,35 +48,39 @@ enum digital.boline.callAssistant.ErrorSource {
 
 
 class digital.boline.callAssistant.ServiceError {
-+ <<Create>> ServiceError(Throwable,ErrorSource)
++ <<Create>> ServiceError(Throwable,ErrorSource,String)
 }
 
 abstract class digital.boline.callAssistant.Service {
-# String serviceName
 - Job? computingJob
 - Job? timeoutJob
 - AtomicLong? timeoutStart
+#  isScopeCancelled
 +  onErrorCallbacks
 +  isComputing
 + <<Create>> Service(CoroutineScope)
 # Boolean checkComputingState(Boolean,String)
-+ Boolean computeAsync(I,FrequentTimeout?)
-# void doComputeAsync(I)
-- void doCheckTimeoutAsync(FrequentTimeout)
++ Boolean canCompute()
++ Boolean computeAsync(I,FrequentTimeout?,String)
+# void doComputeAsync(I,String)
+- void doCheckTimeoutAsync(FrequentTimeout,String)
 # void resetTimeout()
-+ Boolean wait(Timeout?)
-# void doWait()
-+ Boolean stop()
-# void doStop()
-# void doThrow(Throwable,ErrorSource)
++ Boolean wait(Timeout?,String)
+# void doWait(String)
++ Boolean stop(String)
+# void doStop(String)
+# void doThrow(Throwable,ErrorSource,String)
 # Boolean? doThrow(ServiceError)
++ void cancelScope()
 }
 
 
 interface digital.boline.callAssistant.ReusableServiceInterface {
 + AtomicBoolean isActive
-+ Boolean activate()
-+ Boolean deactivate()
++ Boolean canActivate()
++ Boolean activate(String)
++ Boolean canDeactivate()
++ Boolean deactivate(String)
 }
 
 
@@ -79,16 +89,14 @@ abstract class digital.boline.callAssistant.ReusableService {
 + <<Create>> ReusableService(CoroutineScope)
 + Boolean checkComputingState(Boolean,String)
 - Boolean checkActiveState(Boolean,String)
-+ Boolean activate()
-# void doActivate()
-+ Boolean deactivate()
-# void doDeactivate()
++ Boolean canActivate()
++ Boolean activate(String)
+# void doActivate(String)
++ Boolean canDeactivate()
++ Boolean deactivate(String)
+# void doDeactivate(String)
 }
 
-
-class digital.boline.callAssistant.CallbackManagerInterface$Companion {
-+ String getCallbackIdentifier(((I) -> O))
-}
 
 interface digital.boline.callAssistant.CallbackManagerInterface {
 + String add(((I) -> O))
@@ -99,10 +107,22 @@ interface digital.boline.callAssistant.CallbackManagerInterface {
 + ((I) -> O)? getCallbacks(String)
 }
 
+interface digital.boline.callAssistant.CallbackInput {
++ String sourceTag
+}
+
+class digital.boline.callAssistant.SimpleCallbackInput {
++ <<Create>> SimpleCallbackInput(String)
+}
+
+class digital.boline.callAssistant.CallbackManager$Companion {
++ String getCallbackIdentifier(((I) -> O))
+}
+
 class digital.boline.callAssistant.CallbackManager {
 -  serviceName
 - MutableMap<String, ((I) -> O)> callbacks
-+ <<Create>> CallbackManager(CentralizedLogger,String?)
++ <<Create>> CallbackManager(CentralizedLogger)
 + ((I) -> O)? getCallbacks(String)
 + String add(((I) -> O))
 + void remove(((I) -> O))
@@ -114,15 +134,18 @@ class digital.boline.callAssistant.CallbackManager {
 
 
 
+digital.boline.callAssistant.ServiceInterface +.. digital.boline.callAssistant.ServiceInterface$Companion
 digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.ServiceInterface
 digital.boline.callAssistant.Timeout +.. digital.boline.callAssistant.Timeout$Companion
 digital.boline.callAssistant.FrequentTimeout +.. digital.boline.callAssistant.FrequentTimeout$Companion
 digital.boline.callAssistant.Timeout <|-- digital.boline.callAssistant.FrequentTimeout
+digital.boline.callAssistant.CallbackInput <|.. digital.boline.callAssistant.ServiceError
 digital.boline.callAssistant.ServiceInterface <|.. digital.boline.callAssistant.Service
 digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.Service
 digital.boline.callAssistant.ServiceInterface <|.. digital.boline.callAssistant.ReusableServiceInterface
 digital.boline.callAssistant.ReusableServiceInterface <|.. digital.boline.callAssistant.ReusableService
 digital.boline.callAssistant.Service <|-- digital.boline.callAssistant.ReusableService
-digital.boline.callAssistant.CallbackManagerInterface +.. digital.boline.callAssistant.CallbackManagerInterface$Companion
+digital.boline.callAssistant.CallbackInput <|.. digital.boline.callAssistant.SimpleCallbackInput
+digital.boline.callAssistant.CallbackManager +.. digital.boline.callAssistant.CallbackManager$Companion
 digital.boline.callAssistant.CallbackManagerInterface <|.. digital.boline.callAssistant.CallbackManager
 @enduml

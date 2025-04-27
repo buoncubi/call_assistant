@@ -75,6 +75,14 @@ Note that the exception handling is implemented by the `doThrow` method, which c
 always possible to catch for a particular exception but, in this case, we suggest throwing back the exception such to 
 propagate that exception to the callbacks stored in `onErrorCallbacks`. 
 
+#### Source Tag
+
+The service interface allow defining a `sourceTag` identifier to most of its features, e.g., `computingAsync`, `wait`, 
+`stop`, `activate` and `deactivate`. Such an identifier is optional string and, if not specified, it would be an empty.
+It is not processed by the service itself, but it is only propagated to its callbacks, including: on error, on result,
+and on timeout callbacks. The `sourceTag` can be used for passing data from the class that uses the service and the
+callbacks it triggers. 
+
 #### Service Implementation
 
 In other to achieve such a behaviour, the developer need to design a concrete class that extends the abstract class

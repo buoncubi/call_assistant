@@ -10,7 +10,7 @@ class digital.boline.callAssistant.LoggableInterface$Factory$Companion {
 
 class digital.boline.callAssistant.LoggableInterface$Factory {
 + Logger slf4jLogger
-+ <<Create>> Factory(LoggableInterface)
++ <<Create>> Factory(Class<out LoggableInterface>)
 }
 
 
@@ -19,12 +19,14 @@ class digital.boline.callAssistant.LoggableInterface$Companion {
 }
 
 interface digital.boline.callAssistant.LoggableInterface {
-+ void loggerFactory()
++ void loggerFactory(Class<out LoggableInterface>?)
 }
 
 class digital.boline.callAssistant.CentralizedLogger {
 -  loggerTag
++  logsFor
 + <<Create>> CentralizedLogger(Class<out LoggableInterface>,Logger)
++ void setLevel(SLF4JLevel)
 + void trace(String,Any?)
 + void debug(String,Any?)
 + void info(String,Any?)
@@ -46,6 +48,7 @@ class digital.boline.callAssistant.Loggable {
 # void logInfo(String,Any?)
 # void logWarn(String,Any?)
 # void logError(String,Any?)
++ void setLoggingLevel(SLF4JLevel)
 }
 
 

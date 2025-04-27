@@ -124,52 +124,67 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="-aws-transcribe/index.html">AwsTranscribe</a> : <a href="-speech2-text-async/index.html">Speech2TextAsync</a><span class="token operator">&lt;</span><a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.base/java/io/InputStream.html">InputStream</a><span class="token operator">?</span><span class="token punctuation">, </span><span data-unresolved-link="software.amazon.awssdk.services.transcribestreaming.model/Result///PointingToDeclaration/">Result</span><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">It is a class implementing the <a href="-speech2-text-interface/index.html">Speech2TextInterface</a> based on AWS Transcribe Streaming service for real-time audio transcription. It parametrises the audio input as <a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.base/java/io/InputStream.html">InputStream</a>, while the outputs are AWS <span data-unresolved-link="software.amazon.awssdk.services.transcribestreaming.model/Result///PointingToDeclaration/">Result</span>. However, this class is not instantiable since it proves a more abstract implementation, which is agonist by the type actual source of input stream.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-aws-transcribe/index.html">AwsTranscribe</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">inputStreamBuilder<span class="token operator">: </span><a href="-speech2-text-stream-builder/index.html">Speech2TextStreamBuilder</a></span></span><span class="token punctuation">)</span> : <a href="-speech2-text/index.html">Speech2Text</a><span class="token operator">&lt;</span><span data-unresolved-link="software.amazon.awssdk.services.transcribestreaming.model/Result///PointingToDeclaration/">Result</span><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">The class implementing <a href="-speech2-text/index.html">Speech2Text</a> based on AWS Transcribe Streaming service for real-time audio streaming transcription.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-335286334%2FClasslikes%2F-251573632" anchor-label="AwsTranscribeFromMicrophone" id="-335286334%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
+<a data-name="1160839170%2FClasslikes%2F-251573632" anchor-label="DesktopMicrophone" id="1160839170%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
           <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-aws-transcribe-from-microphone/index.html"><span>Aws</span><wbr></wbr><span>Transcribe</span><wbr></wbr><span>From</span><wbr></wbr><span><span>Microphone</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-335286334%2FClasslikes%2F-251573632"></span>
+                  <div><a href="-desktop-microphone/index.html"><span>Desktop</span><wbr></wbr><span><span>Microphone</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1160839170%2FClasslikes%2F-251573632"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-aws-transcribe-from-microphone/index.html">AwsTranscribeFromMicrophone</a> : <a href="-aws-transcribe/index.html">AwsTranscribe</a></div><div class="brief "><p class="paragraph">A class that extends the capabilities of <a href="-aws-transcribe/index.html">AwsTranscribe</a> to support speech-to-text operations using audio captured directly from the system's microphone.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-desktop-microphone/index.html">DesktopMicrophone</a> : <a href="../digital.boline.callAssistant/-loggable/index.html">Loggable</a>, <a href="-speech2-text-stream-builder/index.html">Speech2TextStreamBuilder</a></div><div class="brief "><p class="paragraph">The object that opens a new<code class="lang-kotlin">InputStream</code> from a desktop microphone to be used with <a href="-speech2-text/index.html">Speech2Text</a> and derived classes.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="148496155%2FClasslikes%2F-251573632" anchor-label="Speech2TextAsync" id="148496155%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
+<a data-name="711595691%2FClasslikes%2F-251573632" anchor-label="Speech2Text" id="711595691%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
           <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-speech2-text-async/index.html"><span>Speech2Text</span><wbr></wbr><span><span>Async</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="148496155%2FClasslikes%2F-251573632"></span>
+                  <div><a href="-speech2-text/index.html"><span><span>Speech2Text</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="711595691%2FClasslikes%2F-251573632"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="-speech2-text-async/index.html">Speech2TextAsync</a><span class="token operator">&lt;</span><a href="-speech2-text-async/index.html">I</a><span class="token punctuation">, </span><a href="-speech2-text-async/index.html">O</a><span class="token operator">&gt;</span> : <a href="../digital.boline.callAssistant/-loggable/index.html">Loggable</a>, <a href="-speech2-text-interface/index.html">Speech2TextInterface</a><span class="token operator">&lt;</span><a href="-speech2-text-async/index.html">O</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">This is the base implementation of the <a href="-speech2-text-interface/index.html">Speech2TextInterface</a> interface in an asynchronous manner.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="-speech2-text/index.html">Speech2Text</a><span class="token operator">&lt;</span><a href="-speech2-text/index.html">R</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">streamBuilder<span class="token operator">: </span><a href="-speech2-text-stream-builder/index.html">Speech2TextStreamBuilder</a></span></span><span class="token punctuation">)</span> : <a href="../digital.boline.callAssistant/-reusable-service/index.html">ReusableService</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-unit/index.html">Unit</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">An abstract class that implements the speech-to-text interface based on <a href="../digital.boline.callAssistant/-reusable-service/index.html">ReusableService</a>, which does take nothing as input parameter for make its computation.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="899461118%2FClasslikes%2F-251573632" anchor-label="Speech2TextInterface" id="899461118%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
+<a data-name="-1495486340%2FClasslikes%2F-251573632" anchor-label="Speech2TextStreamBuilder" id="-1495486340%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
           <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-speech2-text-interface/index.html"><span>Speech2Text</span><wbr></wbr><span><span>Interface</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="899461118%2FClasslikes%2F-251573632"></span>
+                  <div><a href="-speech2-text-stream-builder/index.html"><span>Speech2Text</span><wbr></wbr><span>Stream</span><wbr></wbr><span><span>Builder</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1495486340%2FClasslikes%2F-251573632"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-speech2-text-interface/index.html">Speech2TextInterface</a><span class="token operator">&lt;</span><a href="-speech2-text-interface/index.html">O</a><span class="token operator">&gt;</span> : <a href="../digital.boline.callAssistant/-loggable-interface/index.html">LoggableInterface</a></div><div class="brief "><p class="paragraph">Interface representing a Speech-to-Text functionality. This interface allows adding and removing callbacks that handle recognized speech data and provides methods to control the start and stop of the listening process, which should occur asynchronously.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-speech2-text-stream-builder/index.html">Speech2TextStreamBuilder</a></div><div class="brief "><p class="paragraph">The interface to build <code class="lang-kotlin">InputStream</code>, as required by the <a href="-speech2-text/index.html">Speech2Text</a> and derived classes.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1821321315%2FClasslikes%2F-251573632" anchor-label="SubscriptionImpl" id="-1821321315%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-subscription-impl/index.html"><span>Subscription</span><wbr></wbr><span><span>Impl</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1821321315%2FClasslikes%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-subscription-impl/index.html">SubscriptionImpl</a> : <span data-unresolved-link="org.reactivestreams/Subscription///PointingToDeclaration/">Subscription</span></div><div class="brief "><p class="paragraph">Implementation of the Subscription interface to stream audio data to AWS Transcribe.</p></div></div></div>
                 </div>
               </div>
             </div>

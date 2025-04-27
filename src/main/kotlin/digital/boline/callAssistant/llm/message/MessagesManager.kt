@@ -1,5 +1,6 @@
 package digital.boline.callAssistant.llm.message
 
+import digital.boline.callAssistant.CentralizedLogger
 import digital.boline.callAssistant.Loggable
 
 
@@ -38,10 +39,11 @@ import digital.boline.callAssistant.Loggable
  * messages that are constructed and managed. For this reason, the constructor of this class should be something similar
  * to (see [LlmMessage.Builder] [MessageWrapper.Builder] for more):
  * ```
- * val manager = MessageManager {
- *         MyWrapper<M>.build(MyMessage.build())
+ * val manager = MessageManager { logger: CentralizedLogger ->
+ *         MyWrapper<M>.build(MyMessage.build(logger), logger)
  *     }
  * ```
+ * Note that this lambda function is also in charge to propagate the logger from the `MessageManager` to the messages.
  *
  * Messages to be managed can be introduced with the [addUser] and [addAssistant] methods, and the
  * implementation is such to assure that:
@@ -77,7 +79,8 @@ import digital.boline.callAssistant.Loggable
  *
  * @constructor Requires a factory-based lambda function that is able to create instances of [MessageWrapper.Builder],
  * which in turn build instances of [LlmMessage.Builder]. This lambda function is used all the times a new message is
- * added to the list of messages through [addUser], [addAssistant], [addSummary].
+ * added to the list of messages through [addUser], [addAssistant], [addSummary]. Also note that this lambda function
+ * should propagate the logger from the `MessageManager` to the instantiated messages.
  *
  * @param M The type of message as required by the LLM provider
  *
@@ -120,9 +123,9 @@ import digital.boline.callAssistant.Loggable
  * @see MessageWrapper
  * @see AwsMessage
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
-class MessagesManager<M>(private val messageBuilder: () -> MessageWrapper.Builder<M>) : Loggable() {
+class MessagesManager<M>(private val messageBuilder: (logger: CentralizedLogger) -> MessageWrapper.Builder<M>) : Loggable() {
 
     companion object {
         /**
@@ -407,8 +410,8 @@ class MessagesManager<M>(private val messageBuilder: () -> MessageWrapper.Builde
      * and [addSummary]
      *
      * It uses [messageBuilder] to instance a new message and sets its `role` with [MessageWrapper.Builder.setRole],
-     * and `contents` with [MessageWrapper.Builder.addContents] (note that the latter does not add blank string to the
-     * contents).
+     * and `contents` with [MessageWrapper.Builder.addContents] (note that the latter does not add strings to the
+     * `contents` if they are empty).
      *
      * @param role The [MetaRole] to be assigned with the new message.
      * @param contents The string-based set of contents for the new message. It would never be empty.
@@ -418,7 +421,7 @@ class MessagesManager<M>(private val messageBuilder: () -> MessageWrapper.Builde
      */
     private fun addNewMessage(role: MetaRole, contents: List<String>, index: Int? = null): MessageWrapper.Builder<M> {
         // Add message normally.
-        val message = messageBuilder()  // Create new builder instance for each message
+        val message = messageBuilder(logger)  // Create new builder instance for each message
             .setRole(role)
             .addContents(contents)
         message.public().metadata.addTiming(MetaTiming.CREATION)
@@ -594,6 +597,7 @@ class MessagesManager<M>(private val messageBuilder: () -> MessageWrapper.Builde
 }
 
 
+
 /**
  * The data class used to represent the messages to be summarized. A list of this class it encoded in [Summarizing],
  * given by [MessagesManager.getSummaryInfo], and required by [MessagesManager.addSummary]. It uses
@@ -609,7 +613,7 @@ class MessagesManager<M>(private val messageBuilder: () -> MessageWrapper.Builde
  * @see Summarizing.Formatter
  * @see Summarizing.SummarizingMessage
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 data class Summarizing(val messages: List<SummarizingMessage>,
                        val previousSummary: SummarizingMessage? = null) {
@@ -690,6 +694,7 @@ data class Summarizing(val messages: List<SummarizingMessage>,
      * @see Summarizing.Formatter
      *
      * @author Luca Buoncompagni © 2025
+     * @version 1.0
      */
     data class SummarizingMessage(val role: MetaRole, val contents: List<String>, val index: Int, val id: String) {
 
@@ -742,9 +747,9 @@ data class Summarizing(val messages: List<SummarizingMessage>,
      * @see Summarizing.SummarizingMessage
      *
      * @author Luca Buoncompagni © 2025
+     * @version 1.0
      */
     object Formatter {
-
 
         /**  The default tags associated with [userTag], it is equal to `"User "`. */
         private const val USER_TAG = "User"
@@ -778,6 +783,7 @@ data class Summarizing(val messages: List<SummarizingMessage>,
         private val CLOSURE: String = System.lineSeparator()
 
 
+        // See documentation above.
         var userTag: String = USER_TAG
         var assistantTag: String = ASSISTANT_TAG
         var summaryTag: String = SUMMARY_TAG
@@ -787,6 +793,7 @@ data class Summarizing(val messages: List<SummarizingMessage>,
         var closure: String = CLOSURE
         var separator: String = SEPARATOR
         var transformer: (String) -> String = TRANSFORMER
+
 
         /**
          * Returns the tag associated to the given [role].

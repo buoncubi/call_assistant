@@ -6,18 +6,21 @@ the AWS Transcribe service.
 
 ## Software Architecture
 
-As shown in the UML diagram below, the speech-to-text process in based on the `Speech2Text<R>` abstract class, which
+As shown in the UML diagram below, the speech-to-text process in based on the `Speech2Text` abstract class, which
 extends the `ResusableService<Unit>` with a `computeAsync` method that bridge a real-time audio stream to the 
-speech-to-text service provider . In addition, `Speech2Text<R>` provides an `onResultCallback` that will be invoked when 
-some audio has been translated into a text.
+speech-to-text service provider without taking any input parameters. 
 
-The `Speech2Text<R>` class requires a `Speech2TextStreamBuilder`, which is in charge to open the audio stream for the
+`Speech2Text` provides an `onResultCallbacks` that will be invoked when some audio has been translated into a text. 
+Furthermore, when the user start speaking, the `onStartTranscribingCallbacks` are invoked, while when a final 
+transcription of the audio is obtained, then the `onResultCallbacks` is invoked.
+
+The `Speech2Text` class requires a `Speech2TextStreamBuilder`, which is in charge to open the audio stream for the
 speech-to-text service provider. An example of stream builder based on the microphone is `DesktopMicrophone`.
 
 ## AWS Speech To Text
 
 We provide and implementation based on the AWS Streaming Transcribe service into `AwsTranscribe`. This service handle a
-real time audio stream based on the `AudioStreamPublisher`, which uses a `SubscriptionImpl`. The latter buffer audio
+real time audio stream based on the `AudioStreamPublisher`, which uses `SubscriptionImpl`. The latter buffer audio 
 signal in a separate thread, while the former bridge such a signal with an AWS-based client. In this case, we do not use
 the service interface based on coroutine, but threads, to assure real time processing and parallelism. 
 
@@ -25,47 +28,62 @@ the service interface based on coroutine, but threads, to assure real time proce
 environmental variables): `AWS_TRANSCRIBE_LANGUAGE`, `AWS_TRANSCRIBE_AUDIO_STREAM_CHUNK_SIZE`, `AWS_REGION`, 
 `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN`.
 
+`AwsTranscribe` invokes the `onStartTranscribingCallbacks` when a `partial` audio transcription exceed the limit of a
+certain number of words. Such a mechanisms allows to efficient react in the case the user is interrupting the 
+LLM-based assistant. Also, `AwsTranscribe` invokes the `onResultCallbacks` when a final audio transcription is obtained 
+and the user does not speak for a certain amount of time (i.e., no `partial` transcriptions are obtained within such 
+interval of time). This should avoid invoking the callback with a final transcription while the user is still speaking.
+
 An example of how to use this service is:
+
 ```kotlin
- // Instantiate the service with the ability to read `InputStream` from the microphone.
- val transcriber = AwsTranscribe (DesktopMicrophone)
- 
-// Set the callback invoked when a not final transcription has been provided by AWS Transcribe
-transcriber.onResultCallbacks.add { result: Result ->
-    println("Callback -> ${result.alternatives()[0].transcript()}")
-}
+      // Instantiate the service with the ability to read `InputStream` from the microphone.
+      val transcriber = AwsTranscribe (DesktopMicrophone)
 
-// Set the callback invoked when an error occurred.
-transcriber.onErrorCallbacks.add { se: ServiceError ->
-    println("Error during transcription: ('${se.errorSource}') ${se.throwable.message}")
-}
+      // Set the callback invoked when a not partial transcription has been provided by AWS Transcribe
+      transcriber.onResultCallbacks.add { result: Transcription ->
+          println("Callback -> $result")
+      }
 
-// Initialize the AWS Transcribe resources.
-transcriber.activate()
+      // Set the callback invoked when the user started speaking.
+      transcriber.onStartTranscribingCallbacks.add { 
+          println("The user started speaking!")
+      }
 
-// Define the timeout with its callback
-val timeoutSpec = FrequentTimeout(timeout = 5000, checkPeriod = 100) {
-    println("Computation timeout reached!") // This is called when timeout occurs.
-    // Note that this timeout is reset  everytime some (even partial) audio is converted into text.
-}
+      // Set the callback invoked when an error occurred.
+      transcriber.onErrorCallbacks.add { se: ServiceError ->
+          println("Error during transcription: ('${se.source}', ${se.sourceTag}) ${se.throwable.message}")
+      }
 
-// Start asynchronous listener for the microphone (the timeout is optional).
-transcriber.computeAsync(timeoutSpec)
+      // Initialize the AWS Transcribe resources.
+      transcriber.activate()
 
-// Eventually, wait for the computation to finish (the timeout is optional).
-transcriber.wait(Timeout(timeout = 20000) {
-    println("Waiting timeout reached!")
-})
+      // Define the timeout with its callback
+      val timeoutSpec = FrequentTimeout(timeout = 5000, checkPeriod = 50) { sourceTag ->
+          println("Computation timeout reached! ($sourceTag)") // This is called when timeout occurs.
+         // Note that this timeout is reset  everytime some audio is converted into text.
+      }
 
-// You might want to stop the transcription service.
-transcriber.stop()
+      // Start asynchronous listener for the microphone (the timeout and sourceTag are optional).
+      transcriber.computeAsync(timeoutSpec, "MySourceTag")
 
-// Here you can use `computeAsync` again (together with `wait` or `stop`)...
+      // Eventually, wait for the computation to finish (the timeout is optional).
+      transcriber.wait(Timeout(timeout = 20000) { sourceTag ->
+          println("Waiting timeout reached! ($sourceTag)")
+      })
 
-// Always remember to close the service resources.
-transcriber.deactivate()
+      // You might want to stop the transcription service.
+      transcriber.stop()
 
-// You can re-activate the service and make more computation...
+      // Here you can use `computeAsync` again (together with `wait` or `stop`)...
+
+      // Always remember to close the service resources.
+      transcriber.deactivate()
+
+      // You can re-activate the service and make more computation...
+
+      // Cancel the scope and all related jobs. After this the service cannot be activated again.
+      transcriber.cancelScope()
 ```
 
 

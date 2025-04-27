@@ -23,7 +23,7 @@ import kotlin.jvm.internal.CallableReference
  * @see [PromptsManagerImpl]
  * @see [ParsedPrompts]
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 interface Prompts<K, T>: LoggableInterface {
     val prompts: Map<K,T>
@@ -50,7 +50,7 @@ interface Prompts<K, T>: LoggableInterface {
  * @see [PromptsManagerImpl]
  * @see [ParsedPrompts]
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 abstract class SimplePrompt<K, T, O> : Loggable(), Prompts<K, T> {
 
@@ -123,7 +123,7 @@ abstract class SimplePrompt<K, T, O> : Loggable(), Prompts<K, T> {
  * @see [ParsedPrompts]
  * @see [Occurrences]
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 abstract class TypedPrompts : SimplePrompt<String, String, Occurrences>() {
 
@@ -207,7 +207,7 @@ abstract class TypedPrompts : SimplePrompt<String, String, Occurrences>() {
  * @see [Occurrences]
  * @see [MessagesManager]
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 abstract class PromptsManager : TypedPrompts(){
 
@@ -273,7 +273,7 @@ abstract class PromptsManager : TypedPrompts(){
          * The key of a field in the prompt's `metadata` that is used by [formatPrompts] to give a title to the
          * section involving [messageSummary].
          */
-        private const val MESSAGE_SUMMARY_TITLE_KEY = "*MessageSummaryTitle*"
+        const val MESSAGE_SUMMARY_TITLE_KEY = "*MessageSummaryTitle*"
     }
 }
 
@@ -308,7 +308,7 @@ abstract class PromptsManager : TypedPrompts(){
  * @see [ParsedPrompts]
  * @see [Occurrences]
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 class PromptsManagerImpl private constructor(
     override val metadata: Map<String, String>,
@@ -336,10 +336,6 @@ class PromptsManagerImpl private constructor(
     // The documentation of this function is on `PromptsManager.applyVariables`
     override fun applyVariables() {
         // Check if there are data to work with.
-        if (variables.isEmpty()) {
-            logWarn("No variables to apply into the prompts.")
-            return
-        }
         if (rawPrompts.isEmpty()) {
             logWarn("No prompts to work with.")
             return
@@ -409,7 +405,7 @@ class PromptsManagerImpl private constructor(
  * @see [PromptsManager]
  * @see [PromptsManagerImpl]
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 object VariablesFunction: Loggable() {
 

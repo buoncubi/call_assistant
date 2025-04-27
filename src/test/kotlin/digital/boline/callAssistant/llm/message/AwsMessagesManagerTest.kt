@@ -1,5 +1,6 @@
 package digital.boline.callAssistant.llm.message
 
+import digital.boline.callAssistant.Loggable
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import software.amazon.awssdk.services.bedrockruntime.model.ConversationRole
@@ -11,9 +12,9 @@ import kotlin.test.assertEquals
 
 /**
  * The Unit test for the implementations in the
- * `llmInterface.message` package.
+ * `llm.message` package.
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 class AwsMessagesManagerTest {
 
@@ -32,23 +33,22 @@ class AwsMessagesManagerTest {
         manager.addMessage(MetaRole.USER, listOf("Good, ", "thank you!"))
 
         // Get the messages to be give to the LLM model
-        val llmMessages: List<Message> = manager.messages
+        //val llmMessages: List<Message> = manager.messages
 
         // Perform summarization
         val summaryInfo: Summarizing = manager.getSummaryInfo()  // It will not include the last user message.
-        val toSummarize: String = summaryInfo.format()
-        val summary: String = "..." // TODO: Use LLM to process `toSummarize` and provide a `summary` string.
+        //val toSummarize: String = summaryInfo.format()
+        val summary = "..." // It should use LLM to process `toSummarize` and provide a `summary` string.
         manager.addSummary(summary, summaryInfo)
-        // TODO: use `summary` to augment the LLM prompt for being aware of previous messages.
 
         // Add some other messages
         manager.addAssistant("How can I help you?")
 
         // Get the message after summarization, now previous messages are ignored.
-        val llmMessagesAfterSummarization: List<Message> = manager.messages
+        //val llmMessagesAfterSummarization: List<Message> = manager.messages
 
         // Convert the message into a serializable map.
-        val serializedMessages1: List<Map<String, Any>> = manager.toMessagesMap(incremental = true, excludeLast = true)
+        //val serializedMessages1: List<Map<String, Any>> = manager.toMessagesMap(incremental = true, excludeLast = true)
 
         // Add some other messages and manipulate metadata
         manager.addAssistant("Are you still there?")  // It will be merged with previous message. Be mindful of `excludeLast`.
@@ -59,17 +59,20 @@ class AwsMessagesManagerTest {
         userMessage?.metadata?.addTiming(MetaTiming.PLAY_START, System.currentTimeMillis())
 
         // Convert the messages into a serializable map. And take the last message
-        val serializedMessages2: List<Map<String, Any>> = manager.toMessagesMap(incremental = true, excludeLast = false)
+        //val serializedMessages2: List<Map<String, Any>> = manager.toMessagesMap(incremental = true, excludeLast = false)
 
         // Convert the messages into the DynamoDB format.
-        val dynamoMessages: List<Map<String, AttributeValue>> = DynamoDBMessage.toDynamoDB(serializedMessages1 + serializedMessages2)
+        //val dynamoMessages: List<Map<String, AttributeValue>> = DynamoDBMessage.toDynamoDB(serializedMessages1 + serializedMessages2)
 
         // Get the last summary message to prompt the LLM model with previous messages
-        val lastSummary: List<String>? = manager.getLastSummary()?.contents
+        //val lastSummary: List<String>? = manager.getLastSummary()?.contents
 
         println(manager)
     }
 
+    object DummyLogger: Loggable(){
+        val publicLogger = logger
+    }
 
     // Test the behaviour of MessagesManager while adding new messages.
     @Test
@@ -105,6 +108,7 @@ class AwsMessagesManagerTest {
                         buildAwsMetaMessage(
                             MetaRole.USER,
                             listOf(MessagesManager.FAKE_MESSAGE_CONTENTS),
+                            logger = DummyLogger.publicLogger
                         )
                     )
                 }
@@ -116,12 +120,14 @@ class AwsMessagesManagerTest {
                         val previousMsg = out.last()
                         out.removeLast()
                         out.add(buildAwsMetaMessage(previousRole,
-                            previousMsg.contents.map { it } + msg.contents, previousMsg.id))
+                            previousMsg.contents.map { it } + msg.contents,
+                            previousMsg.id,
+                            DummyLogger.publicLogger))
                         continue
                     }
                 }
                 // Add new.
-                out.add(buildAwsMetaMessage(msg.role, msg.contents))
+                out.add(buildAwsMetaMessage(msg.role, msg.contents, logger = DummyLogger.publicLogger))
                 // Update for next loop.
                 previousRole = msg.role
             }
@@ -371,8 +377,8 @@ class AwsMessagesManagerTest {
         testCounter = 1
 
         // Instance the message manager.
-        val messagesManager = MessagesManager {
-            MetaMessage.build(AwsMessage.build())
+        val messagesManager = MessagesManager { logger ->
+            MetaMessage.build(AwsMessage.build(logger), logger)
         }
 
         // 1st ---------------------------------------------------------------------------
@@ -516,7 +522,7 @@ class AwsMessagesManagerTest {
 
     // Get all the keys of a list of maps with nested list and maps. This is done to assert data structures even if
     // their actual value associated with each key is not checked. It assumes that keys are all unique.
-    private  fun getListKeys(objList: List<Any?>): List<Set<String>> {
+    private fun getListKeys(objList: List<Any?>): List<Set<String>> {
 
         fun getAllKeys(obj: Any?): Set<String> { // Helper function
             return when (obj) {

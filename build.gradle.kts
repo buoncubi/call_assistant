@@ -1,5 +1,9 @@
 import java.util.*
 
+// TODO check `Hotline-based dependency management` (libs.versions.toml file)
+
+// document with `./gradlew dokkaHtml` (todo to configure)
+
 // TODO check for the last versions, uniform KotlinVersion, and review all.
 
 plugins {
@@ -7,6 +11,8 @@ plugins {
     java
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
     application // required to make this software runnable
+
+    id("org.jetbrains.dokka") version "2.0.0" // TODO check Dokka deprecation when software runs
 }
 
 
@@ -39,6 +45,10 @@ dependencies {
     // For MP3 player (used by text-to-speech)
     implementation("javazoom:jlayer:1.0.1")
 
+    // For ULID used on messages metadata
+    implementation("com.github.f4b6a3:ulid-creator:5.2.3")
+
+
     // For JSON-based serialization and deserialization of LLM prompts
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0") // TODO why it is not as the kotlin version (2.1.10)?
     // For Byte-based serialization and deserialization of LLM prompts
@@ -55,9 +65,21 @@ dependencies {
     implementation("software.amazon.awssdk:polly")
     // For LLM models usage (i.e., AWS Bedrock Converse streaming service)
     implementation("software.amazon.awssdk:bedrockruntime")
+    // Used for AWS clients since it is faster than default (which is Netty)
+    //implementation("software.amazon.awssdk:aws-crt-client") TODO use?
+
+
 
     // For Lambda-based logging
     //implementation("com.amazonaws:aws-lambda-java-log4j2:1.6.0")
+
+
+    // DynamoDB core dependency
+    implementation("software.amazon.awssdk:dynamodb")               // Core DynamoDB support
+    // Optional but recommended dependencies
+    implementation("software.amazon.awssdk:dynamodb-enhanced")     // Enhanced client with object mapping
+    implementation("software.amazon.awssdk:apache-client")         // HTTP client (recommended)
+
 }
 
 
@@ -69,6 +91,15 @@ tasks.test {
 kotlin {
     jvmToolchain(23)
 }
+
+
+
+
+
+
+
+
+
 
 /**
  * The base path of all environmental files.

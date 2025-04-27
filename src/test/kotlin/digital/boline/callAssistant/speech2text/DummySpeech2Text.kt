@@ -6,44 +6,53 @@ import kotlinx.coroutines.runBlocking
 import org.slf4j.event.Level
 import java.io.InputStream
 
-object DummyInputStreamBuilder: Speech2TextStreamBuilder, Loggable() {
-    override fun build(): InputStream? {
-        logger.trace("Generating dummy input stream.")
-            return null
-    }
-}
 
+/**
+ * A dummy speech-to-text service used to test the [Speech2Text] and [Speech2TextStreamBuilder] interfaces.
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
+ */
 class DummySpeech2Text(private val latencyRandomMillisecond: IntRange = 1..1000)
-    : Speech2Text<String> (DummyInputStreamBuilder)
-    {
+    : Speech2Text (DummyInputStreamBuilder)
+{
 
     init { logger.setLevel(Level.INFO) }
 
     private var counter = 1
 
-    override suspend fun doComputeAsync(input: Unit) { // IT runs on a separate coroutine.
+    override suspend fun doComputeAsync(input: Unit, sourceTag: String) { // IT runs on a separate coroutine.
         delay(latencyRandomMillisecond.random().toLong())
-        onResultCallbacks.invoke("dummy transcribed text $counter.")
+        onResultCallbacks.invoke(Transcription("Dummy transcribed text $counter ($sourceTag)."))
         counter++
-        logInfo("Processing: $input")
     }
 
-    override fun doActivate() {} // Do nothing.
-    override fun doDeactivate() {} // Do nothing.
+    override fun doActivate(sourceTag: String) {} // Do nothing.
+    override fun doDeactivate(sourceTag: String) {} // Do nothing.
+
+    object DummyInputStreamBuilder: Speech2TextStreamBuilder, Loggable() {
+        override fun build(): InputStream? {
+            // Here it should generate an audio input stream.
+            return null
+        }
+    }
+
+    companion object {
+        fun runTest(): Unit = runBlocking {
+            val s2t = DummySpeech2Text(100..1000)
+
+            s2t.onResultCallbacks.add { result ->
+                println("Transcribed: $result")
+            }
+
+            s2t.activate()
+            s2t.computeAsync()
+            s2t.wait()
+            s2t.computeAsync()
+            s2t.stop()
+            s2t.deactivate()
+        }
+    }
 }
 
 
-fun main(): Unit = runBlocking {
-    val stt = DummySpeech2Text(100..1000)
-
-    stt.onResultCallbacks.add { result ->
-        println("Transcribed: $result")
-    }
-
-    stt.activate()
-    stt.computeAsync()
-    stt.wait()
-    stt.computeAsync()
-    stt.stop()
-    stt.deactivate()
-}
+fun main() = DummySpeech2Text.runTest()

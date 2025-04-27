@@ -9,10 +9,7 @@ import org.slf4j.event.Level
 import kotlin.test.assertTrue
 
 /**
- * A simple class to run and manually test the AWS Transcribe service for speech-to-text.
- *
- * @see AwsTranscribe
- * @see DesktopMicrophone
+ * A simple class to run and manually test [AwsTranscribe] with [DesktopMicrophone].
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -30,9 +27,13 @@ object AwsTranscribeRunner: Loggable() {
         transcriber.setLoggingLevel(Level.DEBUG)
 
         var shouldReceiveData = false
-        transcriber.onResultCallbacks.add { result ->
-            logInfo("Callback -> ${result.alternatives()[0].transcript()}")
+        transcriber.onResultCallbacks.add { transcribed ->
+            logInfo("Callback -> '$transcribed'")
             assertTrue(shouldReceiveData)
+        }
+
+        transcriber.onStartTranscribingCallbacks.add {
+            logInfo("Received partial transcription callback.")
         }
 
         transcriber.onErrorCallbacks.add { se: ServiceError ->
@@ -40,7 +41,7 @@ object AwsTranscribeRunner: Loggable() {
             // Manage your error recovery logic here!!!
         }
 
-        val delayMs = 5000L
+        val delayMs = 10000L
 
         transcriber.activate()
         println("1 ------------  LISTEN FOR ${delayMs/1000} SECONDS --------------------")
@@ -78,9 +79,9 @@ object AwsTranscribeRunner: Loggable() {
         transcriber.deactivate()
 
         logInfo("Test run finished!")
+
+        transcriber.cancelScope() // After it cannot be reactivated.
     }
 }
 
-fun main() {
-    AwsTranscribeRunner.runTest()
-}
+fun main() = AwsTranscribeRunner.runTest()

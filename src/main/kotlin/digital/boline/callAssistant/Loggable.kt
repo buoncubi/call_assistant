@@ -52,7 +52,7 @@ internal fun String?.rightPadOrTruncate(maxLength: Int = MAX_LOG_NAME_LENGTH, pa
  * @param clazz The class that produces logs.
  * @return String The suffix to log for identify the log producer based on the class name.
  */
-internal fun getLoggerTag(clazz: Class<*>) = "[${clazz.simpleName.rightPadOrTruncate()}]:: "
+private fun getLoggerTag(clazz: Class<*>) = "[${clazz.simpleName.rightPadOrTruncate()}]:: "
 
 
 
@@ -103,7 +103,7 @@ internal fun getLoggerTag(clazz: Class<*>) = "[${clazz.simpleName.rightPadOrTrun
  * @see Logger
  * @see LogManager
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 interface LoggableInterface {
 
@@ -129,6 +129,7 @@ interface LoggableInterface {
      * @see LogManager
      *
      * @author Luca Buoncompagni © 2025
+     * @version 1.0
      */
     private class Factory(clazz: Class<out LoggableInterface>) {
 
@@ -261,7 +262,7 @@ interface LoggableInterface {
  *
  * @see Loggable
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 class CentralizedLogger(clazz: Class<out LoggableInterface>, private val slf4jLogger: Logger) {
 
@@ -269,6 +270,11 @@ class CentralizedLogger(clazz: Class<out LoggableInterface>, private val slf4jLo
      * The logger tag used to identify the class that produces logs. It is used to prefix all the logs.
      */
     private val loggerTag = getLoggerTag(clazz)
+
+    /**
+     * The name of the class that produces logs. It is only used for logging purposes.
+     */
+    val logsFor = clazz.simpleName
 
     /**
      * Sets the logging level of this logger. This function should only be used for testing purposes, use environmental
@@ -294,7 +300,7 @@ class CentralizedLogger(clazz: Class<out LoggableInterface>, private val slf4jLo
      * @param message the message to be logged with the name of this class as prefix.
      * @param args data structures to be logged, see [LoggableInterface] for mroe.
      */
-    fun trace(message: String, vararg args: Any?) = slf4jLogger.info("${loggerTag}$message", *args)
+    fun trace(message: String, vararg args: Any?) = slf4jLogger.trace("${loggerTag}$message", *args)
 
 
     /**
@@ -374,7 +380,7 @@ class CentralizedLogger(clazz: Class<out LoggableInterface>, private val slf4jLo
  * @see LoggableInterface.Factory
  * @see LoggableInterface.Factory.getNewLogger
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 open class Loggable(clazz: Class<out LoggableInterface>? = null) : LoggableInterface {
 

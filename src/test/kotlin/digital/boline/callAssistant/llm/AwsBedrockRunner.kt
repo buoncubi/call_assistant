@@ -10,9 +10,7 @@ import software.amazon.awssdk.services.bedrockruntime.model.*
 
 
 /**
- * A simple class to run and manually test the AWS Bedrock service for LLM models based on the Streaming Converse API.
- *
- * @see AwsBedrock
+ * A simple class to run and manually test [AwsBedrock].
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -77,15 +75,17 @@ object AwsBedrockRunner: Loggable() {
             logInfo("Timeout occurred!")
         }
         bedrock.activate()
-        bedrock.computeAsync(AwsBedrockRequest(prompts, messages), timeoutSpec)
-        bedrock.wait(Timeout(40000) { println("Waiting timeout reached!") })
+        bedrock.computeAsync(AwsBedrockRequest(prompts, messages), timeoutSpec =timeoutSpec)
+        bedrock.wait(timeoutSpec = Timeout(40000) { sourceTag ->
+            println("Waiting timeout reached! ($sourceTag)")
+        }, sourceTag = "MySourceTag")
         bedrock.deactivate()
 
         logInfo(" 4 -------------------------------------")
         logInfo("End test.")
+
+        bedrock.cancelScope() // After it cannot be reactivated.
     }
 }
 
-fun main() {
-    AwsBedrockRunner.runTest()
-}
+fun main() = AwsBedrockRunner.runTest()

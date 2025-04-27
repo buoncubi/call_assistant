@@ -7,241 +7,170 @@ import org.junit.jupiter.api.Test
 import org.slf4j.event.Level
 import kotlin.time.measureTime
 
-private val dummyScope = CoroutineScope(
-    SupervisorJob() +
-            Dispatchers.Default +
-            CoroutineName("DummyScope")
-)
 
-
+/**
+ * A simple test of the [ReusableService], which also include [Service] and [CallbackManager].
+ *
+ * @author Luca Buoncompagni, © 2025, v1.0.
+ */
 object DummyText2SpeechTest {
+
+    private val dummyScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default + CoroutineName("DummyScope")
+    )
+
+    data class DummyCallbackInput(val data: String, override val sourceTag: String): CallbackInput
+
 
     class DummyService(private val latencyRandomMillisecond: IntRange = 30..1000) : ReusableService<String>(dummyScope) {
 
         init { logger.setLevel(Level.INFO) }
 
-        override suspend fun doComputeAsync(input: String) { // IT runs on a separate coroutine.
+        val onResultCallback = CallbackManager<DummyCallbackInput, Unit>(logger)
+
+        override suspend fun doComputeAsync(input: String, sourceTag: String) { // IT runs on a separate coroutine.
             delay(latencyRandomMillisecond.random().toLong())
-            println("\t[$serviceName] processing: $input")
+            onResultCallback.invoke(DummyCallbackInput(input, sourceTag))
         }
 
-        // TODO test when these returns false
-        override fun doActivate() {} // Do nothing.
-        override fun doDeactivate() {} // Do nothing.
+        override fun doActivate(sourceTag: String) {} // Do nothing.
+        override fun doDeactivate(sourceTag: String) {} // Do nothing.
     }
+
 
 
     @Test
     fun testServiceInterface(): Unit = runBlocking {
-        val tts = DummyService()
-        tts.setLoggingLevel(Level.DEBUG)
+        val service = DummyService()
+        service.setLoggingLevel(Level.DEBUG)
 
         //Should do nothing since it is not activated.
-        val outcome1 = tts.computeAsync("")
-        assertFalse(tts.isActive.get() && tts.isComputing.get() && outcome1)
+        val outcome1 = service.computeAsync("")
+        assertFalse(service.isActive.get() && service.isComputing.get() && outcome1)
 
         //Should do nothing since it is already activated.
-        val outcome2 = tts.deactivate()
-        assertFalse(tts.isActive.get() && tts.isComputing.get() && outcome2)
+        val outcome2 = service.deactivate()
+        assertFalse(service.isActive.get() && service.isComputing.get() && outcome2)
 
         //Should activate the service.
-        val outcome3 = tts.activate()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && outcome3)
+        val outcome3 = service.activate()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && outcome3)
 
         // Should computeAsync the service.
-        val outcome4 = tts.computeAsync("Hello")
-        assertTrue(tts.isActive.get() && tts.isComputing.get() && outcome4)
+        val outcome4 = service.computeAsync("Hello")
+        assertTrue(service.isActive.get() && service.isComputing.get() && outcome4)
 
         // Should wait the service.
-        val outcome5 = tts.wait()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && outcome5)
+        val outcome5 = service.wait()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && outcome5)
 
         // Should computeAsync again the service.
-        val outcome6 = tts.computeAsync("World")
-        assertTrue(tts.isActive.get() && tts.isComputing.get() && outcome6)
+        val outcome6 = service.computeAsync("World")
+        assertTrue(service.isActive.get() && service.isComputing.get() && outcome6)
 
         // Should stop the service.
-        val outcome7 =tts.stop()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && outcome7)
+        val outcome7 =service.stop()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && outcome7)
 
         // Should not stop the service.
-        val outcome8 =tts.stop()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && !outcome8)
+        val outcome8 =service.stop()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && !outcome8)
 
         // Should not re-activate the service.
-        val outcome9 = tts.activate()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && !outcome9)
+        val outcome9 = service.activate()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && !outcome9)
 
         // Should deactivate the service.
-        val outcome10 = tts.deactivate()
-        assertTrue(!tts.isActive.get() && !tts.isComputing.get() && outcome10)
+        val outcome10 = service.deactivate()
+        assertTrue(!service.isActive.get() && !service.isComputing.get() && outcome10)
 
         // Should not re-deactivate the service.
-        val outcome11 = tts.deactivate()
-        assertTrue(!tts.isActive.get() && !tts.isComputing.get() && !outcome11)
+        val outcome11 = service.deactivate()
+        assertTrue(!service.isActive.get() && !service.isComputing.get() && !outcome11)
 
         // Should not computeAsync the service.
-        val outcome12 = tts.computeAsync("Hello")
-        assertTrue(!tts.isActive.get() && !tts.isComputing.get() && !outcome12)
+        val outcome12 = service.computeAsync("Hello")
+        assertTrue(!service.isActive.get() && !service.isComputing.get() && !outcome12)
 
         // Should not wait the service.
-        val outcome13 = tts.wait()
-        assertTrue(!tts.isActive.get() && !tts.isComputing.get() && !outcome13)
+        val outcome13 = service.wait()
+        assertTrue(!service.isActive.get() && !service.isComputing.get() && !outcome13)
 
         // Should not stop the service.
-        val outcome14 = tts.stop()
-        assertTrue(!tts.isActive.get() && !tts.isComputing.get() && !outcome14)
+        val outcome14 = service.stop()
+        assertTrue(!service.isActive.get() && !service.isComputing.get() && !outcome14)
 
         // Should not deactivate the service .
-        val outcome15 = tts.deactivate()
-        assertTrue(!tts.isActive.get() && !tts.isComputing.get() && !outcome15)
+        val outcome15 = service.deactivate()
+        assertTrue(!service.isActive.get() && !service.isComputing.get() && !outcome15)
 
         // Should activate the service.
-        val outcome16 = tts.activate()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && outcome16)
+        val outcome16 = service.activate()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && outcome16)
 
         // Should not stop the service.
-        val outcome17 = tts.stop()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && !outcome17)
+        val outcome17 = service.stop()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && !outcome17)
 
         // Should not wait the service.
-        val outcome18 = tts.wait()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && !outcome18)
+        val outcome18 = service.wait()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && !outcome18)
 
         // Should computeAsync the service.
-        val outcome19 = tts.computeAsync("World")
-        assertTrue(tts.isActive.get() && tts.isComputing.get() && outcome19)
+        val outcome19 = service.computeAsync("World")
+        assertTrue(service.isActive.get() && service.isComputing.get() && outcome19)
 
         // Should stop the service.
-        val outcome20 = tts.stop()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && outcome20)
+        val outcome20 = service.stop()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && outcome20)
 
         // Should computeAsync again.
-        val outcome21 = tts.computeAsync("Hello")
-        assertTrue(tts.isActive.get() && tts.isComputing.get() && outcome21)
+        val outcome21 = service.computeAsync("Hello")
+        assertTrue(service.isActive.get() && service.isComputing.get() && outcome21)
 
         // should wait the service.
-        val outcome22 = tts.wait()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && outcome22)
+        val outcome22 = service.wait()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && outcome22)
 
         // Should computeAsync again.
-        val outcome23 = tts.computeAsync("World")
-        assertTrue(tts.isActive.get() && tts.isComputing.get() && outcome23)
+        val outcome23 = service.computeAsync("World")
+        assertTrue(service.isActive.get() && service.isComputing.get() && outcome23)
+
+        // Test callbacks
+        val test = "CallbackTest"
+        val sourceTag = "SourceTag"
+        val callbackId = service.onResultCallback.add {assertTrue(it.data == test && it.sourceTag == sourceTag) }
+        service.computeAsync(test, sourceTag = sourceTag)
+        service.onResultCallback.remove(callbackId)
 
         // Should not deactivate the service.
-        val outcome24 = tts.deactivate()
-        assertTrue(tts.isActive.get() && tts.isComputing.get() && !outcome24)
+        val outcome24 = service.deactivate()
+        assertTrue(service.isActive.get() && service.isComputing.get() && !outcome24)
 
         // Should stop the service.
-        val outcome25 = tts.stop()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && outcome25)
+        val outcome25 = service.stop()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && outcome25)
 
         // Should deactivate the service.
-        val outcome26 = tts.deactivate()
-        assertTrue(!tts.isActive.get() && !tts.isComputing.get() && outcome26)
+        val outcome26 = service.deactivate()
+        assertTrue(!service.isActive.get() && !service.isComputing.get() && outcome26)
 
         // Should activate the service.
-        val outcome27 = tts.activate()
-        assertTrue(tts.isActive.get() && !tts.isComputing.get() && outcome27)
+        val outcome27 = service.activate()
+        assertTrue(service.isActive.get() && !service.isComputing.get() && outcome27)
 
         // Timeout test
-        val timeoutSpec = FrequentTimeout(12, 10) { println("React to timeout!") }
+        val testTimeoutId = "TestTimeoutId"
+        val timeoutSpec = FrequentTimeout(12, 10) {
+            id -> println("React to timeout! '$id'")
+            assertTrue(id==testTimeoutId)
+        }
         val computationTime = measureTime {
-            tts.computeAsync("Hello", timeoutSpec)
-            tts.wait()
+            service.computeAsync("Hello", timeoutSpec = timeoutSpec, sourceTag = testTimeoutId)
+            service.wait()
         }
         println("Computation time $computationTime")
         assertTrue(computationTime.absoluteValue.inWholeMilliseconds <= 12 + 10) // Allow some milliseconds of delay
 
     }
-
-
-    // TODO test callback interface
-}
-
-
-
-
-class MyReusableService: ReusableService<String>(myScope){
-    val onResultCallback = CallbackManager<String, Unit>(logger)
-
-    init {
-        setLoggingLevel(Level.INFO)
-    }
-
-    override fun doActivate() {
-        println("Initializing service resources.")
-    }
-
-    override suspend fun doComputeAsync(input: String) {
-        // perform some computation here.
-        delay(1000)
-        val output = "\"$input\""
-        println("computation done!")
-        // Propagate the result to the callback.
-        onResultCallback.invoke(output)
-    }
-
-    override fun doStop() {
-        // If necessary, stop here the jobs that have been started on `doComputeAsync`.
-        super.doStop()
-    }
-
-    override suspend fun doWait() {
-        // If necessary, wait here for the jobs that have been started on `doComputeAsync`.
-        super.doWait()
-    }
-
-    override fun doDeactivate() {
-        println("Releasing service resources.")
-    }
-
-    companion object {
-        private val myScope = CoroutineScope(
-            SupervisorJob() + Dispatchers.Default + CoroutineName("myScope")
-        )
-    }
-}
-
-suspend fun main() {
-    // Construct a new service
-    val myReusableService = MyReusableService()
-
-    // Initialize Callbacks
-    myReusableService.onErrorCallbacks.add { error: ServiceError ->
-        println("Error (${error.source}): ${error.throwable}")
-    }
-    myReusableService.onResultCallback.add { result: String ->
-        println("Result: $result")
-    }
-
-    println("------------------------------")
-
-    // Activate the service
-    myReusableService.activate()
-
-    // Perform some computation. Note that timeout is optional.
-    val computingTimeout = FrequentTimeout(2000, 100) {
-        println("Computation went on timeout.")
-    }
-    myReusableService.computeAsync("Servicing fist request.", computingTimeout)
-
-    // Wait for the computation to finish. Note that the timeout is optional.
-    val waitingTimeout = Timeout(2000) {
-        println("Waiting went on timeout.")
-    }
-    myReusableService.wait(waitingTimeout)
-
-    println("------------------------------")
-
-    // Perform another computation.
-    myReusableService.computeAsync("Servicing second request.")
-
-    // Stop the computation
-    myReusableService.stop()
-
-    // Deactivate the service
-    myReusableService.deactivate()
-
-    // You might want to activate the service again and perform some other computation...
 }

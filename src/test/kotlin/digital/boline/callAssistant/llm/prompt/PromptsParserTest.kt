@@ -1,5 +1,6 @@
 package digital.boline.callAssistant.llm.prompt
 
+import digital.boline.callAssistant.llm.prompt.PromptsManager.Companion.MESSAGE_SUMMARY_TITLE_KEY
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
 import org.junit.jupiter.api.AfterEach
@@ -11,9 +12,9 @@ import kotlin.system.measureNanoTime
 
 /**
  * The Unit test for the implementations in the
- * `llmInterface.prompt` package.
+ * `llm.prompt` package.
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 class ParsedPromptsTest {
 
@@ -43,7 +44,8 @@ class ParsedPromptsTest {
         private fun assertPromptFile(parsed: PromptsManager?) {
             assertEquals(
                 parsed?.metadata,
-                mapOf("version" to "1.0", "environment" to "test", "application name" to "Call Assistant"),
+                mapOf("version" to "1.0", "environment" to "test", "application name" to "Call Assistant",
+                    MESSAGE_SUMMARY_TITLE_KEY to "Previous Dialogue"),
                 "Error while testing `metadata` on fields retrieval !!!"
             )
 

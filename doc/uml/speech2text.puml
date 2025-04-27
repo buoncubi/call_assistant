@@ -11,10 +11,33 @@ interface digital.boline.callAssistant.speech2text.Speech2TextStreamBuilder {
 + InputStream? build()
 }
 
+class digital.boline.callAssistant.speech2text.Transcription$Companion {
++  UNKNOWN_TIME
++  UNKNOWN_CONFIDENCE
++  UNKNOWN_MESSAGE
+}
+
+class digital.boline.callAssistant.speech2text.Transcription {
+-  messageBuilder
++ String message
++ Double confidence
++ Long startTime
++ Long endTime
++ String sourceTag
++ <<Create>> Transcription(String,Double,Long,Long,String)
++ void merge(Transcription)
++ void reset()
++ Boolean equals(Any?)
++ Int hashCode()
++ String toString()
+}
+
+
 abstract class digital.boline.callAssistant.speech2text.Speech2Text {
 +  onResultCallbacks
++  onStartTranscribingCallbacks
 + <<Create>> Speech2Text(Speech2TextStreamBuilder)
-+ void computeAsync(FrequentTimeout?)
++ void computeAsync(FrequentTimeout?,String)
 }
 
 
@@ -23,20 +46,30 @@ class digital.boline.callAssistant.speech2text.AwsTranscribe$Companion {
 -  AUDIO_STREAM_CHUNK_SIZE_IN_BYTES
 -  SAMPLE_RATE
 -  MEDIA_ENCODING
+-  MINIMUM_WORDS_FOR_PARTIAL_RESULT
+-  TRANSCRIPTION_BUFFERING_TIME
 }
 
 class digital.boline.callAssistant.speech2text.AwsTranscribe {
 - TranscribeStreamingAsyncClient? client
 - StartStreamTranscriptionRequest? request
 - CompletableFuture<Void>? transcribeJob
+-  bufferingTranscription
+- Job? mergingJob
+- Long? audioStreamStartTime
+-  userStartedSpeaking
+-  userIsSpeaking
++ String sourceTag
 + <<Create>> AwsTranscribe(Speech2TextStreamBuilder)
 - TranscribeStreamingAsyncClient initClient()
 - StartStreamTranscriptionRequest initRequest()
-+ void doActivate()
-+ void doComputeAsync(Unit)
++ void doActivate(String)
++ void doComputeAsync(Unit,String)
 - void getResponseHandler()
-+ void doStop()
-+ void doDeactivate()
+- List<Transcription> parseTranscriptions(List<Result>)
+- void handleTranscriptions(List<Result>)
++ void doStop(String)
++ void doDeactivate(String)
 }
 
 
@@ -68,7 +101,9 @@ class digital.boline.callAssistant.speech2text.SubscriptionImpl {
 
 digital.boline.callAssistant.speech2text.Speech2TextStreamBuilder <|.. digital.boline.callAssistant.speech2text.DesktopMicrophone
 digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.speech2text.DesktopMicrophone
-digital.boline.callAssistant.ReusableService <|-- digital.boline.callAssistant.speech2text.Speech2Text
+digital.boline.callAssistant.speech2text.Transcription +.. digital.boline.callAssistant.speech2text.Transcription$Companion
+digital.boline.callAssistant.speech2text.CallbackInput <|.. digital.boline.callAssistant.speech2text.Transcription
+digital.boline.callAssistant.speech2text.ReusableService <|-- digital.boline.callAssistant.speech2text.Speech2Text
 digital.boline.callAssistant.speech2text.AwsTranscribe +.. digital.boline.callAssistant.speech2text.AwsTranscribe$Companion
 digital.boline.callAssistant.speech2text.Speech2Text <|-- digital.boline.callAssistant.speech2text.AwsTranscribe
 digital.boline.callAssistant.speech2text.AudioStreamPublisher +.. digital.boline.callAssistant.speech2text.AudioStreamPublisher$Companion

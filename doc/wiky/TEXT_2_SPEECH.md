@@ -26,40 +26,43 @@ environmental variables): `AWS_POLLY_VOICE_NAME`, `AWS_POLLY_VOICE_TYPE`, `AWS_R
 The implementation of a service able to leverage AWS services is `AwsPolly`, which can be used as:
 
 ```kotlin
-// Initialize the audio player.
-val player = DesktopAudioPlayer
-player.onEndPlayingCallbacks.add { event: PlaybackEvent? ->
-    logger.info("End playing audio: $event")
-}
+     // Initialize the audio player.
+     val player = DesktopAudioPlayer
+     player.onEndPlayingCallbacks.add { event: PlaybackData ->
+         println("End audio player callback: $event")
+     }
 
-// Initialize the AWS Polly.
-val polly = AwsPolly(player)
-polly.onErrorCallbacks.add {se: ServiceError ->
-    logger.error("Error occurred $se")
-}
+     // Initialize the AWS Polly.
+     val polly = AwsPolly(player)
+     polly.onErrorCallbacks.add {se: ServiceError ->
+         println("Error callback ('${se.source}', ${se.sourceTag}) ${se.throwable}")
+     }
 
-// Initialize Polly's resources.
-polly.activate()
+     // Initialize Polly's resources.
+     polly.activate()
 
-// Use AWS Polly and manually stop it.
-polly.computeAsync("Hello")
-Thread.sleep(200)
-polly.stop()
+     // Use AWS Polly and manually stop it.
+     polly.computeAsync("Hello")
+     Thread.sleep(200)
+     polly.stop()
 
-// Use AWS Polly with optional timeout.
-val computingTimeout = FrequentTimeout(timeout = 20000, checkPeriod = 200){ 
-    println("Polly computing timeout!")
-}
-val waitingTimeout = Timeout(timeout = 10000) {
-    println("Polly waiting timeout!")
-}
-polly.computeAsync("World.", computingTimeout)
-polly.wait(waitingTimeout)
- 
-// Close Polly's resources
-polly.deactivate()
- 
-// You might want to activate Polly again and perform some computation ...
+     // Use AWS Polly with optional timeout, and sourceTag, which will be propagated to callbacks.
+     val computingTimeout = FrequentTimeout(timeout = 20_000, checkPeriod = 200){ sourceTag -> 
+         println("Polly computing timeout! ($sourceTag)")
+     }
+     val waitingTimeout = Timeout(timeout = 10_000) {
+         println("Polly waiting timeout!")
+     }
+     polly.computeAsync("World.", computingTimeout, sourceTag = "MySourceTag")
+     polly.wait(waitingTimeout)
+
+     // Close Polly's resources
+     polly.deactivate()
+
+     // You might want to activate Polly again and perform some computation ...
+
+     // Cancel the scope and all related jobs. After this the service cannot be activated again.
+     polly.cancelScope()
 ```
 
 ![localImage](../uml/text2speech.svg)

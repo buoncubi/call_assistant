@@ -11,6 +11,7 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 
 
+
 /**
  * The implementation of [LlmResponse] for AWS Bedrock, which should be given to [AwsBedrock.computeAsync].
  *
@@ -37,7 +38,8 @@ data class AwsBedrockRequest(
     override val temperature: Float = System.getenv("AWS_BEDROCK_TEMPERATURE").toFloat(),
     override val topP: Float = System.getenv("AWS_BEDROCK_TOP_P").toFloat(),
     override val modelName: String = System.getenv("AWS_BEDROCK_MODEL_NAME")
-) : LlmRequest<List<SystemContentBlock>, List<Message>> {
+) : LlmRequest<List<SystemContentBlock>, List<Message>>
+{
 
     companion object {
         /**
@@ -126,6 +128,8 @@ data class AwsBedrockRequest(
  * is undefined, it is `-1`.
  * @property inputToken The number of tokens in the input prompt. If the value is undefined, it is `-1`.
  * @property outputToken The number of tokens in the output response. If the value is undefined, it is `-1`.
+ * @property sourceTag An identifier given by the class that calls [AwsBedrock.computeAsync] and propagated to the
+ * [AwsBedrock.onResultCallbacks]. By default, it is an empty string.
  *
  * @see LlmResponse
  * @see AwsBedrock
@@ -137,12 +141,13 @@ data class AwsBedrockResponse(
     override val responseLatency: Long,
     override val inputToken: Int,
     override val outputToken: Int,
+    override val sourceTag: String
 ) : LlmResponse
 
 
 
 /**
- * The implementation of [LlmInteract] for AWS Bedrock based on the Streaming Converse API.
+ * The implementation of [LlmService] for AWS Bedrock based on the Streaming Converse API.
  *
  * It implements a [ReusableService], which provides [activate], [computeAsync], [wait], [stop], and [deactivate]
  * facilities for managing the lifecycle of the service asynchronously. It also provides logging, service's state
@@ -154,48 +159,52 @@ data class AwsBedrockResponse(
  *
  * It follows an example for using this class
  * ```
- *     val bedrock = AwsBedrock()
+ *      val bedrock = AwsBedrock()
  *
- *     // Set the callback for errors within AwsBedrock.
- *     bedrock.onErrorCallbacks.add { se: ServiceError ->
- *         logError("Got LLM Bedrock error: ('${se.errorSource}') ${se.throwable}")
- *     }
+ *      // Set the callback for errors within AwsBedrock.
+ *      bedrock.onErrorCallbacks.add { se: ServiceError ->
+ *          println("Got LLM Bedrock error: ('${se.source}', ${se.sourceTag}) ${se.throwable}")
+ *      }
  *
- *     // Set the callback for results within AwsBedrock.
- *     bedrock.onResultCallbacks.add { response: AwsBedrockResponse ->
- *         logInfo("Got LLM Bedrock response: $response")
- *    }
+ *      // Set the callback for results within AwsBedrock.
+ *      bedrock.onResultCallbacks.add { response: AwsBedrockResponse ->
+ *          println("Got LLM Bedrock response: $response")
+ *      }
  *
- *     // Initialize the AWS Bedrock service.
- *     bedrock.activate()
+ *      // Initialize the AWS Bedrock service.
+ *      bedrock.activate()
  *
- *     // Define the request to the LLM model.
- *     val prompts: List<SystemContentBlock> = AwsBedrockRequest.buildPrompts("My prompt")
- *     val message: Message = AwsBedrockRequest.buildMessages(ConversationRole.USER,"My message")
- *     // Note that `request` allow defining other parameter (e.g., temperature, top_p, etc.)
- *     val request: AwsBedrockRequest = AwsBedrockRequest(prompts, listOf(message))
- *     // Optionally define a computation timeout (which is reset every time a part of the LLM response is received).
- *     val timeoutSpec = FrequentTimeout(200, 20) {
- *         logInfo("Time out occurred!")
- *     }
- *     // Make the request to the LLM model
- *     bedrock.computeAsync(request, timeoutSpec)
+ *      // Define the request to the LLM model.
+ *      val prompts: List<SystemContentBlock> = AwsBedrockRequest.buildPrompts("My prompt")
+ *      val message: Message = AwsBedrockRequest.buildMessages(ConversationRole.USER,"My message")
+ *      // Note that `request` allow defining other parameter (e.g., temperature, top_p, etc.)
+ *      val request: AwsBedrockRequest = AwsBedrockRequest(prompts, listOf(message))
+ *      // Optionally define a computation timeout (which is reset every time a part of the LLM response is received).
+ *      val timeoutSpec = FrequentTimeout(200, 20) {
+ *          println("Time out occurred!")
+ *      }
+ *      // Make the request to the LLM model
+ *      bedrock.computeAsync(request, timeoutSpec, "MySourceTag")
  *
- *     // Wait for the response from the LLM model with an optional timeout.
- *     val waitTimeout = Timeout(20000) {
- *         logInfo("Waiting timeout occurred!")
- *     }
- *     bedrock.wait(waitTimeout)
- *     // Or stop the computation.
- *     bedrock.stop()
+ *      // Wait for the response from the LLM model with an optional timeout.
+ *      val waitTimeout = Timeout(20000) { sourceTag ->
+ *          println("Waiting timeout occurred! ($sourceTag)")
+ *      }
+ *      bedrock.wait(waitTimeout, "MyTimeoutSourceTag")
+ *      // Or stop the computation.
+ *      bedrock.stop()
  *
- *     // Eventually, make new computations...
+ *      // Eventually, make new computations...
  *
- *     // Finally, always remember to release the AWS Bedrock resources when it is no longer needed.
- *     bedrock.deactivate()
+ *      // Finally, always remember to release the AWS Bedrock resources when it is no longer needed.
+ *      bedrock.deactivate()
  *
- *     // You might want to `activate` the Bedrock service again and start new computation.
+ *      // You might want to `activate` the Bedrock service again and start new computation.
+ *
+ *      // Cancel the scope and all related jobs. After this the service cannot be activated again.
+ *      bedrock.cancelScope()
  * ```
+ * See `AwsBedrockRunner.kt` in the test src folder, for an example of how to use this class.
  *
  * @property client The AWS Bedrock client. It is `null` when the service is not activated. This property is `private`.
  * @property llmJob The job of the LLM computation. It is `null` when the service is not running. This property is
@@ -206,32 +215,37 @@ data class AwsBedrockResponse(
  * @property onErrorCallbacks The list of callbacks invoked when an error occurs.
  * @property isActive Whether the service resources have been initialized or closed.
  * @property isComputing Whether the service is currently computing a request from the LLM.
+ * @property sourceTag An identifier given by the class that invokes the [computeAsync] and provided to the
+ * [onResultCallbacks], or [onErrorCallbacks] in case of exception. By default, it is an empty string.
  *
  * @see ReusableService
- * @see LlmInteract
+ * @see LlmService
  * @see AwsBedrockRequest
  * @see AwsBedrockResponse
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
-class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
+class AwsBedrock : LlmService<AwsBedrockRequest, AwsBedrockResponse>() {
 
     // See documentation above.
     private var client: BedrockRuntimeAsyncClient? = null
     private var llmJob: CompletableFuture<Void>? = null
     private var requestHandler: ConverseStreamResponseHandler? = null
+    var sourceTag: String = ServiceInterface.UNKNOWN_SOURCE_TAG // i.e., an empty string.
 
 
     /**
      * Acquire the resources required by the AWS Bedrock server by initializing the [client] property. This method is
      * called by [activate]. It runs in a try-catch block that handle any exceptions, and it invokes the
      * [onErrorCallbacks] with [ErrorSource.ACTIVATING].
+     *
+     * @param sourceTag It is not used in this implementation.
      */
-    override fun doActivate() {
+    override fun doActivate(sourceTag: String) {
         client = BedrockRuntimeAsyncClient.builder()
-            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO manage credential on production
+            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO manage credential on production and further configure client
             .region(Region.of(AWS_VENV_REGION))
-            /*.httpClient( // TODO to use?
+            /*.httpClient(
                 // It is faster with respect to Netty (default) httpClient but less stable
                 // It requires `implementation("software.amazon.awssdk:aws-crt-client")` as gradle dependence
                 AwsCrtAsyncHttpClient.builder()
@@ -246,8 +260,10 @@ class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
      * Release the resources required by the AWS Bedrock server by closing the [client] property and setting it to
      * `null`. This method is called by [deactivate]. It runs in a try-catch block that handle any exceptions, and
      * it invokes the [onErrorCallbacks] with [ErrorSource.DEACTIVATING].
+     *
+     * @param sourceTag It is not used in this implementation.
      */
-    override fun doDeactivate() {
+    override fun doDeactivate(sourceTag: String) {
         // Stop the connection with the AWS Bedrock service
         client!!.close() // It takes 2 seconds with Natty HTTP-client (see other commented client, i.e., AwsCrt).
         client = null
@@ -263,7 +279,7 @@ class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
      *  - `onContentBlockStop`: Called when a new response block stops being evaluated.
      *  - `onMessageStop`: Called when the message stops.
      *  - `onMetadata`: Called when metadata is available.
-     *  - `onComplete`: Called when the stream completes.
+     *  - `onComplete`: Called when the stream completes. It invokes the [onResultCallbacks].
      *  - `onDefault`: Called when either an unknown or an unhandled event occurs.
      *  - `onError`: Called when an error occurs during the stream. It invokes the [onErrorCallbacks] with
      *  [ErrorSource.COMPUTING].
@@ -272,6 +288,8 @@ class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
      * usage and metrics, etc. Once the stream completes, it constructs an [AwsBedrockResponse] object encapsulating the
      * processed information, and invokes all the registered callbacks with the generated response. Note that this
      * handler is designed to reset the timeout every time a part of the LLM response is obtained.
+     *
+     * Note that this method will propagate the [sourceTag] to [onErrorCallbacks] and [onResultCallbacks].
      *
      * @return A [ConverseStreamResponseHandler] capable of processing and handling a response stream from an LLM, and
      * used by the [computeAsync] method.
@@ -292,7 +310,8 @@ class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
                 // Functions called by the AWS Bedrock Streaming Converse API over time.
                 ConverseStreamResponseHandler.Visitor.builder()
                     .onMessageStart { startEvent ->  // Called when an incoming message occurs?
-                        logDebug("Bedrock client responded to incoming messages.")
+                        logDebug("Bedrock client responded to incoming messages (start role: '{}').",
+                            startEvent.role())
                         // responseRole = startEvent.role()
                     }
                     .onContentBlockStart { // Called when a new response block starts being evaluated?
@@ -342,9 +361,9 @@ class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
                 // Called if the AWS Bedrock Streaming Converse API generate an error.
                 if (e.cause !is CancellationException && e !is CancellationException && e !is SdkCancellationException) {
                     logError("Bedrock client got an error during request", e)
-                    onErrorCallbacks.invoke(ServiceError(e, ErrorSource.COMPUTING))
+                    doThrow(ServiceError(e, ErrorSource.COMPUTING, sourceTag))
                 } else {
-                    logTrace("AWS Bedrock client cancelled with exception: ", e) // TODO make log depending on serviceName
+                    logTrace("AWS Bedrock client cancelled with exception: ", e)
                 }
             }
             .onComplete {
@@ -357,6 +376,7 @@ class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
                     responseLatency = responseLatency,
                     inputToken = inputToken,
                     outputToken = outputToken,
+                    sourceTag = sourceTag
                 )
 
                 // Invokes all the callbacks in a thread safe manner.
@@ -378,14 +398,23 @@ class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
      * [onErrorCallbacks] with [ErrorSource.COMPUTING].
      *
      * @param input An `AwsBedrockRequest` object containing the necessary information for the request.
+     * @param sourceTag An identifier given by the class that invokes the [computeAsync] and provided to the
+     * [onResultCallbacks], or [onErrorCallbacks] in case of exception.
      */
-    override suspend fun doComputeAsync(input: AwsBedrockRequest) {
-        // Ask something to the LLM model and wait for their response through callback
+    override suspend fun doComputeAsync(input: AwsBedrockRequest, sourceTag: String) {
+
+        this.sourceTag = sourceTag
+
+        // Ask something to the LLM model and wait for their response, which will be provided through callback.
         requestHandler = buildResponseHandler()
         llmJob = client?.converseStream(
             { requestBuilder ->
                 requestBuilder.modelId(input.modelName)
-                    .system(input.prompts)
+                    .apply { // Only set system prompts if they're not null or empty
+                        if (input.prompts.isNotEmpty()) {
+                            system(input.prompts)
+                        }
+                    }
                     .messages(input.messages)
                     .inferenceConfig { configBuilder ->
                         configBuilder
@@ -397,6 +426,12 @@ class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
             },
             requestHandler
         )
+        llmJob?.join()
+
+        // reset resources
+        llmJob = null
+        requestHandler = null
+        this.sourceTag = ServiceInterface.UNKNOWN_SOURCE_TAG // i.e., an empty string.
     }
 
 
@@ -406,12 +441,18 @@ class AwsBedrock : LlmInteract<AwsBedrockRequest, AwsBedrockResponse>() {
      *
      * Note that this function run in a try-catch block that handle any exceptions, and it invokes the
      * [onErrorCallbacks] with [ErrorSource.STOPPING].
+     *
+     * @param sourceTag It is not used in this implementation.
      */
-    override fun doStop() {
-        val toCancel = llmJob
-        llmJob = null // Used to check if callback should be invoked in requestHandler.complete()
-        requestHandler?.complete() // This might still generate callback results
-        toCancel?.cancel(true) // This produces FutureCancelledException
-        super.doStop()
+    override fun doStop(sourceTag: String) {
+        llmJob?.cancel(true)
+        llmJob = null
+
+        requestHandler?.complete()
+        requestHandler = null
+
+        this.sourceTag = ServiceInterface.UNKNOWN_SOURCE_TAG // i.e., an empty string.
+
+        super.doStop(sourceTag)
     }
 }

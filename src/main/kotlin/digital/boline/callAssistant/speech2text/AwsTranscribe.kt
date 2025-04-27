@@ -18,17 +18,17 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
-import javax.sound.sampled.*
 
 
 // TODO activate AWS transcribe only if there is some voice (reduce cost on silence calls)
+
 
 
 /**
  * The class implementing [Speech2Text] based on AWS Transcribe Streaming service for real-time audio streaming
  * transcription.
  *
- * This class requires an [Speech2TextStreamBuilder], which instantiate an input stream that contains the audio to be
+ * This class requires an [Speech2TextStreamBuilder], which instantiates an input stream that contains the audio to be
  * converted into text. It also requires these virtual environment variables:
  *  - `AWS_TRANSCRIBE_LANGUAGE`: see [LANGUAGE_CODE],
  *  - `AWS_TRANSCRIBE_AUDIO_STREAM_CHUNK_SIZE`: see [AUDIO_STREAM_CHUNK_SIZE_IN_BYTES],
@@ -36,48 +36,69 @@ import javax.sound.sampled.*
  *  - variables for AWS credential, i.e., `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_SESSION_TOKEN`.
  *
  * This class performs computation asynchronously based on [ReusableService], which allow defining timeout and
- * callbacks. Here it follows a usage example:
+ * callbacks. In particular, it provides three types of callback
+ *  - [onErrorCallbacks], which are invoked in case of exception by providing the throwable object and an [ErrorSource].
+ *  - [onStartTranscribingCallbacks], which are invoked when the user started speaking. This callback is invoked all the
+ *   time a partial transcription exceed a limit of minim number of words set equal to
+ *   [MINIMUM_WORDS_FOR_PARTIAL_RESULT].
+ *  - [onResultCallbacks], which are invoked when a not partial transcription has been provided by AWS Transcribe.
+ *   Before to invoke the callback, this class waits from [TRANSCRIPTION_BUFFERING_TIME] milliseconds and, if a new
+ *   partial transcription is obtained in that time interval, it waits for the final transcription and merge them
+ *   together. This is done to assure that the callback is invoked when the user is not speaking anymore. Note, that the
+ *   transcription provided to the callback is the one with the best confidence.
+ * See [handleTranscriptions] for more info on [onStartTranscribingCallbacks] and [onResultCallbacks].
+ *
+ * Here it follows a usage example:
  * ```
- *    // Instantiate the service with the ability to read `InputStream` from the microphone.
- *    val transcriber = AwsTranscribe (DesktopMicrophone)
+ *     // Instantiate the service with the ability to read `InputStream` from the microphone.
+ *     val transcriber = AwsTranscribe (DesktopMicrophone)
  *
- *     // Set the callback invoked when a not final transcription has been provided by AWS Transcribe
- *     transcriber.onResultCallbacks.add { result: Result ->
- *         println("Callback -> ${result.alternatives()[0].transcript()}")
- *     }
+ *      // Set the callback invoked when a not partial transcription has been provided by AWS Transcribe
+ *      transcriber.onResultCallbacks.add { result: Transcription ->
+ *          println("Callback -> $result")
+ *      }
  *
- *     // Set the callback invoked when an error occurred.
- *     transcriber.onErrorCallbacks.add { se: ServiceError ->
- *         println("Error during transcription: ('${se.errorSource}') ${se.throwable.message}")
- *     }
+ *      // Set the callback invoked when the user started speaking.
+ *      transcriber.onStartTranscribingCallbacks.add {
+ *          println("The user started speaking!")
+ *      }
  *
- *     // Initialize the AWS Transcribe resources.
- *     transcriber.activate()
+ *      // Set the callback invoked when an error occurred.
+ *      transcriber.onErrorCallbacks.add { se: ServiceError ->
+ *          println("Error during transcription: ('${se.source}', ${se.sourceTag}) ${se.throwable.message}")
+ *      }
  *
- *     // Define the timeout with its callback
- *     val timeoutSpec = FrequentTimeout(timeout = 5000, checkPeriod = 50) {
- *         println("Computation timeout reached!") // This is called when timeout occurs.
+ *      // Initialize the AWS Transcribe resources.
+ *      transcriber.activate()
+ *
+ *      // Define the timeout with its callback
+ *      val timeoutSpec = FrequentTimeout(timeout = 5000, checkPeriod = 50) { sourceTag ->
+ *          println("Computation timeout reached! ($sourceTag)") // This is called when timeout occurs.
  *         // Note that this timeout is reset  everytime some audio is converted into text.
- *     }
+ *      }
  *
- *     // Start asynchronous listener for the microphone (the timeout is optional).
- *     transcriber.computeAsync(timeoutSpec)
+ *      // Start asynchronous listener for the microphone (the timeout and sourceTag are optional).
+ *      transcriber.computeAsync(timeoutSpec, "MySourceTag")
  *
- *     // Eventually, wait for the computation to finish (the timeout is optional).
- *     transcriber.wait(Timeout(timeout = 20000) {
- *         println("Waiting timeout reached!")
- *     })
+ *      // Eventually, wait for the computation to finish (the timeout is optional).
+ *      transcriber.wait(Timeout(timeout = 20000) { sourceTag ->
+ *          println("Waiting timeout reached! ($sourceTag)")
+ *      })
  *
- *     // You might want to stop the transcription service.
- *     transcriber.stop()
+ *      // You might want to stop the transcription service.
+ *      transcriber.stop()
  *
- *     // Here you can use `computeAsync` again (together with `wait` or `stop`)...
+ *      // Here you can use `computeAsync` again (together with `wait` or `stop`)...
  *
- *     // Always remember to close the service resources.
- *     transcriber.deactivate()
+ *      // Always remember to close the service resources.
+ *      transcriber.deactivate()
  *
- *     // You can re-activate the service and make more computation...
+ *      // You can re-activate the service and make more computation...
+ *
+ *      // Cancel the scope and all related jobs. After this the service cannot be activated again.
+ *      transcriber.cancelScope()
  * ```
+ * See `AwsTranscribeRunner.kt` in the test src folder, for an example of how to use this class.
  *
  * @property client The AWS Transcribe client initialized with [activate], and closed with [deactivate]. This property
  * is `null` if the service is not active, and it is `private`.
@@ -88,9 +109,23 @@ import javax.sound.sampled.*
  * @property streamBuilder The object providing the input audio stream to process. However, this is a `private`
  * property.
  * @property onResultCallbacks The callback manager for the text transcription results.
+ * @property onStartTranscribingCallbacks The callback manager for the start of transcription. It is triggered once for
+ * each partial transcription that has more than [MINIMUM_WORDS_FOR_PARTIAL_RESULT] words.
  * @property onErrorCallbacks The object providing the output audio stream to process.
  * @property isActive Whether the service resources have been initialized or not.
  * @property isComputing Whether the service is currently computing or not.
+ * @property bufferingTranscription The transcribed data waiting to be sent to the [onResultCallbacks].
+ * @property mergingJob The job that waits for merging transcribed result close in time into [bufferingTranscription].
+ * This property is `null` if the service is not processing a result, and it is `private`.
+ * @property audioStreamStartTime The time timestamp in milliseconds when the audio stream started. This property is
+ * `null` if the service is not processing a result, and it is `private`.
+ * @property userStartedSpeaking A flag used to trigger the [onStartTranscribingCallbacks] when it goes from `false` to
+ * `true`. This property is `true` when a partial transcription with a number of words more
+ * [MINIMUM_WORDS_FOR_PARTIAL_RESULT] is found, or `false`otherwise. Thi property is `private`.
+ * @property userIsSpeaking A flag used to manage the [mergingJob]. It is `true` when a partial transcription is
+ * obtained, and it becomes `false` when the final transcription is obtained. This property is  `private`.
+ * @property sourceTag A private identifier given by the class calling [computeAsync] and propagated to the callback
+ * related to on start transcription, on transcription result, on error and on timeout events.
  *
  * @see ReusableService
  * @see Speech2Text
@@ -99,12 +134,23 @@ import javax.sound.sampled.*
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
-class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<Result>(inputStreamBuilder) {
+class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text(inputStreamBuilder) {
 
     // See documentation above.
     private var client: TranscribeStreamingAsyncClient? = null
     private var request: StartStreamTranscriptionRequest? = null
     private var transcribeJob: CompletableFuture<Void>? = null
+    private val bufferingTranscription = Transcription()
+
+    // Property used by `handleTranscriptions`.
+    private var mergingJob: Job?  = null
+    private var audioStreamStartTime: Long? = null
+    // Flag used to trigger callbacks on `onStartTranscribingCallbacks`.
+    private var userStartedSpeaking = false
+    // Flag used to manage transcription buffering. It is as `startSpeaking` but without the `MINIMUM_WORDS_FOR_PARTIAL_RESULT` check.
+    private var userIsSpeaking = AtomicBoolean(false)
+    // Set at the beginning of `computeAsync` and reset and the end of it.
+    var sourceTag: String = ServiceInterface.UNKNOWN_SOURCE_TAG // i.e., an empty string.
 
 
     /**
@@ -121,9 +167,9 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
      */
     private fun initClient(): TranscribeStreamingAsyncClient =
         TranscribeStreamingAsyncClient.builder()
-            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO adjust credential provider
             .region(Region.of(AWS_VENV_REGION))
-            /*.httpClient( // TODO to use?
+            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO manage credential on production and further configure client
+            /*.httpClient(
                 // It is faster with respect to Netty (default) httpClient but less stable
                 // It requires `implementation("software.amazon.awssdk:aws-crt-client")` as gradle dependence
                 AwsCrtAsyncHttpClient.builder()
@@ -131,6 +177,7 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
                 .build()
             )*/
             .build()
+
 
 
     /**
@@ -145,10 +192,11 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
      */
     private fun initRequest(): StartStreamTranscriptionRequest =
         StartStreamTranscriptionRequest.builder()
-                .languageCode(LANGUAGE_CODE)
-                .mediaEncoding(MEDIA_ENCODING)
-                .mediaSampleRateHertz(SAMPLE_RATE)
-                .build()
+            .languageCode(LANGUAGE_CODE)
+            .mediaEncoding(MEDIA_ENCODING)
+            .mediaSampleRateHertz(SAMPLE_RATE)
+            .build()
+
 
 
     /**
@@ -157,8 +205,10 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
      *
      * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
      * [onErrorCallbacks] with `errorSource` set to [ErrorSource.ACTIVATING].
+     *
+     * @param sourceTag It is not used in this implementation.
      */
-    override fun doActivate() {
+    override fun doActivate(sourceTag: String) {
         client = initClient()
         request = initRequest()
         // The `activate` method will return `false` in case of exceptions.
@@ -173,12 +223,17 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
      * [onErrorCallbacks] with `errorSource` set to [ErrorSource.COMPUTING].
      *
      * @param input This method takes nothing as input parameter. Thus, this parameter is not used.
+     * @param sourceTag An identifier propagated to the on start transcription and on result callbacks.
      */
-    override suspend fun doComputeAsync(input: Unit) { // Runs on a separate thread
+    override suspend fun doComputeAsync(input: Unit, sourceTag: String) { // Runs on a separate thread
+        // Set the source tag associated with this computation.
+        this.sourceTag = sourceTag
         // Start AWS transcribe service
         // Get input stream (e.g., from microphone).
         val inputStream: InputStream = streamBuilder.build()
             ?: throw IOException("Cannot build input stream") // This exception is cached by `doThrow`.
+        // Set the timestamp for onResultCallback input parameter.
+        audioStreamStartTime = System.currentTimeMillis()
         // Instantiate the publisher for AWS Transcribe.
         val audioPublisher = AudioStreamPublisher(inputStream, logger)
         // Instantiate the object that handle the AWS response.
@@ -186,6 +241,8 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
         // Start the AWS Transcription stream
         transcribeJob = client?.startStreamTranscription(request, audioPublisher, handler)
         transcribeJob?.join()
+        // Reset the source tag.
+        this.sourceTag = ServiceInterface.UNKNOWN_SOURCE_TAG // i.e., an empty string.
     }
 
 
@@ -204,63 +261,223 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
      *   successfully completed, either by finishing audio input or stopping the service explicitly. Currently, this
      *   method only produces log.
      * - [StartStreamTranscriptionResponseHandler.Builder.subscriber]: Processes [TranscriptResultStream] events from
-     *   AWS Transcribe, extracting and formatting transcribed text data, and invoking [onResultCallbacks] with
-     *   finalized results when available. This method is also used to invoke [resetTimeout] when some text has been
-     *   transcribed.
+     *   AWS Transcribe over time. It reacts to new transcription incoming into the stream. Such transcriptions are
+     *   processed by [transcribeJob], which is in charge to filter transcription and invoke the
+     *   [onStartTranscribingCallbacks] and [onResultCallbacks].
      *
      * @return The object that handle the AWS response.
      */
-    private fun getResponseHandler() =
-        StartStreamTranscriptionResponseHandler.builder()
+    private fun getResponseHandler() = StartStreamTranscriptionResponseHandler.builder()
             .onResponse {
                 // It is called as soon as the AWS Transcribe client starts.
                 logDebug("Ready to use AWS Transcribe client.")
             }
             .onError { ex: Throwable ->
-                stop()
-                if (doThrow(ex, ErrorSource.COMPUTING) == true) throw ex
+                stop(sourceTag)
+                if (doThrow(ex, ErrorSource.COMPUTING, sourceTag) == true) throw ex
             }
             .onComplete {
                 // Called if the audio is finished or if the AWS Transcribe client is closed with `stopListening`.
                 logDebug("AWS Transcribe client completed its stream.")
             }
             .subscriber { event: TranscriptResultStream ->
-                // Get transcribed text for AWS.
+                // Get transcribed text over time, as they came into the stream.
                 val results = (event as TranscriptEvent).transcript().results()
-                if (results.isNotEmpty()) {
-                    val result: Result = results[0]
-                    if (result.alternatives()[0].transcript().isNotEmpty()) {
-                        logTrace(
-                            "AWS Transcribe realtime recognition: '{}' ...",
-                            results[0].alternatives()[0].transcript()
-                        )
-                        resetTimeout()
-
-                        if (!result.isPartial) {
-                            val transcribed = result.alternatives()
-                            logDebug(
-                                "AWS Transcribe sentence recognised {} alternative(s): '{}'",
-                                transcribed.size, transcribed[0].transcript()
-                            )
-                            onResultCallbacks.invoke(result)
-                        }
-                    }
-                }
+                if (results.isNotEmpty())
+                    // Filter data, parse the result, and invoke callback
+                    handleTranscriptions(results)
             }
             .build()
 
 
     /**
-     * Stop the service while it is computing and sets [transcribeJob] to `null`.
+     * Transforms a list AWS Transcribe [Result] into a list of [Transcription], which are the object that the
+     * [Speech2Text] interface requires to be given as input parameter to the [onResultCallbacks].
+     *
+     * It computes a `confidence` as the average confidence of the chunks transcribed by AWS and associate a start and
+     * end time to the transcribed message as the absolute time stamp with respect to [audioStreamStartTime]. It also
+     * set the [sourceTag] to the returned [Transcription] object.
+     *
+     * @param results The list of transcribed alternatives as provided by AWS Transcribe.
+     * @return The list of transcribed alternatives as required by [Speech2Text].
+     */
+    private fun parseTranscriptions(results: List<Result>): List<Transcription> = results.map { result ->
+        val alternative = result.alternatives()[0]
+        val transcribed = alternative.transcript()
+
+        // Calculate average confidence from transcribed chunks.
+        val chunks = alternative.items()
+        val averageConfidence = if (chunks.isNotEmpty()) {
+            chunks.mapNotNull { it.confidence() }   // filters out null values
+                .takeIf { it.isNotEmpty() }         // check if we have any non-null values
+                ?.average()                         // calculate average if we have values
+                ?: Transcription.UNKNOWN_CONFIDENCE // default to 0.0 if all values were null
+        } else {
+            Transcription.UNKNOWN_CONFIDENCE
+        }
+
+        /**
+         * A helping function that converts Double timestamp in seconds into a Long timestamp in milliseconds. It also
+         * checks that the timestamp is feasible.
+         *
+         * @param time The Double timestamp in seconds to be converted
+         * @return The Long timestamp in milliseconds corresponding to the input timestamp, or
+         * [Transcription.UNKNOWN_TIME] if the input timestamp is not feasible.
+         */
+        fun checkTime(time: Double): Long =
+            if (time != Double.MAX_VALUE && time != Double.MIN_VALUE && time != 0.0)
+                    (time * 1000).toLong()
+            else
+                Transcription.UNKNOWN_TIME
+
+        val absoluteStartTime = if(audioStreamStartTime != null) {
+            audioStreamStartTime!!
+        }  else {
+            logError("Absolute time for transcription result is not set!")
+            0L
+        }
+
+        // AWS provides the transcription time relative to when the audio streaming started.
+        val relativeStartTime = checkTime(result.startTime())
+        val relativeEndTime = checkTime(result.endTime())
+
+        // Build the object that is returned by this function.
+        Transcription(
+            message = transcribed,
+            confidence = averageConfidence,
+            startTime = absoluteStartTime + relativeStartTime,
+            endTime = absoluteStartTime + relativeEndTime,
+            sourceTag = sourceTag
+        )
+    }
+
+
+    /**
+     * Manage what AWS transcribe with respect to time, and invoke the [onStartTranscribingCallbacks] and
+     * [onResultCallbacks].
+     *
+     * This class has three purposes:
+     *  1. it updates the timeout associated with [computeAsync] by invoking [resetTimeout].
+     *  2. it manages partial AWS transcriptions by invoking the [onStartTranscribingCallbacks] and setting the
+     *  [userIsSpeaking] flag.
+     *  3. it manages final AWS transcriptions by invoking the [onResultCallbacks] based on the [bufferingTranscription]
+     *
+     * When a transcription is partial, it sets the [userIsSpeaking] flag, which is reset when a final transcription
+     * is obtained. Then, it checks if the transcription contains at least a number of words equal to
+     * [MINIMUM_WORDS_FOR_PARTIAL_RESULT] and, if this is the case, it sets the [userStartedSpeaking] flag to `true`,
+     * which is reset when a final result is obtained. When [userIsSpeaking] changes from `false` to `true`, it invokes
+     * the [onStartTranscribingCallbacks].
+     *
+     * When a transcription is final, it exploits [parseTranscriptions] to transform the input [Result], and it chooses
+     * the transcription with the highest confidence, which data is stored in the [bufferingTranscription]. Then it
+     * asynchronously waits for [TRANSCRIPTION_BUFFERING_TIME] milliseconds and, if in the [userIsSpeaking] flags
+     * becomes `true` again it waits for the incoming final transcription to arrive. Otherwise, it calls the
+     * [onResultCallbacks] with the [bufferingTranscription] data, and resets such a data to empty.
+     *
+     * Note that [sourceTag] set during [computeAsync] will be propagated to the [onStartTranscribingCallbacks] and
+     * [onResultCallbacks].
+     *
+     * @param results The AWS Transcribe partial or final results to manage for calling the callbacks.
+     */
+    private fun handleTranscriptions(results: List<Result>) {
+
+        // Reset the timeout associated with `computeAsync`, since something is being transcribed from the audio.
+        resetTimeout()
+
+        // Check if there is at least one not partial result.
+        val hasFinalResult = results.any { !it.isPartial }
+
+        if (!hasFinalResult) {
+            // Get all the transcription alternatives in results
+            val transcripts: List<String> = results.flatMap { it.alternatives() }.map { it.transcript() }
+
+            logDebug("AWS Transcribe realtime recognition with {} alternative(s). First transcription: '{}' ...",
+                results.size, transcripts[0])
+
+            // The user is speaking, and we should wait for a final transcription to arrive.
+            userIsSpeaking.set(true)
+
+            // Notify only once for each partial result through callback.
+            if(!userStartedSpeaking) {
+                // Get number of words of the string in `transcriptions` that has the maximum number of words.
+                val maxWordCount = transcripts.maxOf { str ->
+                    str.trim().split("\\s+".toRegex()).size
+                }
+
+                // Notify the `onStartTranscribingCallbacks` if the user said at least some words.
+                if (maxWordCount >= MINIMUM_WORDS_FOR_PARTIAL_RESULT) {
+                    onStartTranscribingCallbacks.invoke(SimpleCallbackInput(sourceTag))
+                    // Set flag to avoid calling the callback several time from the same transcription.
+                    userStartedSpeaking = true
+                }
+            }
+        } else {
+            // Transform all transcriptions and get the best transcription.
+            val transcriptions: List<Transcription> = parseTranscriptions(results)
+            val bestTranscription: Transcription = transcriptions.maxBy { it.confidence }
+
+            logInfo("AWS Transcribe sentence recognised: '{}'", bestTranscription)
+
+            // Manage the transcription data across different speech-to-text result close on time.
+            synchronized( bufferingTranscription) {
+                // Update the transcription with the new data
+                bufferingTranscription.merge(bestTranscription)
+
+                // Stop waiting job since a new one is going to be launched.
+                if (mergingJob?.isActive == true) {
+                    mergingJob?.cancel()
+                    logTrace("AWS Transcribe merged results as '{}'", bestTranscription)
+                }
+
+                // Reset the flag related to the user speaking (i.e., related to partial transcription).
+                userStartedSpeaking = false // Managed only once for each transcription based on a minimum number of words.
+                userIsSpeaking.set(false) // Managed for each partial transcription.
+            }
+
+            // Run a new asynchronous job for waiting and see if other final transcription close on time are obtained.
+            mergingJob = scope.launch {
+                // Wait same time to see if the user keep speaking
+                delay(TRANSCRIPTION_BUFFERING_TIME)
+
+                // If the user does not keep speaking, invoke the callback. Otherwise, a new `mergingJob` will run when
+                // the user transcription will be final, and it will invoke the callback.
+                if (!userIsSpeaking.get()) {
+                    synchronized(bufferingTranscription) {
+                        logDebug("AWS Transcribe generated final and merged transcription '{}'", bufferingTranscription)
+                        // Actually invoke the callback.
+                        onResultCallbacks.invoke(bufferingTranscription)
+
+                        // Reset the data and job for the next callback.
+                        bufferingTranscription.reset()
+                        mergingJob = null
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Stop the service while it is computing and sets [transcribeJob] to `null`. It also stops the [mergingJob], and
+     * sets [audioStreamStartTime] to `null`.
      *
      * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
      * [onErrorCallbacks] with `errorSource` set to [ErrorSource.STOPPING].
+     *
+     * @param sourceTag It is not used in this implementation.
      */
-    override fun doStop() {
+    override fun doStop(sourceTag: String) {
         AudioStreamPublisher.stop() // It makes transcribeJob finishing
+
         transcribeJob?.cancel(true)
         transcribeJob = null
-        super.doStop()
+
+        mergingJob?.cancel()
+        audioStreamStartTime = null
+
+        this.sourceTag = ServiceInterface.UNKNOWN_SOURCE_TAG // i.e., an empty string.
+
+        super.doStop(sourceTag)
     }
 
 
@@ -270,8 +487,10 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
      *
      * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
      * [onErrorCallbacks] with `errorSource` set to [ErrorSource.DEACTIVATING].
+     *
+     * @param sourceTag It is not used in this implementation.
      */
-    override fun doDeactivate() {
+    override fun doDeactivate(sourceTag: String) {
         // Stop the AWS Transcribe server and close relative resources.
         client?.close() // It takes 2 seconds with Natty HTTP-client (see other commented client, i.e., AwsCrt).
         client = null
@@ -281,7 +500,6 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
 
 
     companion object {
-        // TODO make var configurable from API
 
         /**
          * The language code for the transcription, e.g., `it-IT`. This value is required from the
@@ -302,9 +520,8 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
 
         /**
          * The audio sampling rate in Hz, set to 16000Hz. This value is required from the environmental variable
-         * `AWS_TRANSCRIBE_SAMPLE_RATE` as an integer. Note that [AwsTranscribeFromMicrophone.MIC_SAMPLE_SIZE_IN_BIT]
-         * is related to this value.
-         * .
+         * `AWS_TRANSCRIBE_SAMPLE_RATE` as an integer. Note that [DesktopMicrophone.MIC_SAMPLE_SIZE_IN_BIT] is related
+         * to this value.
          */
         internal const val SAMPLE_RATE = 16000
 
@@ -319,6 +536,21 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
          *  - `ogg-opus`: Compressed, low quality and low latency as well.
          */
         private val MEDIA_ENCODING = MediaEncoding.PCM
+
+
+        /**
+         * Minimum number of words that has to be transcribed before to invoke the [onStartTranscribingCallbacks].
+         * Such a count is reset after each finalized transcribed text that is sent to the [onResultCallbacks]. It is
+         * set equal to 4.
+         */
+        private const val MINIMUM_WORDS_FOR_PARTIAL_RESULT = 4  // TODO parametrize with environmental variables.
+
+
+        /**
+         * The delay in milliseconds used to wait for new transcriptions to be sent to the [onResultCallbacks] if the
+         * user is still speaking even if a final transcription has been provided. By default, it is set equal to 1000.
+         */
+        private const val TRANSCRIPTION_BUFFERING_TIME = 1500L // TODO parametrize with environmental variables.
     }
 
 }
@@ -347,9 +579,11 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text<
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
-private class AudioStreamPublisher(private val inputStream: InputStream,
-                                   private val logger: CentralizedLogger)
-        : Publisher<AudioStream?> {
+private class AudioStreamPublisher(
+    private val inputStream: InputStream,
+    private val logger: CentralizedLogger
+) : Publisher<AudioStream?>
+{
 
     /**
      * Subscribes a [Subscriber] to the audio stream. This method establishes a subscription based on [SubscriptionImpl]
@@ -420,10 +654,11 @@ private class AudioStreamPublisher(private val inputStream: InputStream,
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
 class SubscriptionImpl internal constructor(
-                                            private val subscriber: Subscriber<in AudioStream?>,
-                                            private val inputStream: InputStream,
-                                            private val logger: CentralizedLogger)
-                                            : Subscription {
+    private val subscriber: Subscriber<in AudioStream?>,
+    private val inputStream: InputStream,
+    private val logger: CentralizedLogger
+) : Subscription
+{
 
 
     /**

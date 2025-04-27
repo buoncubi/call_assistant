@@ -7,7 +7,7 @@
  * see `PromptsParser`, `ParsedPrompts`, `PromptsDeserializer`,
  * and `PromptsManager`.
  *
- * @author Luca Buoncompagni © 2025
+ * @author Luca Buoncompagni, © 2025, v1.0.
  */
 
 package digital.boline.callAssistant.llm.prompt

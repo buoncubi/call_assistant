@@ -124,52 +124,67 @@
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-aws-polly/index.html">AwsPolly</a> : <a href="-aws-polly-mute/index.html">AwsPollyMute</a></div><div class="brief "><p class="paragraph">A class that extends <a href="-aws-polly-mute/index.html">AwsPollyMute</a> and provides functionality to <a href="-aws-polly/play-audio.html">playAudio</a> audio streams produced by AWS Polly's text-to-speech synthesis.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">class </span><a href="-aws-polly/index.html">AwsPolly</a><span class="token operator">&lt;</span><a href="-aws-polly/index.html">C</a><span class="token operator">&gt;</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">player<span class="token operator">: </span><a href="-text2-speech-player/index.html">Text2SpeechPlayer</a><span class="token operator">&lt;</span><a href="-aws-polly/index.html">C</a><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span> : <a href="-text2-speech/index.html">Text2Speech</a></div><div class="brief "><p class="paragraph">The implementation of <a href="-text2-speech/index.html">Text2Speech</a> based on AWS Polly.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="-39752370%2FClasslikes%2F-251573632" anchor-label="AwsPollyMute" id="-39752370%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
+<a data-name="-1171618455%2FClasslikes%2F-251573632" anchor-label="DesktopAudioPlayer" id="-1171618455%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
           <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-aws-polly-mute/index.html"><span>Aws</span><wbr></wbr><span>Polly</span><wbr></wbr><span><span>Mute</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-39752370%2FClasslikes%2F-251573632"></span>
+                  <div><a href="-desktop-audio-player/index.html"><span>Desktop</span><wbr></wbr><span>Audio</span><wbr></wbr><span><span>Player</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1171618455%2FClasslikes%2F-251573632"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="-aws-polly-mute/index.html">AwsPollyMute</a> : <a href="-text2-speech-async/index.html">Text2SpeechAsync</a><span class="token operator">&lt;</span><a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.base/java/io/InputStream.html">InputStream</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">An abstract extension of <a href="-text2-speech-async/index.html">Text2SpeechAsync</a> designed to interact with AWS Polly for synthesizing speech from text. This class provides functionality to initialize and manage an AWS Polly client, configure voice settings, and fetch audio streams for given text input using AWS Polly's text-to-speech capabilities. Also, it implements support for starting and stopping the text-to-speech service and ensures proper initialization and resource cleanup of the AWS Polly client and voice. However, it does not provide a mechanism for directly playing the audio stream.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-desktop-audio-player/index.html">DesktopAudioPlayer</a> : <a href="-text2-speech-player/index.html">Text2SpeechPlayer</a><span class="token operator">&lt;</span><span data-unresolved-link="javazoom.jl.player.advanced/PlaybackEvent///PointingToDeclaration/">PlaybackEvent</span><span class="token operator">?</span><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">A class that plays an audio streams. This class is mainly used for playing the text-to-speech synthesis on a desktop computer, i.e., it is used for debugging purposes. This class should be given to an instance of the <a href="-text2-speech/index.html">Text2Speech</a> abstract class.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="657690415%2FClasslikes%2F-251573632" anchor-label="Text2SpeechAsync" id="657690415%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
+<a data-name="2111810071%2FClasslikes%2F-251573632" anchor-label="Text2Speech" id="2111810071%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
           <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-text2-speech-async/index.html"><span>Text2Speech</span><wbr></wbr><span><span>Async</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="657690415%2FClasslikes%2F-251573632"></span>
+                  <div><a href="-text2-speech/index.html"><span><span>Text2Speech</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2111810071%2FClasslikes%2F-251573632"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="-text2-speech-async/index.html">Text2SpeechAsync</a><span class="token operator">&lt;</span><a href="-text2-speech-async/index.html">T</a><span class="token operator">&gt;</span> : <a href="../digital.boline.callAssistant/-loggable/index.html">Loggable</a>, <a href="-text2-speech-interface/index.html">Text2SpeechInterface</a><span class="token operator">&lt;</span><a href="-text2-speech-async/index.html">T</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">Abstract class for implementing asynchronous text-to-speech functionality based on the <a href="-text2-speech-interface/index.html">Text2SpeechInterface</a>. It provides mechanisms to fetch audio, playAudio audio, and perform text-to-speech operations asynchronously while ensuring thread safety through the use of mutexes. It also provides basic implementation of the <span data-unresolved-link="digital.boline.callAssistant.text2speech/Text2SpeechAsync/serverRunning/#/PointingToDeclaration/">serverRunning</span> flag, but further management of the flag is left to the derived classes through the <a href="-text2-speech-async/start.html">start</a> and <a href="-text2-speech-async/stop.html">stop</a> methods.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="-text2-speech/index.html">Text2Speech</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">player<span class="token operator">: </span><a href="-text2-speech-player/index.html">Text2SpeechPlayer</a><span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">&gt;</span></span></span><span class="token punctuation">)</span> : <a href="../digital.boline.callAssistant/-reusable-service/index.html">ReusableService</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">The interface to perform text-to-speech. It performs computation asynchronously based on the <a href="../digital.boline.callAssistant/-reusable-service/index.html">ReusableService</a>.</p></div></div></div>
                 </div>
               </div>
             </div>
           </div>
-<a data-name="817378834%2FClasslikes%2F-251573632" anchor-label="Text2SpeechInterface" id="817378834%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
+<a data-name="-644197962%2FClasslikes%2F-251573632" anchor-label="Text2SpeechPlayer" id="-644197962%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
           <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
             <div class="main-subrow keyValue ">
               <div class=""><span class="inline-flex">
-                  <div><a href="-text2-speech-interface/index.html"><span>Text2Speech</span><wbr></wbr><span><span>Interface</span></span></a></div>
-<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="817378834%2FClasslikes%2F-251573632"></span>
+                  <div><a href="-text2-speech-player/index.html"><span>Text2Speech</span><wbr></wbr><span><span>Player</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-644197962%2FClasslikes%2F-251573632"></span>
                     <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
                   </span></span></div>
               <div>
                 <div class="title">
-                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-text2-speech-interface/index.html">Text2SpeechInterface</a><span class="token operator">&lt;</span><a href="-text2-speech-interface/index.html">T</a><span class="token operator">&gt;</span> : <a href="../digital.boline.callAssistant/-loggable-interface/index.html">LoggableInterface</a></div><div class="brief "><p class="paragraph">An interface for text-to-speech functionality. This interface provides methods to convert text into audio, playAudio audio, start and stop text-to-speech operations, and simplify text playback. These methods should be performed asynchronously.</p></div></div></div>
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">abstract </span><span class="token keyword">class </span><a href="-text2-speech-player/index.html">Text2SpeechPlayer</a><span class="token operator">&lt;</span><a href="-text2-speech-player/index.html">C</a><span class="token operator">&gt;</span> : <a href="../digital.boline.callAssistant/-service/index.html">Service</a><span class="token operator">&lt;</span><a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.base/java/io/InputStream.html">InputStream</a><span class="token operator">&gt; </span>, <a href="-text2-speech-player-interface/index.html">Text2SpeechPlayerInterface</a><span class="token operator">&lt;</span><a href="-text2-speech-player/index.html">C</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">A shorthand for using <a href="-text2-speech-player-interface/index.html">Text2SpeechPlayerInterface</a> based on <a href="../digital.boline.callAssistant/-service/index.html">Service</a> of <code class="lang-kotlin">InputStream</code> and <span data-unresolved-link="digital.boline.callAssistant.text2speech//text2SpeechScope/#/PointingToDeclaration/">text2SpeechScope</span>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="145142099%2FClasslikes%2F-251573632" anchor-label="Text2SpeechPlayerInterface" id="145142099%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-text2-speech-player-interface/index.html"><span>Text2Speech</span><wbr></wbr><span>Player</span><wbr></wbr><span><span>Interface</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="145142099%2FClasslikes%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">interface </span><a href="-text2-speech-player-interface/index.html">Text2SpeechPlayerInterface</a><span class="token operator">&lt;</span><a href="-text2-speech-player-interface/index.html">C</a><span class="token operator">&gt;</span> : <a href="../digital.boline.callAssistant/-service-interface/index.html">ServiceInterface</a><span class="token operator">&lt;</span><a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.base/java/io/InputStream.html">InputStream</a><span class="token operator">&gt; </span></div><div class="brief "><p class="paragraph">The interface for playing the results of a text-to-speech process as implemented by <a href="-text2-speech/index.html">Text2Speech</a>. This interface required to play the audio on a separate coroutine, see <a href="../digital.boline.callAssistant/-service-interface/index.html">ServiceInterface</a> for more.</p></div></div></div>
                 </div>
               </div>
             </div>

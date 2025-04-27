@@ -2,7 +2,8 @@
     "metadata": {
         "version": "1.0",
         "application name": "Call Assistant",
-        "environment": "test"
+        "environment": "test",
+        "*MessageSummaryTitle*": "Previous Dialogue"
     },
     "variables": {
         "Context": [

@@ -1,8 +1,9 @@
 package digital.boline.callAssistant.text2speech
 
-import digital.boline.callAssistant.ApplicationRunner.Companion.AWS_VENV_REGION
-import digital.boline.callAssistant.ErrorSource // Only used for documentation
+import digital.boline.callAssistant.ApplicationRunner
+import digital.boline.callAssistant.CallbackInput
 import digital.boline.callAssistant.ReusableService
+import digital.boline.callAssistant.ErrorSource // Only used for documentation
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.polly.PollyClient
@@ -13,7 +14,6 @@ import software.amazon.awssdk.services.polly.model.Voice
 import java.io.InputStream
 
 
-
 /**
  * The implementation of [Text2Speech] based on AWS Polly.
  *
@@ -21,52 +21,54 @@ import java.io.InputStream
  * computation is made asynchronously by the means of coroutines. Note that this class allows defining timeout and
  * callbacks as shown in the example below.
  *
- * A minimal example for using this class is:
- * ```
- *      // Initialize the audio player.
- *      val player = DesktopAudioPlayer
- *      player.onEndPlayingCallbacks.add { event: PlaybackEvent? ->
- *          logger.info("End audio player callback: $event")
- *      }
- *
- *      // Initialize the AWS Polly.
- *      val polly = AwsPolly(player)
- *      polly.onErrorCallbacks.add {se: ServiceError ->
- *          logger.error("Error callback $se")
- *      }
- *
- *      // Initialize Polly's resources.
- *      polly.activate()
- *
- *      // Use AWS Polly and manually stop it.
- *      polly.computeAsync("Hello")
- *      Thread.sleep(200)
- *      polly.stop()
- *
- *      // Use AWS Polly with optional timeout.
- *      val computingTimeout = FrequentTimeout(timeout = 20_000, checkPeriod = 200){
- *          println("Polly computing timeout!")
- *      }
- *      val waitingTimeout = Timeout(timeout = 10_000) {
- *          println("Polly waiting timeout!")
- *      }
- *      polly.computeAsync("World.", computingTimeout)
- *      polly.wait(waitingTimeout)
- *
- *      // Close Polly's resources
- *      polly.deactivate()
- *
- *      // You might want to activate Polly again and perform some computation ...
- * ```
- * See `AwsPollyRunner.kt` in the test src folder, for an example of how to use this class.
- *
- *
  * This class requires (since default values are not given) the following virtual environment variables:
  *  - `AWS_POLLY_VOICE_NAME`: see [VOICE_NAME],
  *  - `AWS_POLLY_VOICE_TYPE`: see [VOICE_TYPE],
- *  - `AWS_REGION`: see [AWS_VENV_REGION],
+ *  - `AWS_REGION`: see [ApplicationRunner.AWS_VENV_REGION],
  *  - `AWS_ACCESS_KEY_ID`,
  *  - `AWS_SECRET_ACCESS_KEY`.
+ *
+ * A minimal example for using this class is:
+ * ```
+ *     // Initialize the audio player.
+ *     val player = DesktopAudioPlayer
+ *     player.onEndPlayingCallbacks.add { event: PlaybackData ->
+ *         println("End audio player callback: $event")
+ *     }
+ *
+ *     // Initialize the AWS Polly.
+ *     val polly = AwsPolly(player)
+ *     polly.onErrorCallbacks.add {se: ServiceError ->
+ *         println("Error callback ('${se.source}', ${se.sourceTag}) ${se.throwable}")
+ *     }
+ *
+ *     // Initialize Polly's resources.
+ *     polly.activate()
+ *
+ *     // Use AWS Polly and manually stop it.
+ *     polly.computeAsync("Hello")
+ *     Thread.sleep(200)
+ *     polly.stop()
+ *
+ *     // Use AWS Polly with optional timeout, and sourceTag, which will be propagated to callbacks.
+ *     val computingTimeout = FrequentTimeout(timeout = 20_000, checkPeriod = 200){ sourceTag ->
+ *         println("Polly computing timeout! ($sourceTag)")
+ *     }
+ *     val waitingTimeout = Timeout(timeout = 10_000) {
+ *         println("Polly waiting timeout!")
+ *     }
+ *     polly.computeAsync("World.", computingTimeout, sourceTag = "MySourceTag")
+ *     polly.wait(waitingTimeout)
+ *
+ *     // Close Polly's resources
+ *     polly.deactivate()
+ *
+ *     // You might want to activate Polly again and perform some computation ...
+ *
+ *     // Cancel the scope and all related jobs. After this the service cannot be activated again.
+ *     polly.cancelScope()
+ * ```
+ * See `AwsPollyRunner.kt` in the test src folder, for an example of how to use this class.
  * 
  *
  * @param C The type of the callbacks input required by the [Text2SpeechPlayer] instance.
@@ -90,7 +92,7 @@ import java.io.InputStream
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
-class AwsPolly<C>(player: Text2SpeechPlayer<C>) : Text2Speech(player) {
+class AwsPolly<C: CallbackInput>(player: Text2SpeechPlayer<C>) : Text2Speech(player) {
 
     // See documentation above.
     private var client: PollyClient? = null
@@ -101,8 +103,8 @@ class AwsPolly<C>(player: Text2SpeechPlayer<C>) : Text2Speech(player) {
      * Initializes and configures the AWS Polly `client` for text-to-speech processing. This function is invoked in the
      * [activate] method.
      * 
-     * This method attempts to create a [PollyClient] using the specified AWS [AWS_VENV_REGION] and AWS credentials
-     * given through environmental variables, i.e., `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and
+     * This method attempts to create a [PollyClient] using the specified AWS [ApplicationRunner.AWS_VENV_REGION] and
+     * AWS credentials given through environmental variables, i.e., `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and
      * `AWS_SESSION_TOKEN`.
      *
      * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
@@ -112,9 +114,9 @@ class AwsPolly<C>(player: Text2SpeechPlayer<C>) : Text2Speech(player) {
      */
     private fun initializeClient(): PollyClient =
         PollyClient.builder()
-            .region(Region.of(AWS_VENV_REGION))
-            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO adjust credential provider
-            /*.httpClient( // TODO to use?
+            .region(Region.of(ApplicationRunner.AWS_VENV_REGION))
+            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO manage credential on production and further configure client
+            /*.httpClient(
                 // It is faster with respect to Netty (default) httpClient but less stable
                 // It requires `implementation("software.amazon.awssdk:aws-crt-client")` as gradle dependence
                 AwsCrtHttpClient.builder()
@@ -145,7 +147,7 @@ class AwsPolly<C>(player: Text2SpeechPlayer<C>) : Text2Speech(player) {
             ?.firstOrNull { it.name() == VOICE_NAME }
 
         if (voiceAttempt == null) {
-            logError("Service '{}' did not initialize AWS Polly voice successfully.", serviceName)
+            logError("Service did not initialize AWS Polly voice successfully.")
             throw NullPointerException("AWS Polly's voice '$VOICE_NAME' not found.")
         }
 
@@ -163,7 +165,7 @@ class AwsPolly<C>(player: Text2SpeechPlayer<C>) : Text2Speech(player) {
      * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
      * [onErrorCallbacks] with `errorSource` set to [ErrorSource.ACTIVATING].
      */
-    override fun doActivate() {
+    override fun doActivate(sourceTag: String) {
         // Initialize, which make it automatically activate
         client = initializeClient()
         voice = initializeVoice()
@@ -179,8 +181,10 @@ class AwsPolly<C>(player: Text2SpeechPlayer<C>) : Text2Speech(player) {
      *
      * Note that this method runs in a try-catch block managed by [doThrow], which invokes callbacks set through
      * [onErrorCallbacks] with `errorSource` set to [ErrorSource.DEACTIVATING].
+     *
+     * @param sourceTag It is not used in this implementation.
      */
-    override fun doDeactivate() {
+    override fun doDeactivate(sourceTag: String) {
         // Release Polly's resources
         client!!.close()
         client = null
@@ -220,8 +224,6 @@ class AwsPolly<C>(player: Text2SpeechPlayer<C>) : Text2Speech(player) {
 
 
     companion object {
-
-        // TODO make a class collecting AWS environmental config
 
         /**
          * Specifies the default name of the Amazon Polly voice to be used (e.g., `Bianca`). This value is required

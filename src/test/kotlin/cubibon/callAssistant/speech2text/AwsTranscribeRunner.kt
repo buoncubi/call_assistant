@@ -1,8 +1,8 @@
-package digital.boline.callAssistant.speech2text
+package cubibon.callAssistant.speech2text
 
-import digital.boline.callAssistant.FrequentTimeout
-import digital.boline.callAssistant.Loggable
-import digital.boline.callAssistant.ServiceError
+import cubibon.callAssistant.FrequentTimeout
+import cubibon.callAssistant.Loggable
+import cubibon.callAssistant.ServiceError
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.slf4j.event.Level

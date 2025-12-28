@@ -1,6 +1,6 @@
-package digital.boline.callAssistant.text2speech
+package cubibon.callAssistant.text2speech
 
-import digital.boline.callAssistant.*
+import cubibon.callAssistant.*
 import kotlinx.coroutines.*
 import org.slf4j.event.Level
 import java.io.InputStream

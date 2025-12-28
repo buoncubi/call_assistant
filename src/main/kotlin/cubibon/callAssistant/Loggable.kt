@@ -1,4 +1,4 @@
-package digital.boline.callAssistant
+package cubibon.callAssistant
 
 import org.apache.logging.log4j.core.config.Configurator
 import org.slf4j.LoggerFactory
@@ -7,7 +7,7 @@ import org.slf4j.event.Level as SLF4JLevel
 import org.apache.logging.log4j.Level
 
 
-// TODO be sure to wait for logg to be flushed when app is closing
+// todo be sure to wait for logg to be flushed when app is closing
 
 /**  The max lenght of the logger name that will be log before to troncate. */
 private const val MAX_LOG_NAME_LENGTH = 15

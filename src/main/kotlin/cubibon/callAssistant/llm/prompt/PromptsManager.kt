@@ -1,9 +1,9 @@
-package digital.boline.callAssistant.llm.prompt
+package cubibon.callAssistant.llm.prompt
 
-import digital.boline.callAssistant.Loggable
-import digital.boline.callAssistant.LoggableInterface
-import digital.boline.callAssistant.Utils
-import digital.boline.callAssistant.llm.message.MessagesManager // Only used in the documentation.
+import cubibon.callAssistant.Loggable
+import cubibon.callAssistant.LoggableInterface
+import cubibon.callAssistant.Utils
+import cubibon.callAssistant.llm.message.MessagesManager // Only used in the documentation.
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -352,9 +352,6 @@ class PromptsManagerImpl private constructor(
 
         logInfo("Applied variables to prompts.")
     }
-
-
-    // TODO add summary to the prompts and document about it
 }
 
 

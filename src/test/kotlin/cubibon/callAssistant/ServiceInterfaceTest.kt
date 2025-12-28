@@ -1,4 +1,4 @@
-package digital.boline.callAssistant
+package cubibon.callAssistant
 
 import kotlinx.coroutines.*
 import org.junit.jupiter.api.Assertions.assertFalse

@@ -1,8 +1,8 @@
-package digital.boline.callAssistant.llm.message
+package cubibon.callAssistant.llm.message
 
 import com.github.f4b6a3.ulid.UlidCreator
-import digital.boline.callAssistant.CentralizedLogger
-import digital.boline.callAssistant.Utils
+import cubibon.callAssistant.CentralizedLogger
+import cubibon.callAssistant.Utils
 
 
 /**

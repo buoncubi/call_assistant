@@ -1,9 +1,9 @@
-package digital.boline.callAssistant.llm
+package cubibon.callAssistant.llm
 
-import digital.boline.callAssistant.*
-import digital.boline.callAssistant.ApplicationRunner.Companion.AWS_VENV_REGION
-import digital.boline.callAssistant.llm.message.MessageWrapper
-import digital.boline.callAssistant.llm.message.MetaRole
+import cubibon.callAssistant.*
+import cubibon.callAssistant.ApplicationRunner.Companion.AWS_VENV_REGION
+import cubibon.callAssistant.llm.message.MessageWrapper
+import cubibon.callAssistant.llm.message.MetaRole
 import kotlinx.coroutines.CoroutineScope
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.http.SdkCancellationException
@@ -344,7 +344,7 @@ class AwsBedrock : LlmService<AwsBedrockRequest, AwsBedrockResponse>() {
      */
     override fun doActivate(sourceTag: String) {
         client = BedrockRuntimeAsyncClient.builder()
-            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO manage credential on production and further configure client
+            .credentialsProvider(DefaultCredentialsProvider.create()) // todo manage credential on production and further configure client
             .region(Region.of(AWS_VENV_REGION))
             /*.httpClient(
                 // It is faster with respect to Netty (default) httpClient but less stable
@@ -503,8 +503,9 @@ class AwsBedrock : LlmService<AwsBedrockRequest, AwsBedrockResponse>() {
      * @param input An `AwsBedrockRequest` object containing the necessary information for the request.
      * @param sourceTag An identifier given by the class that invokes the [computeAsync] and provided to the
      * [onResultCallbacks], or [onErrorCallbacks] in case of exception.
+     * @param scope The scope where the service works with.
      */
-    override suspend fun doComputeAsync(input: AwsBedrockRequest, sourceTag: String, scope: CoroutineScope) { //TODO to document
+    override suspend fun doComputeAsync(input: AwsBedrockRequest, sourceTag: String, scope: CoroutineScope) {
 
         this.sourceTag = sourceTag
         this.computingScope = scope
@@ -536,7 +537,7 @@ class AwsBedrock : LlmService<AwsBedrockRequest, AwsBedrockResponse>() {
         llmJob = null
         requestHandler = null
         this.sourceTag = ServiceInterface.UNKNOWN_SOURCE_TAG // i.e., an empty string.
-        this.computingScope = null // TODO
+        this.computingScope = null
     }
 
 
@@ -557,7 +558,7 @@ class AwsBedrock : LlmService<AwsBedrockRequest, AwsBedrockResponse>() {
         requestHandler = null
 
         this.sourceTag = ServiceInterface.UNKNOWN_SOURCE_TAG // i.e., an empty string.
-        this.computingScope = null // TODO
+        this.computingScope = null
 
         super.doStop(sourceTag)
     }

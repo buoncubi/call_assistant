@@ -1,7 +1,7 @@
-package digital.boline.callAssistant.speech2text
+package cubibon.callAssistant.speech2text
 
-import digital.boline.callAssistant.*
-import digital.boline.callAssistant.ApplicationRunner.Companion.AWS_VENV_REGION
+import cubibon.callAssistant.*
+import cubibon.callAssistant.ApplicationRunner.Companion.AWS_VENV_REGION
 import kotlinx.coroutines.*
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 
-// TODO activate AWS transcribe only if there is some voice (reduce cost on silence calls)
+// todo activate AWS transcribe only if there is some voice (reduce cost on silence calls)
 
 
 
@@ -168,7 +168,7 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text(
     private fun initClient(): TranscribeStreamingAsyncClient =
         TranscribeStreamingAsyncClient.builder()
             .region(Region.of(AWS_VENV_REGION))
-            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO manage credential on production and further configure client
+            .credentialsProvider(DefaultCredentialsProvider.create()) // todo manage credential on production and further configure client
             /*.httpClient(
                 // It is faster with respect to Netty (default) httpClient but less stable
                 // It requires `implementation("software.amazon.awssdk:aws-crt-client")` as gradle dependence
@@ -214,7 +214,10 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text(
         // The `activate` method will return `false` in case of exceptions.
     }
 
-    private var computingScope: CoroutineScope? = null // TODO document (also elsewhere)
+    /**
+     * The coroutine scope associated with the service.
+     */
+    private var computingScope: CoroutineScope? = null
 
     /**
      * Perform asynchronous computation that listen to the input stream given by [streamBuilder] and produce text that
@@ -225,8 +228,11 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text(
      *
      * @param input This method takes nothing as input parameter. Thus, this parameter is not used.
      * @param sourceTag An identifier propagated to the on start transcription and on result callbacks.
+     * @param scope The coroutine scope associated with the service.
      */
-    override suspend fun doComputeAsync(input: Unit, sourceTag: String, scope: CoroutineScope) { // TODO to document // Runs on a separate thread
+    override suspend fun doComputeAsync(input: Unit, sourceTag: String, scope: CoroutineScope) {
+        // It runs on a separate thread
+
         // Set the source tag associated with this computation.
         this.sourceTag = sourceTag
         this.computingScope = scope
@@ -440,7 +446,7 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text(
             }
 
             // Run a new asynchronous job for waiting and see if other final transcription are shortly obtained.
-            mergingJob = scope.launch { // TODO manage scope?
+            mergingJob = scope.launch {
                 // Wait same time to see if the user keep speaking
                 delay(TRANSCRIPTION_BUFFERING_TIME)
 
@@ -549,14 +555,14 @@ class AwsTranscribe(inputStreamBuilder: Speech2TextStreamBuilder) : Speech2Text(
          * Such a count is reset after each finalized transcribed text that is sent to the [onResultCallbacks]. It is
          * set equal to 4.
          */
-        private const val MINIMUM_WORDS_FOR_PARTIAL_RESULT = 4  // TODO parametrize with environmental variables.
+        private const val MINIMUM_WORDS_FOR_PARTIAL_RESULT = 4  // todo parametrize with environmental variables.
 
 
         /**
          * The delay in milliseconds used to wait for new transcriptions to be sent to the [onResultCallbacks] if the
          * user is still speaking even if a final transcription has been provided. By default, it is set equal to 1000.
          */
-        private const val TRANSCRIPTION_BUFFERING_TIME = 1000L // TODO parametrize with environmental variables.
+        private const val TRANSCRIPTION_BUFFERING_TIME = 1000L // todo parametrize with environmental variables.
     }
 
 }

@@ -1,6 +1,6 @@
-package digital.boline.callAssistant.speech2text
+package cubibon.callAssistant.speech2text
 
-import digital.boline.callAssistant.*
+import cubibon.callAssistant.*
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

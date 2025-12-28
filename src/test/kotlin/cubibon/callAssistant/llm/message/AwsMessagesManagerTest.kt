@@ -1,6 +1,6 @@
-package digital.boline.callAssistant.llm.message
+package cubibon.callAssistant.llm.message
 
-import digital.boline.callAssistant.Loggable
+import cubibon.callAssistant.Loggable
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import software.amazon.awssdk.services.bedrockruntime.model.ConversationRole

@@ -1,23 +1,23 @@
-package digital.boline.callAssistant
+package cubibon.callAssistant
 
 /**
  * The entry point of this project. It runs the phone call-based Human-LLM interaction.
  */
-class ApplicationRunner: Loggable() {
+class ApplicationRunner: cubibon.callAssistant.Loggable() {
 
     init {
         try {
             runApplication()
         } catch (e: Exception) {
             logError("Error while running application", e)
-            // TODO something in case of error, use throw to respawn clients
+            // todo do something in case of error, use throw to respawn clients
         }
     }
 
     private fun runApplication() {
         logInfo("Application started")
 
-        // TODO implement
+        // todo to be implemented
     }
 
     companion object {

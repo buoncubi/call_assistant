@@ -1,6 +1,6 @@
-package digital.boline.callAssistant.speech2text
+package cubibon.callAssistant.speech2text
 
-import digital.boline.callAssistant.Loggable
+import cubibon.callAssistant.Loggable
 import java.io.InputStream
 import javax.sound.sampled.*
 

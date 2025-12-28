@@ -1,9 +1,9 @@
-package digital.boline.callAssistant.text2speech
+package cubibon.callAssistant.text2speech
 
-import digital.boline.callAssistant.CallbackInput
-import digital.boline.callAssistant.CallbackManager
-import digital.boline.callAssistant.FrequentTimeout
-import digital.boline.callAssistant.Service
+import cubibon.callAssistant.CallbackInput
+import cubibon.callAssistant.CallbackManager
+import cubibon.callAssistant.FrequentTimeout
+import cubibon.callAssistant.Service
 import javazoom.jl.player.FactoryRegistry
 import javazoom.jl.player.advanced.AdvancedPlayer
 import javazoom.jl.player.advanced.PlaybackEvent
@@ -83,13 +83,14 @@ object DesktopAudioPlayer : Text2SpeechPlayer<PlaybackData>(){
      * @param sourceTag An identifier that will be propagated to the callbacks associated with this class, i.e., on
      * begin playing, on end playing, on error, and on timeout.
      */
-    override suspend fun doComputeAsync(input: InputStream, sourceTag: String, scope: CoroutineScope) { // TODO // runs on a separate thread
+    override suspend fun doComputeAsync(input: InputStream, sourceTag: String, scope: CoroutineScope) {
+        // It runs on a separate thread
 
         val initTime = measureTime {
             // This operation might be done only once if a `ReusableService` is used instead of a `Service`.
             player = AdvancedPlayer(
                 input,
-                FactoryRegistry.systemRegistry().createAudioDevice() // TODO create it only once instead of all times that a computationAsync is invoked?!
+                FactoryRegistry.systemRegistry().createAudioDevice()
             )
         }
         logInfo("Creating a new Desktop Player (took: {})", initTime)

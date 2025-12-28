@@ -1,11 +1,11 @@
-package digital.boline.callAssistant.llm
+package cubibon.callAssistant.llm
 
-import digital.boline.callAssistant.CallbackInput
-import digital.boline.callAssistant.CallbackManager
-import digital.boline.callAssistant.ReusableService
-import digital.boline.callAssistant.speech2text.AwsTranscribe
-import digital.boline.callAssistant.speech2text.DesktopMicrophone
-import digital.boline.callAssistant.speech2text.Speech2TextStreamBuilder
+import cubibon.callAssistant.CallbackInput
+import cubibon.callAssistant.CallbackManager
+import cubibon.callAssistant.ReusableService
+import cubibon.callAssistant.speech2text.AwsTranscribe
+import cubibon.callAssistant.speech2text.DesktopMicrophone
+import cubibon.callAssistant.speech2text.Speech2TextStreamBuilder
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

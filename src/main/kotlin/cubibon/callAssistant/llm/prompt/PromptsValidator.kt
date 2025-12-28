@@ -10,7 +10,7 @@
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
 
-package digital.boline.callAssistant.llm.prompt
+package cubibon.callAssistant.llm.prompt
 
 import kotlinx.coroutines.Dispatchers
 import sun.misc.Signal

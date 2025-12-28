@@ -1,6 +1,6 @@
-package digital.boline.callAssistant.text2speech
+package cubibon.callAssistant.text2speech
 
-import digital.boline.callAssistant.*
+import cubibon.callAssistant.*
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -118,11 +118,16 @@ abstract class Text2SpeechPlayer<C: CallbackInput>: Service<InputStream>(text2Sp
  */
 abstract class Text2Speech(private val player: Text2SpeechPlayer<*>) : ReusableService<String>(text2SpeechScope) {
 
-    private var computingScope: CoroutineScope? = null // TODO
+    /**
+     * The scope of the current [doComputeAsync] computation. It is `null` if no computation is active.
+     * This scope is used to ensure that callbacks, such as those for errors, are invoked within the
+     * context of the coroutine that initiated the computation.
+     */
+    private var computingScope: CoroutineScope? = null
 
     init {
         // Propagates `player` errors on the error callbacks of this class.
-        player.onErrorCallbacks.add { onErrorCallbacks.invoke(it, computingScope!!) } //TODO
+        player.onErrorCallbacks.add { onErrorCallbacks.invoke(it, computingScope!!) }
     }
 
 
@@ -156,8 +161,9 @@ abstract class Text2Speech(private val player: Text2SpeechPlayer<*>) : ReusableS
      * @param input The string to be converted to audio.
      * @param sourceTag An identifier that is not processed by this class, but it is propagated to the on result, on
      * error, and on timeout callbacks invoked by this function, which encompass also [player] functionalities.
+     * @param scope The scope in which the computation is performed.
      */
-    override suspend fun doComputeAsync(input: String, sourceTag: String, scope: CoroutineScope) { // TODO
+    override suspend fun doComputeAsync(input: String, sourceTag: String, scope: CoroutineScope) {
 
         computingScope = scope
 

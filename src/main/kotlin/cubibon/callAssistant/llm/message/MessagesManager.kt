@@ -1,8 +1,8 @@
-package digital.boline.callAssistant.llm.message
+package cubibon.callAssistant.llm.message
 
-import digital.boline.callAssistant.CentralizedLogger
-import digital.boline.callAssistant.Loggable
-import digital.boline.callAssistant.Utils
+import cubibon.callAssistant.CentralizedLogger
+import cubibon.callAssistant.Loggable
+import cubibon.callAssistant.Utils
 import kotlin.math.log
 
 
@@ -185,7 +185,7 @@ class MessagesManager<M>(private val messageBuilder: (logger: CentralizedLogger)
         }
 
 
-    // TODO simplify and remove dependency from M, the DialogueManager (or LLMRequest object) will transform it for a specific AWS provider.
+    // todo simplify and remove dependency from M, the DialogueManager (or LLMRequest object) will transform it for a specific AWS provider.
     val messagesStr: List<MessageWrapper<*>>
         get() {
             if (firstLlmMessageIdx < 0) {
@@ -198,7 +198,7 @@ class MessagesManager<M>(private val messageBuilder: (logger: CentralizedLogger)
             } else {
                 return mutableMessages.subList(firstLlmMessageIdx, mutableMessages.size).mapNotNull {
                     if (it.public().role != MetaRole.SUMMARY)
-                        return@mapNotNull it.public()  // TODO make sure that it returns a copy
+                        return@mapNotNull it.public()  // make sure that it returns a copy
                     null
                 }
             }
@@ -381,7 +381,7 @@ class MessagesManager<M>(private val messageBuilder: (logger: CentralizedLogger)
             logWarn("The first message cannot be of type 'ASSISTANT', fake message added.")
 
             // Adding fake message.
-            //firstLlmMessageIdx += 1 // TODO? Avoiding adding fake messages to the list of messages for the LLM model.
+            //firstLlmMessageIdx += 1 // Avoiding adding fake messages to the list of messages for the LLM model.
             val fakeMessage = addNewMessage(MetaRole.USER, listOf(FAKE_MESSAGE_CONTENTS))
             fakeMessage.public().metadata.addAttributes(MetaAttribute.FAKE)
         }

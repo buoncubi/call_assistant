@@ -1,6 +1,6 @@
-package digital.boline.callAssistant.llm.prompt
+package cubibon.callAssistant.llm.prompt
 
-import digital.boline.callAssistant.llm.prompt.PromptsManager.Companion.MESSAGE_SUMMARY_TITLE_KEY
+import cubibon.callAssistant.llm.prompt.PromptsManager.Companion.MESSAGE_SUMMARY_TITLE_KEY
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.config.Configurator
 import org.junit.jupiter.api.AfterEach

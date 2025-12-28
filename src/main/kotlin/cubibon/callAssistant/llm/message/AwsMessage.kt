@@ -1,7 +1,7 @@
-package digital.boline.callAssistant.llm.message
+package cubibon.callAssistant.llm.message
 
-import digital.boline.callAssistant.CentralizedLogger
-import digital.boline.callAssistant.Loggable
+import cubibon.callAssistant.CentralizedLogger
+import cubibon.callAssistant.Loggable
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.bedrockruntime.model.ContentBlock
 import software.amazon.awssdk.services.bedrockruntime.model.ConversationRole

@@ -1,23 +1,100 @@
+# Call Assistant Backend
+
+A Kotlin-based backend that drives LLM-based phone conversations with a human.
+
+It is meant to be a base to interface to implement secretary
+assistants for small companies and freelancers. For instance, 
+we assume that the user calls a freelancer to an Andorid 
+device, which allows the receiver to redirect calls to a VOIP
+number, where the virtual assistant will ask for the reason
+of the call. The objective of the assistant is to collect 
+information from the user and return them to the freelancer.
+
+This project implements the backend of a call assistant 
+system, which is based on AWS services including 
+[Bedroock](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/java_bedrock-runtime_code_examples.html),
+[Transcribe](https://aws.amazon.com/pm/transcribe/), and
+[Polly](https://aws.amazon.com/polly/).
+However, the implemented backend abstracts the three AWS 
+services (i.e., **LLM**, **Speech-To-Text** and 
+**Text-To-Speech**, respectively), such that these 
+functionalities do not strictly need to be based on AWS 
+Kotlin API. Nonetheless, the implementation has some 
+missing features (addressed at the end of this file), which 
+need to be addressed. The more evident limitation is that this
+backend lack of the ability to store conversation logs and 
+provide the summary of it to the freelancer.
 
 
+## Software Components
+
+This backend architects the tree AWS services through **packages**, 
+which are:
+ - [text2speech/](src/main/kotlin/cubibon/callAssistant/speech2text/)
+   (more on the package [documentation](doc/wiky/TEXT_2_SPEECH.md)):  
+   Implements the interface that takes audio to streams and returns 
+   string with metadata by invoking streaming WEB services. 
+ - [speech2text/](src/main/kotlin/cubibon/callAssistant/text2speech),
+   (more on the package [documentation](doc/wiky/SPEECH_2_TEXT.md)):  
+   Implements the interface that takes strings and plays an audio 
+   stream based on streaming WEB services.
+ - The [llm/](src/main/kotlin/cubibon/callAssistant/llm) package
+  ([documentation](doc/wiky/LLM.md))  is divided in 
+   two sub-packages:
+   - [llm.message/](src/main/kotlin/cubibon/callAssistant/llm/message) 
+     (more on the [documentation](doc/wiky/LLM_MESSAGE.md)):  
+     Interfaces text-to-speech and speech-to-text to LLM based messages 
+     (i.e., `role` as `USER` and `ASSISTANT`).
+   - [llm.prompt/](src/main/kotlin/cubibon/callAssistant/llm/prompt)
+     (more on the [documentation](doc/wiky/LLM_PROMPT.md)):  
+     Implements a simple syntax (based on placeholder) to dynamically 
+     generate prompts for the LLM. 
+ - [dialogue/](src/main/kotlin/cubibon/callAssistant/dialogue)
+   (package ([documentation](doc/wiky/DIALOGUE.md)):    
+   Orchestrates the dialogue between the user and assistant based on 
+   the above packages and a finite state machine.  
+   Note that this is the last part that was developed, and it requires
+   further testing and development.
+ - [ServiceInterface.ky](src/main/kotlin/cubibon/callAssistant/ServiceInterface.kt)
+   [documentated here](doc/wiky/SERVICE.md)):  
+   Provides a base interface for WEB services, and it is use 
+   by all the package above.
+ - [Loggable.kt](src/main/kotlin/cubibon/callAssistant/Loggable.kt)
+   (package [documentated here](doc/wiky/LOGGABLE.md)):  
+   Provides a logging abstraction.
+
+The code is detailed documented through Dokka, and the HTML version is 
+[available here](doc/dokka/). Also, this repository provides UML diagrams
+of all the packages, and their are [available here](doc/uml).
+
+![Alt text](./doc/uml/all.svg)
+<img src="./doc/uml/all.svg">
 
 
-## Launching
-
-## Installation:
- ...
-
-### How To Run:
+## Installation and Run
  
-Run a test on terminal: `./gradlew :test --tests "com.project.package.TestFile.testFunctionName"`, where 
-`testFunctionName` can be omitted if you want to run all the tests functions in the `TestFile`.
+The software is based on Kotlin 1.9.24 and Groovy 3.0.22, and the 
+software can be build with `.\gradlew`.
 
-Run a main function on developing `./gradlew run`
+To run one of the [available tests](src/test/kotlin/cubibon/callAssistant) 
+you can use
+```
+./gradlew :test --tests "com.project.package.TestFile.testFunctionName"
+``` 
+where `testFunctionName` can be omitted if you want to run all the 
+tests functions in the `TestFile`.
 
-Run on production `./gradlew run -Pprod`
+To run the main entrypoint use on developing use 
+```
+./gradlew run
+```
+while on production 
+```
+./gradlew run -Pprod
+```
 
-Note that we used the Gradle `application` plugin to define the global `main` function, which is located on the 
-[digital.boline.callAssistant.ApplicationRunner](src/main/kotlin/digital/boline/callAssistant/ApplicationRunner.kt) 
+Note that we used the Gradle `application` plugin to define the global 
+`main` function, which is located on the [cubibon.callAssistant.ApplicationRunner](src/main/kotlin/cubibon/callAssistant/ApplicationRunner.kt) 
 class.
 
 
@@ -61,7 +138,7 @@ In particular, we define a `logger` for each Kotlin package, which level is spec
 It follows a list of `OPTIONAL` environmental variables for logging purposes, where possible values are: `ALL`, `TRACE`, 
 `DEBUG`, `INFO`, `WARN`, `ERROR`, or `OFF`.
 
- - `BASE_PKG`: The base package of this project, by default is `digital.boline.callAssistant`.
+ - `BASE_PKG`: The base package of this project, by default is `cubibon.callAssistant`.
  - `BASE_PKG_AWS`: The base package of AWS dependencies, by default is `software.amazon.awssdk`.
 
 
@@ -123,29 +200,20 @@ sensitive information. Here it follows the list of required variables
    top 90% of the probability distribution, while a value of 0.1 will only consider the most likely tokens that make up 
    the top 10% of the probability distribution, resulting in more focused and deterministic outputs.
 
-## Project Structure
 
-Documentation:
- - For logging see the code documented in the [Loggable.kt](src/main/kotlin/digital/boline/callAssistant/Loggable.kt) file
- - For speech-to-text see the README
- - For text-to-text see the README
- - For dialogue management see the README
- - For llm model see the README
- - For prompt syntax and management see the [README](doc/wiky/LLM_PROMPT.md)
- - For message management see the [README](doc/wiky/LLM_MESSAGE.md)
+## Current Limitation
 
-todo 
- - list of packages
- - llm API
- - text2speech API
- - speech2text API
- - dialogue
+Currently the backend still does not:
+ - manage the dialogue properly (the current implementation is only a Proof of Concept),
+ - produce a report of the call and save them into a DB,
+ - has an LLM messages structure that can be further simplified,
+ - has limited reaction to errors,
+ - doe not implement a proper running mechanism for production,
 
 
- TODO update Dokka, UMLs, and refer to wiky
- 
-_---
+---
 
-**Author** Luca Buoncompagni.  
-© 2025.
+**Author**: Luca Buoncompagni © 2025.,  
+**License**: AGPL-3.0 license,  
+**Version**: 1.0,
 

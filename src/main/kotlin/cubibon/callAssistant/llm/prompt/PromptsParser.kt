@@ -1,6 +1,6 @@
-package digital.boline.callAssistant.llm.prompt
+package cubibon.callAssistant.llm.prompt
 
-import digital.boline.callAssistant.Loggable
+import cubibon.callAssistant.Loggable
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader
@@ -9,7 +9,7 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 import kotlin.contracts.contract
 
-// TODO allow recursive field definition, e.g., `my field key = {{another field key}}`.
+// todo allow recursive field definition, e.g., `my field key = {{another field key}}`.
 
 
 /**

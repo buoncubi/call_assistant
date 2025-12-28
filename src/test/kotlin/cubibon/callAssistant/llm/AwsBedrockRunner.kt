@@ -1,9 +1,9 @@
-package digital.boline.callAssistant.llm
+package cubibon.callAssistant.llm
 
-import digital.boline.callAssistant.FrequentTimeout
-import digital.boline.callAssistant.Loggable
-import digital.boline.callAssistant.ServiceError
-import digital.boline.callAssistant.Timeout
+import cubibon.callAssistant.FrequentTimeout
+import cubibon.callAssistant.Loggable
+import cubibon.callAssistant.ServiceError
+import cubibon.callAssistant.Timeout
 import kotlinx.coroutines.runBlocking
 import org.slf4j.event.Level
 import software.amazon.awssdk.services.bedrockruntime.model.*

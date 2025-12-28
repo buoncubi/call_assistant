@@ -1,6 +1,6 @@
-package digital.boline.callAssistant.speech2text
+package cubibon.callAssistant.speech2text
 
-import digital.boline.callAssistant.Loggable
+import cubibon.callAssistant.Loggable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking

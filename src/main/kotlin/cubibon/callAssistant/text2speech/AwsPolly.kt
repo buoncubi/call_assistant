@@ -1,9 +1,9 @@
-package digital.boline.callAssistant.text2speech
+package cubibon.callAssistant.text2speech
 
-import digital.boline.callAssistant.ApplicationRunner
-import digital.boline.callAssistant.CallbackInput
-import digital.boline.callAssistant.ReusableService
-import digital.boline.callAssistant.ErrorSource // Only used for documentation
+import cubibon.callAssistant.ApplicationRunner
+import cubibon.callAssistant.CallbackInput
+import cubibon.callAssistant.ReusableService
+import cubibon.callAssistant.ErrorSource // Only used for documentation
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.polly.PollyClient
@@ -115,7 +115,7 @@ class AwsPolly<C: CallbackInput>(player: Text2SpeechPlayer<C>) : Text2Speech(pla
     private fun initializeClient(): PollyClient =
         PollyClient.builder()
             .region(Region.of(ApplicationRunner.AWS_VENV_REGION))
-            .credentialsProvider(DefaultCredentialsProvider.create()) // TODO manage credential on production and further configure client
+            .credentialsProvider(DefaultCredentialsProvider.create()) // todo manage credential on production and further configure client
             /*.httpClient(
                 // It is faster with respect to Netty (default) httpClient but less stable
                 // It requires `implementation("software.amazon.awssdk:aws-crt-client")` as gradle dependence
@@ -209,7 +209,7 @@ class AwsPolly<C: CallbackInput>(player: Text2SpeechPlayer<C>) : Text2Speech(pla
     override suspend fun fetchAudio(text: String): InputStream? {
         if (text.length > MAX_TEXT_LENGTH) {
             logError("Text exceeds AWS Polly's $MAX_TEXT_LENGTH character limit for $VOICE_TYPE voices.")
-            // TODO do something if this happens
+            // todo do something if this happens
             return null
         }
 

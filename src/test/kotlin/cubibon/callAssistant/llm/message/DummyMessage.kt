@@ -1,4 +1,4 @@
-package digital.boline.callAssistant.llm.message
+package cubibon.callAssistant.llm.message
 
 
 class DummyMessage private constructor() : LlmMessage<String> {

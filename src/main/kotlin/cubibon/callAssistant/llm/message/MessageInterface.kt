@@ -1,4 +1,4 @@
-package digital.boline.callAssistant.llm.message
+package cubibon.callAssistant.llm.message
 
 
 /**
@@ -173,8 +173,8 @@ interface LlmMessage<out M> {
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
 enum class MetaAttribute{FAKE, MERGED, LLM_INTERRUPTED, SPEECH_INTERRUPTED, HARDCODED;
-    // TODO document INTERRUPTED (also on readme), i.e., when the user interrupt the assistant while the llm is reasoning or while is playing
-    // TODO document HARDCODED (also on readme), i.e., when the assist says an hardcoded sentence
+    // todo document INTERRUPTED (also on readme), i.e., when the user interrupt the assistant while the llm is reasoning or while is playing
+    // todo document HARDCODED (also on readme), i.e., when the assist says an hardcoded sentence
 
     override fun toString(): String {
         return super.toString().toCamelCase() // this is used by  `MetaData.toMap`

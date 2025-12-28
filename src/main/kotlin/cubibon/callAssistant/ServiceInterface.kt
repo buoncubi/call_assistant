@@ -1,4 +1,4 @@
-package digital.boline.callAssistant
+package cubibon.callAssistant
 
 import kotlinx.coroutines.*
 import software.amazon.awssdk.http.SdkCancellationException
@@ -34,10 +34,10 @@ import kotlin.time.measureTime
  * @see ReusableService
  * @see CallbackManagerInterface
  * @see FrequentTimeout
- * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
- * @see digital.boline.callAssistant.text2speech.Text2Speech
- * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmService
+ * @see cubibon.callAssistant.text2speech.Text2SpeechPlayer
+ * @see cubibon.callAssistant.text2speech.Text2Speech
+ * @see cubibon.callAssistant.speech2text.Speech2Text
+ * @see cubibon.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -469,8 +469,9 @@ abstract class Service<I>(protected val scope: CoroutineScope): ServiceInterface
      * @param input The input required for the service's computation, as given to [computeAsync].
      * @param sourceTag An identifier that should be propagated to lambda function associated with this method, e.g.,
      * on result callbacks. By default, it is empty, as given to [computeAsync].
+     * @param scope A `protected` property that defines where the coroutine used by this service will run.
      */
-    protected abstract suspend fun doComputeAsync(input: I, sourceTag: String, scope: CoroutineScope) //TODO to document
+    protected abstract suspend fun doComputeAsync(input: I, sourceTag: String, scope: CoroutineScope)
 
 
     /**
@@ -563,7 +564,19 @@ abstract class Service<I>(protected val scope: CoroutineScope): ServiceInterface
      */
     final override suspend fun wait(timeoutSpec: Timeout?, sourceTag: String): Boolean {
 
-        // TODO document
+        /**
+         * A local function that handles exceptions that might occur within the [wait] method.
+         *
+         * It checks for [TimeoutCancellationException] to manage waiting timeouts. If a timeout occurs,
+         * it stops the service and invokes the timeout callback. For all other exceptions, it delegates
+         * handling to the [doThrow] method, ensuring consistent error management across the service.
+         *
+         * @param ex The exception that was caught.
+         * @param timeoutSpec The timeout specifications provided to the [wait] method. Used to invoke the
+         * timeout callback.
+         * @param scope The coroutine scope in which to run error callbacks if the exception is not a timeout.
+         * It's `null` if the exception occurred outside a `withTimeout` block.
+         */
         fun catchException(ex: Exception, timeoutSpec: Timeout?, scope: CoroutineScope?) {
             if (ex is TimeoutCancellationException && timeoutSpec != null) {
                 // If timeout occurred stop the service and invoke the callback.
@@ -701,11 +714,12 @@ abstract class Service<I>(protected val scope: CoroutineScope): ServiceInterface
      * [ErrorSource] for more.
      * @param sourceTag An identifier given by the class that uses this service. It is not used by this class, but just
      * propagated to the lambda function while invoking the [onErrorCallbacks].
+     * @param scope A `protected` property that defines where the coroutine used by this service will run.
      * @return It returns `true` if the exception should be propagated with `throw`, `false` if it should only be
      * logged, and `null` if the exception should be ignored.
      */
     protected fun doThrow(throwable: Throwable, errorSource: ErrorSource, sourceTag: String, scope: CoroutineScope?) =
-        doThrow(ServiceError(throwable, errorSource, sourceTag), scope) // TODO document and set deafult scope to null
+        doThrow(ServiceError(throwable, errorSource, sourceTag), scope)
 
 
     /**
@@ -727,6 +741,7 @@ abstract class Service<I>(protected val scope: CoroutineScope): ServiceInterface
      *
      * @param serviceError A data container class that encompass the `throwable` to handle, and the [ErrorSource],
      * which identify the function producing the error.
+     * @param scope A `protected` property that defines where the coroutine used by this service will run.
      * @return It returns `true` if the exception should be propagated with `throw`, `false` if it should only be
      * logged, and `null` if the exception should be ignored.
      */
@@ -741,7 +756,7 @@ abstract class Service<I>(protected val scope: CoroutineScope): ServiceInterface
         }
 
         // Invoke callbacks
-        onErrorCallbacks.invoke(serviceError, scope) // TODO document and set default scope to null
+        onErrorCallbacks.invoke(serviceError, scope)
 
         // Log the type of error
         logError("Service experienced '{}'.", experiencedErrorLog, throwable)
@@ -796,10 +811,10 @@ abstract class Service<I>(protected val scope: CoroutineScope): ServiceInterface
  * @see ReusableService
  * @see CallbackManagerInterface
  * @see FrequentTimeout
- * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
- * @see digital.boline.callAssistant.text2speech.Text2Speech
- * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmService
+ * @see cubibon.callAssistant.text2speech.Text2SpeechPlayer
+ * @see cubibon.callAssistant.text2speech.Text2Speech
+ * @see cubibon.callAssistant.speech2text.Speech2Text
+ * @see cubibon.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -899,10 +914,10 @@ interface ReusableServiceInterface<I> : ServiceInterface<I> {
  * @see ReusableService
  * @see CallbackManagerInterface
  * @see FrequentTimeout
- * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
- * @see digital.boline.callAssistant.text2speech.Text2Speech
- * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmService
+ * @see cubibon.callAssistant.text2speech.Text2SpeechPlayer
+ * @see cubibon.callAssistant.text2speech.Text2Speech
+ * @see cubibon.callAssistant.speech2text.Speech2Text
+ * @see cubibon.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -1111,10 +1126,10 @@ abstract class ReusableService<I>(scope: CoroutineScope) : ReusableServiceInterf
  * @see CallbackManagerInterface
  * @see SimpleCallbackInput
  * @see ServiceInterface
- * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
- * @see digital.boline.callAssistant.text2speech.Text2Speech
- * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmService
+ * @see cubibon.callAssistant.text2speech.Text2SpeechPlayer
+ * @see cubibon.callAssistant.text2speech.Text2Speech
+ * @see cubibon.callAssistant.speech2text.Speech2Text
+ * @see cubibon.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -1150,8 +1165,9 @@ interface CallbackManagerInterface<I: CallbackInput>  {
     /**
      * Calls all the added callbacks with the given input parameters and returns associated results.
      * @param callbackInput The input data for the callbacks.
+     * @param scope A `protected` property that defines where the coroutine used by this service will run.
      */
-    fun invoke(callbackInput: I, scope: CoroutineScope?) // TODO document scope and set deafult to null
+    fun invoke(callbackInput: I, scope: CoroutineScope?)
 
 
     /**
@@ -1176,17 +1192,20 @@ interface CallbackManagerInterface<I: CallbackInput>  {
  * @see CallbackManager
  * @see SimpleCallbackInput
  * @see ServiceInterface
- * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
- * @see digital.boline.callAssistant.text2speech.Text2Speech
- * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmService
+ * @see cubibon.callAssistant.text2speech.Text2SpeechPlayer
+ * @see cubibon.callAssistant.text2speech.Text2Speech
+ * @see cubibon.callAssistant.speech2text.Speech2Text
+ * @see cubibon.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
 interface CallbackInput {
     val sourceTag: String
 
-    // TODO document
+    /**
+     * Creates a shallow copy of this `ServiceError` instance.
+     * @return A new `ServiceError` instance with the same property values.
+     */
     fun copy(): CallbackInput
 }
 
@@ -1206,10 +1225,10 @@ interface CallbackInput {
  * @see CallbackManager
  * @see SimpleCallbackInput
  * @see ServiceInterface
- * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
- * @see digital.boline.callAssistant.text2speech.Text2Speech
- * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmService
+ * @see cubibon.callAssistant.text2speech.Text2SpeechPlayer
+ * @see cubibon.callAssistant.text2speech.Text2Speech
+ * @see cubibon.callAssistant.speech2text.Speech2Text
+ * @see cubibon.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -1239,10 +1258,10 @@ open class SimpleCallbackInput(override val sourceTag: String) : CallbackInput {
  * @property callbacks The map that stores the callbacks with relative identifier. However, this property is `private`.
  *
  * @see CallbackManager
- * @see digital.boline.callAssistant.text2speech.Text2SpeechPlayer
- * @see digital.boline.callAssistant.text2speech.Text2Speech
- * @see digital.boline.callAssistant.speech2text.Speech2Text
- * @see digital.boline.callAssistant.llm.LlmService
+ * @see cubibon.callAssistant.text2speech.Text2SpeechPlayer
+ * @see cubibon.callAssistant.text2speech.Text2Speech
+ * @see cubibon.callAssistant.speech2text.Speech2Text
+ * @see cubibon.callAssistant.llm.LlmService
  *
  * @author Luca Buoncompagni, © 2025, v1.0.
  */
@@ -1253,7 +1272,7 @@ class CallbackManager<I: CallbackInput>(private val logger: CentralizedLogger) :
     private val serviceName = logger.logsFor
 
     // See documentation above.
-    private val callbacks: MutableMap<String, suspend (I) -> Unit> = mutableMapOf() // TODO change it to concurrent hashmap
+    private val callbacks: MutableMap<String, suspend (I) -> Unit> = mutableMapOf() // todo change it to concurrent hashmap
 
 
     /**
@@ -1283,7 +1302,7 @@ class CallbackManager<I: CallbackInput>(private val logger: CentralizedLogger) :
             val callbackId = getCallbackIdentifier(callback)
 
             if(callbacks.put(callbackId, callback) != null)
-                // TODO add log name for discriminating the type of callback (e.g., onResult, onError, etc.)
+                // todo add log name for discriminating the type of callback (e.g., onResult, onError, etc.)
                 logger.warn("Replacing callback (with ID: '{}') for service '{}'.", callbackId, serviceName)
             else
                 logger.debug("Adding callback (with ID: '{}') for service '{}'.", callbackId, serviceName)
@@ -1334,12 +1353,13 @@ class CallbackManager<I: CallbackInput>(private val logger: CentralizedLogger) :
      * results. It measures computing time for each callback, and produce relative logs.
      *
      * @param callbackInput The input data for the callbacks.
+     * @param scope A `protected` property that defines where the coroutine used by this service will run.
      */
-    override fun invoke(callbackInput: I, scope: CoroutineScope?) { // TODO document scope also elsewhere
+    override fun invoke(callbackInput: I, scope: CoroutineScope?) {
 
         val callbackInput: I = callbackInput.copy() as I
 
-        // Todo document
+
         suspend fun invokeCallback(callbackId: String, callback: suspend ((I) -> Unit), input: I, computationTimeMap: MutableMap<String, Duration>) {
             val computationTime = measureTime {
                 callback(input) // Actually Invoke the callback.
@@ -1349,7 +1369,7 @@ class CallbackManager<I: CallbackInput>(private val logger: CentralizedLogger) :
 
 
 
-        //synchronized(callbacks) { TODO use mutex
+        //synchronized(callbacks) {
             if(callbacks.isEmpty()) {
                 logger.debug("Service '{}' does not have any callbacks to be invoked.", serviceName)
                 return
@@ -1359,56 +1379,8 @@ class CallbackManager<I: CallbackInput>(private val logger: CentralizedLogger) :
             logger.debug("Service '{}' is invoking callbacks...", serviceName)
             val computationTimeMap = mutableMapOf<String, Duration>()
 
-            //val jobs = mutableSetOf<Job>()
-            /*
-            if (scope == null) {
-                val totalComputationTime = measureTime {
-                    callbacks.forEach {
-                        it.key to { // TODO document
-                            // If the scope is `null`, run on the current thread while blocking it.
-                            runBlocking {
-                                invokeCallback(it.key, it.value, callbackInput, computationTimeMap)
-                            }
-                        }
-                    }
-                }
-                if (logger.isInfoEnabled()) {
-                    val inputStr = Utils.escapeCharacters(callbackInput)
-                    val logMsg = "Service $serviceName invokes ${callbacks.size} callback(s) with input: '$inputStr' " +
-                            "(computation times: $computationTimeMap, total computation time: $totalComputationTime )."
-                    logger.info(logMsg)
-                    // TODO computationTimeMap is empty if we do not wait for the launched job within the `scope` to finish.
-                }
-            } else {
-                scope.launch {
-                    val jobs = mutableSetOf<Job>()
-                    val totalComputationTime = measureTime {
-                        callbacks.forEach {
-                            it.key to { // TODO document
-                                // If the scope is `null`, run on the current thread while blocking it.
-                                val job = launch {
-                                    invokeCallback(it.key, it.value, callbackInput, computationTimeMap)
-                                }
-                                jobs.add(job)
-                            }
-                        }
-                        jobs.forEach{it.join()}
-                    }
-                    if (logger.isInfoEnabled()) {
-                        val inputStr = Utils.escapeCharacters(callbackInput)
-                        val logMsg = "Service $serviceName invokes ${callbacks.size} callback(s) with input: '$inputStr' " +
-                                "(computation times: $computationTimeMap, total computation time: $totalComputationTime )."
-                        logger.info(logMsg)
-                        // TODO computationTimeMap is empty if we do not wait for the launched job within the `scope` to finish.
-                    }
-                }
-            }
-            */
-
-
             val totalComputationTime = measureTime {
                 callbacks.forEach {
-                    // TODO document
                     // If the scope is not `null`, run on a child thread without blocking the current thread.
                     // If the parent thread is cancelled, then this child thread is cancelled as well.
                     scope?.launch {
@@ -1416,7 +1388,7 @@ class CallbackManager<I: CallbackInput>(private val logger: CentralizedLogger) :
                             invokeCallback(it.key, it.value, callbackInput, computationTimeMap)
                         } catch (ex: Exception) {
                             println("EXCEPTION IN CALLBACK: $ex")
-                            // TODO connect to doThrow
+                            // todo connect to `doThrow()`
                         }
 
                     }
@@ -1439,61 +1411,10 @@ class CallbackManager<I: CallbackInput>(private val logger: CentralizedLogger) :
                 val logMsg = "Service $serviceName invoked ${callbacks.size} callback(s) with input: '$inputStr' " +
                         "(computation times: $computationTimeLog, total computation time: $totalComputationTime )."
                 logger.info(logMsg)
-                // TODO computationTimeMap is empty if we do not wait for the launched job within the `scope` to finish.
+                // todo computationTimeMap is empty if we do not wait for the launched job within the `scope` to finish.
             }
         //}
     }
-
-
-    /*
-    override fun invoke(callbackInput: I, scope: CoroutineScope?) {
-        // TODO remove scope
-        invoke(callbackInput) { callback, input ->
-            runBlocking {
-                measureTime {
-                    callback(input) // Actually Invoke the callback.
-                }
-            }
-        }
-    }
-
-    override suspend fun invokeSuspended(callbackInput: I) {
-        invoke(callbackInput) { callback, input ->
-            measureTime {
-                callback(input) // Actually Invoke the callback.
-            }
-        }
-    }
-
-    private fun invoke(callbackInput: I, operator: (suspend ((I)->Unit), I) -> Duration) {
-        //synchronized(callbacks) { TODO use mutex
-        if(callbacks.isEmpty()) {
-            logger.warn("Service '{}' does not have any callbacks to be invoked.", serviceName)
-            return
-        }
-
-        // Invoke the function and measure computation time.
-        logger.debug("Service '{}' is invoking callbacks...", serviceName)
-        val computationTimeMap = mutableMapOf<String, Duration>()
-
-        val totalComputationTime = measureTime {
-            callbacks.forEach {
-                it.key to { // TODO document
-                    val duration = operator(it.value, callbackInput) // Actually Invoke the callback.
-                    computationTimeMap[it.key] = duration
-                }
-            }
-        }
-
-        if (logger.isInfoEnabled()) {
-            val inputStr = Utils.escapeCharacters(callbackInput)
-            val logMsg = "Service $serviceName invokes ${callbacks.size} callback(s) with input: '$inputStr' " +
-                    "(computation times: $computationTimeMap, total computation time: $totalComputationTime )."
-            logger.info(logMsg)
-            // TODO computationTimeMap is empty if we do not wait for the launched job within the `scope` to finish.
-        }
-    }
-     */
 
 
     companion object {

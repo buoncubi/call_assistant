@@ -9,6 +9,11 @@ build/
 .idea/jarRepositories.xml
 .idea/compiler.xml
 .idea/libraries/
+.idea/AndroidProjectSystem.xml
+.idea/studiobot.xml
+.idea/caches/deviceStreaming.xml
+.idea/markdown.xml
+.idea/misc.xml
 *.iws
 *.iml
 *.ipr

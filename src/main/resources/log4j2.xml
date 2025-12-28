@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- TODO When you're ready to deploy to AWS Lambda, you'll need to:
+<!-- todo When you're ready to deploy to AWS Lambda, you'll need to:
  - Add the Lambda appender
  - Add the file appender if needed
  - Update the logger references to use the Lambda appender

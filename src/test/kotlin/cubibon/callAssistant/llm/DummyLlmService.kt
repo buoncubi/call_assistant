@@ -1,7 +1,7 @@
-package digital.boline.callAssistant.llm
+package cubibon.callAssistant.llm
 
-import digital.boline.callAssistant.CallbackInput
-import digital.boline.callAssistant.ServiceInterface
+import cubibon.callAssistant.CallbackInput
+import cubibon.callAssistant.ServiceInterface
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking

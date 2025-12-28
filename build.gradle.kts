@@ -1,18 +1,12 @@
 import java.util.*
 
-// TODO check `Hotline-based dependency management` (libs.versions.toml file)
-
-// document with `./gradlew dokkaHtml` (todo to configure)
-
-// TODO check for the last versions, uniform KotlinVersion, and review all.
-
 plugins {
     kotlin("jvm") version "2.1.10"
     java
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
     application // required to make this software runnable
 
-    id("org.jetbrains.dokka") version "2.0.0" // TODO check Dokka deprecation when software runs
+    id("org.jetbrains.dokka") version "2.0.0"
 }
 
 
@@ -22,7 +16,7 @@ version = "0.1.0"
 
 // The global entry point of the software.
 application {
-    mainClass.set("digital.boline.callAssistant.ApplicationRunnerKt")
+    mainClass.set("cubibon.callAssistant.ApplicationRunnerKt")
 }
 
 
@@ -40,7 +34,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-slf4j2-impl:2.24.3")  // Bridge between SLF4J and Log4j2
 
     // Required for asynchronous computation in Kotlin
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1") // TODO why it is not as the kotlin version (2.1.10)?
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
 
     // For MP3 player (used by text-to-speech)
     implementation("javazoom:jlayer:1.0.1")
@@ -50,9 +44,9 @@ dependencies {
 
 
     // For JSON-based serialization and deserialization of LLM prompts
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0") // TODO why it is not as the kotlin version (2.1.10)?
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
     // For Byte-based serialization and deserialization of LLM prompts
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.8.0") // TODO why it is not as the kotlin version (2.1.10)?
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.8.0")
 
     // Dependencies for AWS (based on java)
     implementation(platform("software.amazon.awssdk:bom:2.30.31"))
@@ -66,7 +60,7 @@ dependencies {
     // For LLM models usage (i.e., AWS Bedrock Converse streaming service)
     implementation("software.amazon.awssdk:bedrockruntime")
     // Used for AWS clients since it is faster than default (which is Netty)
-    //implementation("software.amazon.awssdk:aws-crt-client") TODO use?
+    //implementation("software.amazon.awssdk:aws-crt-client")
 
 
 
@@ -74,6 +68,7 @@ dependencies {
     //implementation("com.amazonaws:aws-lambda-java-log4j2:1.6.0")
 
 
+    // todo to configure
     // DynamoDB core dependency
     implementation("software.amazon.awssdk:dynamodb")               // Core DynamoDB support
     // Optional but recommended dependencies

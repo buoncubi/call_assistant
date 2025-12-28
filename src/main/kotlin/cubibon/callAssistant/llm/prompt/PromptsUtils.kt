@@ -1,6 +1,6 @@
-package digital.boline.callAssistant.llm.prompt
+package cubibon.callAssistant.llm.prompt
 
-import digital.boline.callAssistant.Loggable
+import cubibon.callAssistant.Loggable
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -185,7 +185,7 @@ data class ParsedPrompts(@Transient val rawText: String = ""): TypedPrompts() {
      * @param file The target file where the binary data of the object will be saved.
      * @return `true` if the JSON string was successfully saved, `false` otherwise.
      */
-    @OptIn(ExperimentalSerializationApi::class) // TODO check for not experimental library
+    @OptIn(ExperimentalSerializationApi::class) // todo check for not experimental library
     fun serializeBinary(file: File): Boolean {
         return serialize(file) {
             ProtoBuf.encodeToByteArray(serializer(), this)
@@ -331,7 +331,7 @@ object PromptsDeserializer: Loggable() {
      * @param file The file containing the serialized prompt Binary data to load.
      * @return The deserialized [PromptsManagerImpl] object, or `null` if deserialization fails.
      */
-    @OptIn(ExperimentalSerializationApi::class) // TODO check for not experimental library
+    @OptIn(ExperimentalSerializationApi::class) // todo check for not experimental library
     fun fromBytes(file: File): PromptsManager? {
         val parsedPrompts = deserialize(file) { it: ByteArray ->
             ProtoBuf.decodeFromByteArray(ParsedPrompts.serializer(), it)

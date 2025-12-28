@@ -67,8 +67,7 @@ The code is detailed documented through Dokka, and the HTML version is
 [available here](doc/dokka/). Also, this repository provides UML diagrams
 of all the packages, and their are [available here](doc/uml).
 
-![Alt text](./doc/uml/all.svg)
-<img src="./doc/uml/all.svg">
+![Software Architecture](./doc/uml/all.svg)
 
 
 ## Installation and Run

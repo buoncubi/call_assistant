@@ -5,15 +5,7 @@ build/
 !**/src/test/**/build/
 
 ### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
-.idea/AndroidProjectSystem.xml
-.idea/studiobot.xml
-.idea/caches/deviceStreaming.xml
-.idea/markdown.xml
-.idea/misc.xml
+.idea/*
 *.iws
 *.iml
 *.ipr

@@ -91,10 +91,10 @@ An example of how to use this service is:
 
 For more info see the [Service Interface](SERVICE).  
 For more implementation details check out the
-[documented code](../dokka/html/-call-assistant--brain/digital.boline.callAssistant.speech2text/index.html).  
+[documented code](../dokka/html/-call-assistant--brain/cubibon.callAssistant.speech2text/index.html).  
 For more examples checkout
-[DummySpeech2Text.kt](../../src/test/kotlin/digital/boline/callAssistant/speech2text/DummySpeech2Text.kt) and
-[AwsTranscribeRunner.kt](../../src/test/kotlin/digital/boline/callAssistant/speech2text/AwsTranscribeRunner.kt).
+[DummySpeech2Text.kt](../../src/test/kotlin/cubibon/callAssistant/speech2text/DummySpeech2Text.kt) and
+[AwsTranscribeRunner.kt](../../src/test/kotlin/cubibon/callAssistant/speech2text/AwsTranscribeRunner.kt).
 
 ---
 

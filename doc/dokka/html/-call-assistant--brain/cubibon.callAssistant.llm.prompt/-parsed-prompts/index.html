@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html class="no-js">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8">
+    <title>ParsedPrompts</title>
+    <link href="../../../images/logo-icon.svg" rel="icon" type="image/svg">
+    <script>var pathToRoot = "../../../";</script>
+    <script>document.documentElement.classList.replace("no-js","js");</script>
+    <script>const storage = localStorage.getItem("dokka-dark-mode")
+    if (storage == null) {
+        const osDarkSchemePreferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (osDarkSchemePreferred === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    } else {
+        const savedDarkMode = JSON.parse(storage)
+        if(savedDarkMode === true) {
+            document.getElementsByTagName("html")[0].classList.add("theme-dark")
+        }
+    }
+    </script>
+<script type="text/javascript" src="https://unpkg.com/kotlin-playground@1/dist/playground.min.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/sourceset_dependencies.js" async="async"></script>
+<link href="../../../styles/style.css" rel="Stylesheet">
+<link href="../../../styles/main.css" rel="Stylesheet">
+<link href="../../../styles/prism.css" rel="Stylesheet">
+<link href="../../../styles/logo-styles.css" rel="Stylesheet">
+<link href="../../../styles/font-jb-sans-auto.css" rel="Stylesheet">
+<link href="../../../ui-kit/ui-kit.min.css" rel="Stylesheet">
+<script type="text/javascript" src="../../../scripts/clipboard.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/navigation-loader.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/platform-content-handler.js" async="async"></script>
+<script type="text/javascript" src="../../../scripts/main.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/prism.js" async="async"></script>
+<script type="text/javascript" src="../../../ui-kit/ui-kit.min.js" defer="defer"></script>
+<script type="text/javascript" src="../../../scripts/symbol-parameters-wrapper_deferred.js" defer="defer"></script>
+</head>
+<body>
+    <div class="root">
+    <nav class="navigation theme-dark" id="navigation-wrapper">
+            <a class="library-name--link" href="../../../index.html">
+                    CallAssistant-Brain
+            </a>
+        <button class="navigation-controls--btn navigation-controls--btn_toc ui-kit_mobile-only" id="toc-toggle"
+                type="button">Toggle table of contents
+        </button>
+        <div class="navigation-controls--break ui-kit_mobile-only"></div>
+        <div class="library-version" id="library-version">
+0.1.0        </div>
+        <div class="navigation-controls">
+        <div class="filter-section filter-section_loading" id="filter-section">
+                <button class="platform-tag platform-selector jvm-like" data-active=""
+                        data-filter=":/main">jvm</button>
+            <div class="dropdown filter-section--dropdown" data-role="dropdown" id="filter-section-dropdown">
+                <button class="button button_dropdown filter-section--dropdown-toggle" role="combobox"
+                        data-role="dropdown-toggle"
+                        aria-controls="platform-tags-listbox"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
+                        aria-label="Toggle source sets"
+                ></button>
+                <ul role="listbox" id="platform-tags-listbox" class="dropdown--list" data-role="dropdown-listbox">
+                    <div class="dropdown--header"><span>Platform filter</span>
+                        <button class="button" data-role="dropdown-toggle" aria-label="Close platform filter">
+                            <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                        </button>
+                    </div>
+                        <li role="option" class="dropdown--option platform-selector-option jvm-like" tabindex="0">
+                            <label class="checkbox">
+                                <input type="checkbox" class="checkbox--input" id=":/main"
+                                       data-filter=":/main"/>
+                                <span class="checkbox--icon"></span>
+                                jvm
+                            </label>
+                        </li>
+                </ul>
+                <div class="dropdown--overlay"></div>
+            </div>
+        </div>
+            <button class="navigation-controls--btn navigation-controls--btn_theme" id="theme-toggle-button"
+                    type="button">Switch theme
+            </button>
+            <div class="navigation-controls--btn navigation-controls--btn_search" id="searchBar" role="button">Search in
+                API
+            </div>
+        </div>
+    </nav>
+        <div id="container">
+            <div class="sidebar" id="leftColumn">
+                <div class="dropdown theme-dark_mobile" data-role="dropdown" id="toc-dropdown">
+                    <ul role="listbox" id="toc-listbox" class="dropdown--list dropdown--list_toc-list"
+                        data-role="dropdown-listbox">
+                        <div class="dropdown--header">
+                            <span>
+                                    CallAssistant-Brain
+                            </span>
+                            <button class="button" data-role="dropdown-toggle" aria-label="Close table of contents">
+                                <i class="ui-kit-icon ui-kit-icon_cross"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar--inner" id="sideMenu"></div>
+                    </ul>
+                    <div class="dropdown--overlay"></div>
+                </div>
+            </div>
+            <div id="main">
+<div class="main-content" data-page-type="classlike" id="content" pageIds="CallAssistant-Brain::cubibon.callAssistant.llm.prompt/ParsedPrompts///PointingToDeclaration//-251573632">
+  <div class="breadcrumbs"><a href="../../../index.html">CallAssistant-Brain</a><span class="delimiter">/</span><a href="../index.html">cubibon.callAssistant.llm.prompt</a><span class="delimiter">/</span><span class="current">ParsedPrompts</span></div>
+  <div class="cover ">
+    <h1 class="cover"><span>Parsed</span><wbr></wbr><span><span>Prompts</span></span></h1>
+    <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><span data-unresolved-link="kotlinx.serialization/Serializable///PointingToDeclaration/"><span class="token annotation builtin">Serializable</span></span></div></div><span class="token keyword">data </span><span class="token keyword">class </span><a href="index.html">ParsedPrompts</a><span class="token punctuation">(</span><span class="parameters "><span class="parameter "><span class="token keyword">val </span>rawText<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span><span class="token string">&quot;&quot;</span></span></span><span class="token punctuation">)</span> : <a href="../-typed-prompts/index.html">TypedPrompts</a></div><p class="paragraph">Represents a parsed and mutable set of prompt-related data, including <a href="metadata.html">metadata</a>, <a href="constants.html">constants</a>, <a href="variables-definition.html">variablesDefinition</a>, <a href="variables.html">variables</a> occurrences, and <a href="prompts.html">prompts</a> content.</p><p class="paragraph">This class allow to parse <a href="prompts.html">prompts</a> contents where <a href="constants.html">constants</a> placeholder are filled with relative value at parsing time. However, <a href="variables.html">variables</a> placeholders are still in place, and they will be filled by the <a href="../-prompts-manager/apply-variables.html">PromptsManager.applyVariables</a> mechanisms at runtime.</p><p class="paragraph">This class is designed to encapsulate the parsed results, and it is generated by <a href="../-prompts-parser/parse.html">PromptsParser.parse</a>. For being efficient, this class is not meant to be used at runtime, but offline. Then, its data can be store in a Json or Binary file for being efficiently used at runtime (see <a href="serialize-json.html">serializeJson</a> and <a href="serialize-binary.html">serializeBinary</a>).</p><span class="kdoc-tag"><h4 class="">Author</h4><p class="paragraph">Luca Buoncompagni, © 2025, v1.0.</p></span><h4 class="">See also</h4><div class="table"><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-prompts-parser/parse.html"><span>Prompts</span><wbr></wbr><span>Parser.</span><wbr></wbr><span>parse</span></a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-typed-prompts/index.html"><span>Typed</span><wbr></wbr><span><span>Prompts</span></span></a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-prompts-deserializer/index.html"><span>Prompts</span><wbr></wbr><span><span>Deserializer</span></span></a></div></span></div><div></div></div></div><div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main"><div class="main-subrow keyValue "><div class=""><span class="inline-flex"><div><a href="../-prompts-manager/index.html"><span>Prompts</span><wbr></wbr><span><span>Manager</span></span></a></div></span></div><div></div></div></div></div></div></div>
+  </div>
+  <div class="tabbedcontent">
+    <div class="tabs-section" tabs-section="tabs-section"><button class="section-tab" data-active="" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION">Members</button><button class="section-tab" data-togglable="CONSTRUCTOR,TYPE,PROPERTY,FUNCTION,EXTENSION_PROPERTY,EXTENSION_FUNCTION">Members &amp; Extensions</button></div>
+    <div class="tabs-section-body">
+      <div data-togglable="CONSTRUCTOR">
+        <h2 class="">Constructors</h2>
+        <div class="table"><a data-name="948180574%2FConstructors%2F-251573632" anchor-label="ParsedPrompts" id="948180574%2FConstructors%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-togglable="CONSTRUCTOR" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-parsed-prompts.html"><span>Parsed</span><wbr></wbr><span><span>Prompts</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="948180574%2FConstructors%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">constructor</span><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">rawText<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator"> = </span><span class="token string">&quot;&quot;</span></span></span><span class="token punctuation">)</span></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="TYPE">
+        <h2 class="">Types</h2>
+        <div class="table"><a data-name="-292644469%2FClasslikes%2F-251573632" anchor-label="Companion" id="-292644469%2FClasslikes%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="-companion/index.html"><span><span>Companion</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-292644469%2FClasslikes%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">object </span><a href="-companion/index.html">Companion</a></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="PROPERTY">
+        <h2 class="">Properties</h2>
+        <div class="table"><a data-name="-1075642923%2FProperties%2F-251573632" anchor-label="constants" id="-1075642923%2FProperties%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="constants.html"><span><span>constants</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1075642923%2FProperties%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><span data-unresolved-link="kotlinx.serialization/Transient///PointingToDeclaration/"><span class="token annotation builtin">Transient</span></span></div></div><span class="token keyword">val </span><a href="constants.html">constants</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">A key-value map definition of constants as a pair of constants name and its value. This property is not serialized into files.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-564364793%2FProperties%2F-251573632" anchor-label="metadata" id="-564364793%2FProperties%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="metadata.html"><span><span>metadata</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-564364793%2FProperties%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">val </span><a href="metadata.html">metadata</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">See <span data-unresolved-link="cubibon.callAssistant.llm.prompt/TypedPrompts/metadata/#/PointingToDeclaration/">TypedPrompts.metadata</span>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1694906709%2FProperties%2F-251573632" anchor-label="prompts" id="1694906709%2FProperties%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="prompts.html"><span><span>prompts</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1694906709%2FProperties%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">val </span><a href="prompts.html">prompts</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">See <span data-unresolved-link="cubibon.callAssistant.llm.prompt/TypedPrompts/prompts/#/PointingToDeclaration/">TypedPrompts.prompts</span>. In this implementation prompts might have <a href="constants.html">constants</a> placeholder which are filled at parsing time.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1666466257%2FProperties%2F-251573632" anchor-label="rawText" id="-1666466257%2FProperties%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="raw-text.html"><span>raw</span><wbr></wbr><span><span>Text</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1666466257%2FProperties%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><span data-unresolved-link="kotlinx.serialization/Transient///PointingToDeclaration/"><span class="token annotation builtin">Transient</span></span></div></div><span class="token keyword">val </span><a href="raw-text.html">rawText</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">The raw prompt text as given before parsing. It is used only for testing purposes. and, by default its value is an empty string.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-1774678355%2FProperties%2F-251573632" anchor-label="variables" id="-1774678355%2FProperties%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="variables.html"><span><span>variables</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-1774678355%2FProperties%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">val </span><a href="variables.html">variables</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="../-occurrences/index.html">Occurrences</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">See <span data-unresolved-link="cubibon.callAssistant.llm.prompt/TypedPrompts/variables/#/PointingToDeclaration/">TypedPrompts.variables</span>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="355338394%2FProperties%2F-251573632" anchor-label="variablesDefinition" id="355338394%2FProperties%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="variables-definition.html"><span>variables</span><wbr></wbr><span><span>Definition</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="355338394%2FProperties%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><div class="block"><div class="block"><span class="token annotation builtin">@</span><span data-unresolved-link="kotlinx.serialization/Transient///PointingToDeclaration/"><span class="token annotation builtin">Transient</span></span></div></div><span class="token keyword">val </span><a href="variables-definition.html">variablesDefinition</a><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin.collections/-mutable-map/index.html">MutableMap</a><span class="token operator">&lt;</span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token punctuation">, </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a><span class="token operator">&gt;</span></div><div class="brief "><p class="paragraph">A map containing the definitions of variables, where keys are variables name, and values are their respective function names as defined in <a href="../-variables-function/index.html">VariablesFunction</a>. This property is not serialized into files.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div data-togglable="FUNCTION">
+        <h2 class="">Functions</h2>
+        <div class="table"><a data-name="-904970557%2FFunctions%2F-251573632" anchor-label="getPromptManager" id="-904970557%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="get-prompt-manager.html"><span>get</span><wbr></wbr><span>Prompt</span><wbr></wbr><span><span>Manager</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-904970557%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="get-prompt-manager.html"><span class="token function">getPromptManager</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="../-prompts-manager/index.html">PromptsManager</a></div><div class="brief "><p class="paragraph">Returns a <a href="../-prompts-manager/index.html">PromptsManager</a> instance containing an immutable copy of the data parsed from a prompt files. This actual implementation returns an instance of <a href="../-prompts-manager-impl/index.html">PromptsManagerImpl</a>.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1568355414%2FFunctions%2F-251573632" anchor-label="loggerFactory" id="1568355414%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../cubibon.callAssistant/-loggable-interface/logger-factory.html"><span>logger</span><wbr></wbr><span><span>Factory</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1568355414%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="../../cubibon.callAssistant/-loggable-interface/index.html">LoggableInterface</a><span class="token punctuation">.</span><a href="../../cubibon.callAssistant/-loggable-interface/logger-factory.html"><span class="token function">loggerFactory</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">clazz<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.base/java/lang/Class.html">Class</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="../../cubibon.callAssistant/-loggable-interface/index.html">LoggableInterface</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.slf4j/Logger///PointingToDeclaration/">Logger</span></div><div class="brief "><p class="paragraph">It instanciate a new <span data-unresolved-link="cubibon.callAssistant/LoggableInterface.Factory///PointingToDeclaration/">Factory</span> and provides a reference to the <span data-unresolved-link="org.slf4j/Logger///PointingToDeclaration/">Logger</span> instance, which identifier is associated with the package name of <code class="lang-kotlin">this</code>. Note that this function can only be used by the classes implementing the <a href="../../cubibon.callAssistant/-loggable-interface/index.html">LoggableInterface</a> interface,</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1568355414%2FFunctions%2F-251573632" anchor-label="loggerFactory" id="1568355414%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-togglable="EXTENSION_FUNCTION" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../cubibon.callAssistant/-loggable-interface/logger-factory.html"><span>logger</span><wbr></wbr><span><span>Factory</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1568355414%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">fun </span><a href="../../cubibon.callAssistant/-loggable-interface/index.html">LoggableInterface</a><span class="token punctuation">.</span><a href="../../cubibon.callAssistant/-loggable-interface/logger-factory.html"><span class="token function">loggerFactory</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">clazz<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.base/java/lang/Class.html">Class</a><span class="token operator">&lt;</span><span class="token keyword">out </span><a href="../../cubibon.callAssistant/-loggable-interface/index.html">LoggableInterface</a><span class="token operator">&gt;</span><span class="token operator">?</span><span class="token operator"> = </span>null</span></span><span class="token punctuation">)</span><span class="token operator">: </span><span data-unresolved-link="org.slf4j/Logger///PointingToDeclaration/">Logger</span></div><div class="brief "><p class="paragraph">It instanciate a new <span data-unresolved-link="cubibon.callAssistant/LoggableInterface.Factory///PointingToDeclaration/">Factory</span> and provides a reference to the <span data-unresolved-link="org.slf4j/Logger///PointingToDeclaration/">Logger</span> instance, which identifier is associated with the package name of <code class="lang-kotlin">this</code>. Note that this function can only be used by the classes implementing the <a href="../../cubibon.callAssistant/-loggable-interface/index.html">LoggableInterface</a> interface,</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="421869952%2FFunctions%2F-251573632" anchor-label="serializeBinary" id="421869952%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="serialize-binary.html"><span>serialize</span><wbr></wbr><span><span>Binary</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="421869952%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="serialize-binary.html"><span class="token function">serializeBinary</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">file<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.base/java/io/File.html">File</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Saves the current object in a binary format to the specified file. The object is serialized into a byte array using <span data-unresolved-link="kotlinx.serialization.protobuf/ProtoBuf/decodeFromByteArray/#kotlinx.serialization.DeserializationStrategy[TypeParam(bounds=[kotlin.Any?])]#kotlin.ByteArray/PointingToDeclaration/">ProtoBuf.decodeFromByteArray</span>. Use <a href="serialize-json.html">serializeJson</a> for readability but fewer performances.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="serialize-binary.html"><span class="token function">serializeBinary</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">filePath<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Saves the current object in a binary format to the specified file path. The object is serialized using <span data-unresolved-link="kotlinx.serialization.protobuf/ProtoBuf/decodeFromByteArray/#kotlinx.serialization.DeserializationStrategy[TypeParam(bounds=[kotlin.Any?])]#kotlin.ByteArray/PointingToDeclaration/">ProtoBuf.decodeFromByteArray</span> and stored in the specified file. Use <a href="serialize-json.html">serializeJson</a> for readability but fewer performances.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="1211978720%2FFunctions%2F-251573632" anchor-label="serializeJson" id="1211978720%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="serialize-json.html"><span>serialize</span><wbr></wbr><span><span>Json</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="1211978720%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="serialize-json.html"><span class="token function">serializeJson</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">file<span class="token operator">: </span><a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.base/java/io/File.html">File</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Saves the current object as a JSON string to the specified file. The JSON is serialized using <span data-unresolved-link="kotlinx.serialization.json/Json/encodeToString/#kotlinx.serialization.SerializationStrategy[TypeParam(bounds=[kotlin.Any?])]#TypeParam(bounds=[kotlin.Any?])/PointingToDeclaration/">Json.encodeToString</span> with <code class="lang-kotlin">pretty-print</code> configuration for human readability. Use <a href="serialize-binary.html">serializeBinary</a> for better performances at runtime.</p></div><div class="symbol monospace"><span class="token keyword">fun </span><a href="serialize-json.html"><span class="token function">serializeJson</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">filePath<span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></span></span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-boolean/index.html">Boolean</a></div><div class="brief "><p class="paragraph">Saves the current object as a JSON string to the specified file path.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="-622851692%2FFunctions%2F-251573632" anchor-label="setLoggingLevel" id="-622851692%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="../../cubibon.callAssistant/-loggable/set-logging-level.html"><span>set</span><wbr></wbr><span>Logging</span><wbr></wbr><span><span>Level</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="-622851692%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">fun </span><a href="../../cubibon.callAssistant/-loggable/set-logging-level.html"><span class="token function">setLoggingLevel</span></a><span class="token punctuation">(</span><span class="parameters "><span class="parameter ">level<span class="token operator">: </span><span data-unresolved-link="org.slf4j.event/Level///PointingToDeclaration/">Level</span></span></span><span class="token punctuation">)</span></div><div class="brief "><p class="paragraph">Sets the logging level of this logger. This function should only be used for testing purposes, use environmental variable on production instead.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+<a data-name="2014073194%2FFunctions%2F-251573632" anchor-label="toString" id="2014073194%2FFunctions%2F-251573632" data-filterable-set=":/main"></a>
+          <div class="table-row" data-filterable-current=":/main" data-filterable-set=":/main">
+            <div class="main-subrow keyValue ">
+              <div class=""><span class="inline-flex">
+                  <div><a href="to-string.html"><span>to</span><wbr></wbr><span><span>String</span></span></a></div>
+<span class="anchor-wrapper"><span class="anchor-icon" pointing-to="2014073194%2FFunctions%2F-251573632"></span>
+                    <div class="copy-popup-wrapper "><span class="copy-popup-icon"></span><span>Link copied to clipboard</span></div>
+                  </span></span></div>
+              <div>
+                <div class="title">
+                  <div class="platform-hinted " data-platform-hinted="data-platform-hinted"><div class="content sourceset-dependent-content" data-active="" data-togglable=":/main"><div class="symbol monospace"><span class="token keyword">open </span><span class="token keyword">override </span><span class="token keyword">fun </span><a href="to-string.html"><span class="token function">toString</span></a><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">: </span><a href="https://kotlinlang.org/api/core/kotlin-stdlib/kotlin/-string/index.html">String</a></div><div class="brief "><p class="paragraph">Returns a string representation that shows all the properties of <code class="lang-kotlin">this</code> class in a human-readable manner.</p></div></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    <div class="footer">
+        <a href="#content" id="go-to-top-link" class="footer--button footer--button_go-to-top"></a>
+        <span>© 2025 Copyright</span>
+        <span class="pull-right">
+            <span>Generated by </span>
+            <a class="footer--link footer--link_external" href="https://github.com/Kotlin/dokka">
+                <span>dokka</span>
+            </a>
+        </span>
+    </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

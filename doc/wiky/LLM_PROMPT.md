@@ -7,16 +7,16 @@ syntax, which can be parsed on a Kotlin map that can be used to guide the instru
 ## Package Structure
 
 It is base on the following files
- - [PromptsParser.kt](../../src/main/kotlin/digital/boline/callAssistant/llm/prompt/PromptsParser.kt), which implements the instruction for parsing the prompts syntax and generate 
+ - [PromptsParser.kt](../../src/main/kotlin/cubibon/callAssistant/llm/prompt/PromptsParser.kt), which implements the instruction for parsing the prompts syntax and generate 
    Kotlin maps based on the `PromptsParser` class. The latter exposes the `parse()` method, which return instances of
    the `ParsedPrompts` object.
- - [PromptsUtils.kt](../../src/main/kotlin/digital/boline/callAssistant/llm/prompt/PromptsUtils.kt), which implements some helper functions for prompts management, such as the 
+ - [PromptsUtils.kt](../../src/main/kotlin/cubibon/callAssistant/llm/prompt/PromptsUtils.kt), which implements some helper functions for prompts management, such as the 
    `ParsedPrompts`, `PromptsDeserializer` and related structures: `Occorrence`, and list of `Occurrences`.
- - [PromptsManager.kt](../../src/main/kotlin/digital/boline/callAssistant/llm/prompt/PromptsManager.kt), which implements the kotlin maps to be used at runtime for exploiting 
+ - [PromptsManager.kt](../../src/main/kotlin/cubibon/callAssistant/llm/prompt/PromptsManager.kt), which implements the kotlin maps to be used at runtime for exploiting 
    prompts. It encompasses the `Prompts` interface, and the `SimplePrompts`, and `ApplicablePrompts` abstract classes 
    for generality. Also, it implements the `PromptsManager` and the `VariablesFunction`, which are the objects used at 
    runtime.
- - [PromptsValidator.kt](../../src/main/kotlin/digital/boline/callAssistant/llm/prompt/PromptsValidator.kt), which implements a running function that allow checking prompt syntax, 
+ - [PromptsValidator.kt](../../src/main/kotlin/cubibon/callAssistant/llm/prompt/PromptsValidator.kt), which implements a running function that allow checking prompt syntax, 
    and serialize their results for an efficient usage at run time.
 
 
@@ -216,7 +216,7 @@ To define new Kotlin functions that can be used to define custom variables on sp
  1. implement the function into the `VariablesFunction` object, and 
  2. add your implementation to the functions map in `VariablesFunction`. 
 The `VariablesFunction` object is available at the 
-[PromptsManagerImpl.kt](../../src/main/kotlin/digital/boline/callAssistant/llm/prompt/PromptsManager.kt) file.
+[PromptsManagerImpl.kt](../../src/main/kotlin/cubibon/callAssistant/llm/prompt/PromptsManager.kt) file.
 
 For example, Let us assume you want to implement a function `myFunc`, which can be used within the prompts syntax as:
 ```
@@ -328,15 +328,15 @@ class. For more info about the summarization process see the [`message` package 
 
 
 For more examples about the prompt syntax and related API, see the
-[PromptsParserTest.kt](../../src/test/kotlin/digital/boline/callAssistant/llm/prompt/PromptsParserTest.kt)
-or the [PromptsValidator.ky](../../src/main/kotlin/digital/boline/callAssistant/llm/prompt/PromptsValidator.kt) files. The former is a Unit-Test implementation of the prompts-related
+[PromptsParserTest.kt](../../src/test/kotlin/cubibon/callAssistant/llm/prompt/PromptsParserTest.kt)
+or the [PromptsValidator.ky](../../src/main/kotlin/cubibon/callAssistant/llm/prompt/PromptsValidator.kt) files. The former is a Unit-Test implementation of the prompts-related
 implementation. The latter can be used to perform parsing, validating and serializing prompts while interacting through
 the terminal, and it has been designed to cover all the operation that should be done offline.
 
 ### Architecture:
 
 Here it follows the UML Class diagram of the classes implemented in the [prompt]() package, for a more detailed check 
-the [code documentation](../dokka/html/-call-assistant--brain/digital.boline.callAssistant.llm.prompt/index.html).
+the [code documentation](../dokka/html/-call-assistant--brain/cubibon.callAssistant.llm.prompt/index.html).
 
 ![localImage](../uml/llm-prompt.svg)
 

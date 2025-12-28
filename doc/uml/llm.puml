@@ -1,5 +1,5 @@
 @startuml
-class digital.boline.callAssistant.llm.AwsBedrockRequest$Companion {
+class cubibon.callAssistant.llm.AwsBedrockRequest$Companion {
 + List<SystemContentBlock> buildPrompts(List<String>)
 + List<SystemContentBlock> buildPrompts(String)
 + Message buildMessages(ConversationRole,String)
@@ -10,15 +10,15 @@ class digital.boline.callAssistant.llm.AwsBedrockRequest$Companion {
 + Message buildAssistantMessages(List<String>)
 }
 
-class digital.boline.callAssistant.llm.AwsBedrockRequest {
+class cubibon.callAssistant.llm.AwsBedrockRequest {
 + <<Create>> AwsBedrockRequest(List<SystemContentBlock>,List<Message>,Int,Float,Float,String)
 }
 
-class digital.boline.callAssistant.llm.AwsBedrockResponse {
+class cubibon.callAssistant.llm.AwsBedrockResponse {
 + <<Create>> AwsBedrockResponse(String,Long,Int,Int,String)
 }
 
-class digital.boline.callAssistant.llm.AwsBedrock {
+class cubibon.callAssistant.llm.AwsBedrock {
 - BedrockRuntimeAsyncClient? client
 - CompletableFuture<Void>? llmJob
 - ConverseStreamResponseHandler? requestHandler
@@ -31,7 +31,7 @@ class digital.boline.callAssistant.llm.AwsBedrock {
 }
 
 
-interface digital.boline.callAssistant.llm.LlmRequest {
+interface cubibon.callAssistant.llm.LlmRequest {
 + P prompts
 + M messages
 + String modelName
@@ -40,7 +40,7 @@ interface digital.boline.callAssistant.llm.LlmRequest {
 + Int maxTokens
 }
 
-interface digital.boline.callAssistant.llm.LlmResponse {
+interface cubibon.callAssistant.llm.LlmResponse {
 + String message
 + Long responseLatency
 + Int inputToken
@@ -48,16 +48,16 @@ interface digital.boline.callAssistant.llm.LlmResponse {
 + String sourceTag
 }
 
-abstract class digital.boline.callAssistant.llm.LlmService {
+abstract class cubibon.callAssistant.llm.LlmService {
 +  onResultCallbacks
 }
 
 
 
-digital.boline.callAssistant.llm.AwsBedrockRequest +.. digital.boline.callAssistant.llm.AwsBedrockRequest$Companion
-digital.boline.callAssistant.llm.LlmRequest <|.. digital.boline.callAssistant.llm.AwsBedrockRequest
-digital.boline.callAssistant.llm.LlmResponse <|.. digital.boline.callAssistant.llm.AwsBedrockResponse
-digital.boline.callAssistant.llm.LlmService <|-- digital.boline.callAssistant.llm.AwsBedrock
-digital.boline.callAssistant.CallbackInput <|.. digital.boline.callAssistant.llm.LlmResponse
-digital.boline.callAssistant.ReusableService <|-- digital.boline.callAssistant.llm.LlmService
+cubibon.callAssistant.llm.AwsBedrockRequest +.. cubibon.callAssistant.llm.AwsBedrockRequest$Companion
+cubibon.callAssistant.llm.LlmRequest <|.. cubibon.callAssistant.llm.AwsBedrockRequest
+cubibon.callAssistant.llm.LlmResponse <|.. cubibon.callAssistant.llm.AwsBedrockResponse
+cubibon.callAssistant.llm.LlmService <|-- cubibon.callAssistant.llm.AwsBedrock
+cubibon.callAssistant.CallbackInput <|.. cubibon.callAssistant.llm.LlmResponse
+cubibon.callAssistant.ReusableService <|-- cubibon.callAssistant.llm.LlmService
 @enduml

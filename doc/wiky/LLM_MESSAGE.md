@@ -23,7 +23,7 @@ This objective of this package are
 ## General Architecture and Datastructures
 
 This package is divided in the following files
- - [MessageInterface.kt](../../src/main/kotlin/digital/boline/callAssistant/llm/message/MessageInterface.kt), which 
+ - [MessageInterface.kt](../../src/main/kotlin/cubibon/callAssistant/llm/message/MessageInterface.kt), which 
    contains the base classes for this implementation, i.e.,
    - `MetaRole`: is an enumerator describing the role of the message, such as `USER` and `ASSISTANT`, and the `SUMMARY`
      tag.
@@ -33,11 +33,11 @@ This package is divided in the following files
    - `MessageWrapper`: is an interface to represent a general message, which include an identifier, some metadata, a 
      message role, and some message contents (as a `List<String>`). This class is the base message representation and 
      can be used to obtain references to `LlmMessage`, `MetaData`.
- - [MetaMessage.kt](../../src/main/kotlin/digital/boline/callAssistant/llm/message/MetaMessage.kt), which implements the
+ - [MetaMessage.kt](../../src/main/kotlin/cubibon/callAssistant/llm/message/MetaMessage.kt), which implements the
    interfaces introduced above that are not related to specific LLM providers. In particular, it includes:
    - `MessageData`, which implements the `MetaData` interface, and exploits `MetaAttributes` and `MetaTiming`.
    - `MetaMessage`, which implements the `MessageWrapper` interface, and uses the `MetaData` class.
- - [AwsMessage.kt](../../src/main/kotlin/digital/boline/callAssistant/llm/message/AwsMessage.kt), which encompass
+ - [AwsMessage.kt](../../src/main/kotlin/cubibon/callAssistant/llm/message/AwsMessage.kt), which encompass
    implementations related to Bedrock-based LLMs provided by AWS. It includes:
    - `AwsMessage`, which implements the `LlmMessage` interface for AWS.
    - `DynamoDBMessage`, which converts maps representing messages into a data structure that can be store in the AWS
@@ -45,7 +45,7 @@ This package is divided in the following files
    - `buildAwsMessagesManager` and `buildAwsMetaMessage`, which are helping functions that respectively get instances of 
      the `MessagesManager` (see below) to be used for AWS Bedrock, and `MessageWrapper` based on `AwsMessage` for 
      testing purposes.
- - [MessagesManager.kt](../../src/main/kotlin/digital/boline/callAssistant/llm/message/MessagesManager.kt), which is the
+ - [MessagesManager.kt](../../src/main/kotlin/cubibon/callAssistant/llm/message/MessagesManager.kt), which is the
    entry point for this implementation. It contains:
    - `MessagesManager`, which manages a list of `MessageWrapper` implementation, see below for more information.
    - `Summarizing`, which is a data class useful during the summarization process explained below.
@@ -62,7 +62,7 @@ paradigm, where `MetaMessage` can instance specific `MessageWrapper` implementat
 specific implementation of `LlmMessage`. To allow such a paradigm, both `MessageWrapper` and `LlmMessage` implement a 
 `Builder` inner class, which is also exploited to decouple properties meant to be accessible only within 
 `MessagesManager` from properties publicly available (for more information, see 
-[the documented code](../dokka/html/-call-assistant--brain/digital.boline.callAssistant.llm.message/index.html) 
+[the documented code](../dokka/html/-call-assistant--brain/cubibon.callAssistant.llm.message/index.html) 
 of `MessagesManager`, `LlmMessage`, `LlmMessage.Builder`, `MessageWrapper`, and `MessageWrapper.Builder`). 
 
 Within this paradigm, the basic implementation of the an `LlmMessage`, and related instantiation can be for instance:
@@ -250,8 +250,8 @@ Be aware that a sub-field of the `metadata` key do not appear if the related val
  - `timing` is a `Map<String, Long>` used to associate a timestamp in milliseconds to a key associated with the 
    `MetaTiming` enumerator, which defines
    - `creation`: is the time stamp when this message has been created (this value always appear in the metadata).
-   - `playStart`: is the instant in which the message playback started (it only occurs when `role` is `assistant`).
-   - `playEnd`: is the instant in which the message playback ended (it only occurs when `role` is `assistant`).
+   - `speechStart`: is the instant in which the message playback started (it only occurs when `role` is `assistant`).
+   - `speechEnd`: is the instant in which the message playback ended (it only occurs when `role` is `assistant`).
    - `listenStart`: is the instant in which the message listening task started (it only occurs when `role` is `user`).
    - `listenEnd`: is the instant in which the message listening task ended (it only occurs when `role` is `user`).
    - `llmStart`: is The instant in which the LLM-based evaluation started (it only occurs when `role` is `user`).
@@ -269,9 +269,9 @@ add new messages in the lists. See the example below for more info.
 ## API Usage
 
 Here an example of how to use the messages API for AWS bedrock. For more examples see the Unit tests implemented in the 
-[AwsMessageManagerTest.kt](../../src/test/kotlin/digital/boline/callAssistant/llm/message/AwsMessagesManagerTest.kt) 
+[AwsMessageManagerTest.kt](../../src/test/kotlin/cubibon/callAssistant/llm/message/AwsMessagesManagerTest.kt) 
 file. Furthermore, more functionalities are described in the 
-[code documentation](../dokka/html/-call-assistant--brain/digital.boline.callAssistant.llm.message/index.html).
+[code documentation](../dokka/html/-call-assistant--brain/cubibon.callAssistant.llm.message/index.html).
 
 ```kotlin
 // Create the message manager.
@@ -290,9 +290,9 @@ val llmMessages: List<Message> = manager.messages
 // Perform summarization
 val summaryInfo: Summarizing = manager.getSummaryInfo()  // It will not include the last user message.
 val toSummarize: String = summaryInfo.format()
-val summary: String = "..." // TODO: Use LLM to process `toSummarize` and provide a `summary` string.
+val summary: String = "..." // todo !: Use LLM to process `toSummarize` and provide a `summary` string.
 manager.addSummary(summary, summaryInfo)
-// TODO: use `summary` to augment the LLM prompt for being aware of previous messages.
+// todo !: use `summary` to augment the LLM prompt for being aware of previous messages.
 
 // Add some other messages
 manager.addAssistant("How can I help you?")

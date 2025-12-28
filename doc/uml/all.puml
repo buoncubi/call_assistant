@@ -1,17 +1,17 @@
 @startuml
-class digital.boline.callAssistant.llm.message.AwsMessage$Builder {
+class cubibon.callAssistant.llm.message.AwsMessage$Builder {
 + void public()
 }
 
-class digital.boline.callAssistant.llm.message.AwsMessage$Companion {
+class cubibon.callAssistant.llm.message.AwsMessage$Companion {
 + LlmMessage.Builder<Message> build()
 }
 
-class digital.boline.callAssistant.llm.message.AwsMessage {
+class cubibon.callAssistant.llm.message.AwsMessage {
 + Message getRawMessage(MetaRole,List<String>)
 }
 
-class digital.boline.callAssistant.llm.message.DynamoDBMessage {
+class cubibon.callAssistant.llm.message.DynamoDBMessage {
 + List<Map<String, AttributeValue>> toDynamoDB(List<Map<String, Any?>>)
 - Map<String, AttributeValue> toDynamoDB(Map<String, Any?>)
 - AttributeValue toAttributeValue(Any?)
@@ -19,15 +19,15 @@ class digital.boline.callAssistant.llm.message.DynamoDBMessage {
 - AttributeValue getErrorAttribute()
 }
 
-class digital.boline.callAssistant.ApplicationRunner$Companion {
+class cubibon.callAssistant.ApplicationRunner$Companion {
 + String AWS_VENV_REGION
 }
 
-class digital.boline.callAssistant.ApplicationRunner {
+class cubibon.callAssistant.ApplicationRunner {
 - void runApplication()
 }
 
-class digital.boline.callAssistant.llm.AwsBedrockRequest$Companion {
+class cubibon.callAssistant.llm.AwsBedrockRequest$Companion {
 + List<SystemContentBlock> buildPrompts(List<String>)
 + List<SystemContentBlock> buildPrompts(String)
 + Message buildMessages(ConversationRole,String)
@@ -38,11 +38,11 @@ class digital.boline.callAssistant.llm.AwsBedrockRequest$Companion {
 + Message buildAssistantMessages(List<String>)
 }
 
-class digital.boline.callAssistant.llm.AwsBedrockRequest {
+class cubibon.callAssistant.llm.AwsBedrockRequest {
 }
-class digital.boline.callAssistant.llm.AwsBedrockResponse {
+class cubibon.callAssistant.llm.AwsBedrockResponse {
 }
-class digital.boline.callAssistant.llm.AwsBedrock {
+class cubibon.callAssistant.llm.AwsBedrock {
 - BedrockRuntimeAsyncClient? client
 - CompletableFuture<Void>? llmJob
 - ConverseStreamResponseHandler? requestHandler
@@ -54,17 +54,17 @@ class digital.boline.callAssistant.llm.AwsBedrock {
 }
 
 
-interface digital.boline.callAssistant.speech2text.Speech2TextStreamBuilder {
+interface cubibon.callAssistant.speech2text.Speech2TextStreamBuilder {
 + InputStream? build()
 }
 
-abstract class digital.boline.callAssistant.speech2text.Speech2Text {
+abstract class cubibon.callAssistant.speech2text.Speech2Text {
 +  onResultCallbacks
 + void computeAsync(FrequentTimeout?)
 }
 
 
-class digital.boline.callAssistant.text2speech.DesktopAudioPlayer {
+class cubibon.callAssistant.text2speech.DesktopAudioPlayer {
 +  onBeginPlayingCallbacks
 +  onEndPlayingCallbacks
 - AdvancedPlayer? player
@@ -73,7 +73,7 @@ class digital.boline.callAssistant.text2speech.DesktopAudioPlayer {
 }
 
 
-enum digital.boline.callAssistant.llm.message.MetaRole {
+enum cubibon.callAssistant.llm.message.MetaRole {
 +  USER
 +  ASSISTANT
 +  SUMMARY
@@ -81,22 +81,22 @@ enum digital.boline.callAssistant.llm.message.MetaRole {
 }
 
 
-interface digital.boline.callAssistant.llm.message.LlmMessage$Builder {
+interface cubibon.callAssistant.llm.message.LlmMessage$Builder {
 + LlmMessage<M> public()
 }
 
-interface digital.boline.callAssistant.llm.message.LlmMessage {
+interface cubibon.callAssistant.llm.message.LlmMessage {
 + M getRawMessage(MetaRole,List<String>)
 }
 
-enum digital.boline.callAssistant.llm.message.MetaAttribute {
+enum cubibon.callAssistant.llm.message.MetaAttribute {
 +  FAKE
 +  MERGED
 + String toString()
 }
 
 
-enum digital.boline.callAssistant.llm.message.MetaTiming {
+enum cubibon.callAssistant.llm.message.MetaTiming {
 +  CREATION
 +  PLAY_START
 +  PLAY_END
@@ -108,7 +108,7 @@ enum digital.boline.callAssistant.llm.message.MetaTiming {
 }
 
 
-interface digital.boline.callAssistant.llm.message.MetaData {
+interface cubibon.callAssistant.llm.message.MetaData {
 + List<String>? summaryIds
 + List<MetaAttribute>? attributes
 + Map<MetaTiming, Long>? timing
@@ -123,7 +123,7 @@ interface digital.boline.callAssistant.llm.message.MetaData {
 }
 
 
-class digital.boline.callAssistant.llm.message.MessageWrapper$Builder$Companion {
+class cubibon.callAssistant.llm.message.MessageWrapper$Builder$Companion {
 +  MAP_ID_KEY
 +  MAP_MESSAGE_KEY
 +  MAP_ROLE_KEY
@@ -131,7 +131,7 @@ class digital.boline.callAssistant.llm.message.MessageWrapper$Builder$Companion 
 +  MAP_METADATA_KEY
 }
 
-interface digital.boline.callAssistant.llm.message.MessageWrapper$Builder {
+interface cubibon.callAssistant.llm.message.MessageWrapper$Builder {
 + Builder<M> setRole(MetaRole)
 + Builder<M> addContents(List<String>)
 + Builder<M> setId(String)
@@ -139,7 +139,7 @@ interface digital.boline.callAssistant.llm.message.MessageWrapper$Builder {
 + Map<String, Any> toMap()
 }
 
-interface digital.boline.callAssistant.llm.message.MessageWrapper {
+interface cubibon.callAssistant.llm.message.MessageWrapper {
 + String id
 + MetaRole role
 + List<String> contents
@@ -151,15 +151,15 @@ interface digital.boline.callAssistant.llm.message.MessageWrapper {
 }
 
 
-class digital.boline.callAssistant.llm.prompt.Occurrence {
+class cubibon.callAssistant.llm.prompt.Occurrence {
 + String toString()
 }
 
-class digital.boline.callAssistant.llm.prompt.ParsedPrompts$Companion {
+class cubibon.callAssistant.llm.prompt.ParsedPrompts$Companion {
 -  SEPARATOR
 }
 
-class digital.boline.callAssistant.llm.prompt.ParsedPrompts {
+class cubibon.callAssistant.llm.prompt.ParsedPrompts {
 +  metadata
 +  variables
 +  prompts
@@ -175,7 +175,7 @@ class digital.boline.callAssistant.llm.prompt.ParsedPrompts {
 }
 
 
-class digital.boline.callAssistant.llm.prompt.PromptsDeserializer {
+class cubibon.callAssistant.llm.prompt.PromptsDeserializer {
 + PromptsManager? fromBytesOrJson(String)
 + PromptsManager? fromBytesOrJson(File)
 + PromptsManager? fromBytes(String)
@@ -185,7 +185,7 @@ class digital.boline.callAssistant.llm.prompt.PromptsDeserializer {
 - ParsedPrompts? deserialize(File,(data: T) -> ParsedPrompts)
 }
 
-class digital.boline.callAssistant.speech2text.DesktopMicrophone {
+class cubibon.callAssistant.speech2text.DesktopMicrophone {
 - Int MIC_SAMPLE_SIZE_IN_BIT
 - Int MIC_AUDIO_CHANNEL
 - Float MIC_SAMPLE_RATE
@@ -193,32 +193,32 @@ class digital.boline.callAssistant.speech2text.DesktopMicrophone {
 }
 
 
-interface digital.boline.callAssistant.llm.prompt.Prompts {
+interface cubibon.callAssistant.llm.prompt.Prompts {
 + Map<K,T> prompts
 }
 
-abstract class digital.boline.callAssistant.llm.prompt.SimplePrompt {
+abstract class cubibon.callAssistant.llm.prompt.SimplePrompt {
 + Map<K, T> metadata
 + Map<K, O> variables
 # String formatMap2String(Map<*,*>,String,String)
 }
 
 
-class digital.boline.callAssistant.llm.prompt.TypedPrompts$Companion {
+class cubibon.callAssistant.llm.prompt.TypedPrompts$Companion {
 -  SEPARATOR
 }
 
-abstract class digital.boline.callAssistant.llm.prompt.TypedPrompts {
+abstract class cubibon.callAssistant.llm.prompt.TypedPrompts {
 + String toString()
 + Boolean equals(Any?)
 + Int hashCode()
 }
 
-class digital.boline.callAssistant.llm.prompt.PromptsManager$Companion {
+class cubibon.callAssistant.llm.prompt.PromptsManager$Companion {
 -  MESSAGE_SUMMARY_TITLE_KEY
 }
 
-abstract class digital.boline.callAssistant.llm.prompt.PromptsManager {
+abstract class cubibon.callAssistant.llm.prompt.PromptsManager {
 + Map<String, String> rawPrompts
 + String messageSummary
 + String formatPrompts(List<String>,Boolean,Boolean)
@@ -226,13 +226,13 @@ abstract class digital.boline.callAssistant.llm.prompt.PromptsManager {
 }
 
 
-class digital.boline.callAssistant.llm.prompt.PromptsManagerImpl {
+class cubibon.callAssistant.llm.prompt.PromptsManagerImpl {
 + Map<String, String> prompts
 + void applyVariables()
 }
 
 
-class digital.boline.callAssistant.llm.prompt.VariablesFunction {
+class cubibon.callAssistant.llm.prompt.VariablesFunction {
 -  functionMap
 - String formattedTime
 - Pair<String, () -> String> addFunction(() -> String)
@@ -246,7 +246,7 @@ class digital.boline.callAssistant.llm.prompt.VariablesFunction {
 }
 
 
-class digital.boline.callAssistant.LoggableInterface$Factory$Companion {
+class cubibon.callAssistant.LoggableInterface$Factory$Companion {
 -  internalLogger
 - void getLoggerName(Class<*>)
 - Logger getNewLogger(Class<*>)
@@ -255,19 +255,19 @@ class digital.boline.callAssistant.LoggableInterface$Factory$Companion {
 }
 
 
-class digital.boline.callAssistant.LoggableInterface$Factory {
+class cubibon.callAssistant.LoggableInterface$Factory {
 + Logger slf4jLogger
 }
 
-class digital.boline.callAssistant.LoggableInterface$Companion {
+class cubibon.callAssistant.LoggableInterface$Companion {
 + String NEW_LINE
 }
 
-interface digital.boline.callAssistant.LoggableInterface {
+interface cubibon.callAssistant.LoggableInterface {
 + void loggerFactory(Class<out LoggableInterface>?)
 }
 
-class digital.boline.callAssistant.CentralizedLogger {
+class cubibon.callAssistant.CentralizedLogger {
 -  loggerTag
 + void setLevel(SLF4JLevel)
 + void trace(String,Any?)
@@ -278,11 +278,11 @@ class digital.boline.callAssistant.CentralizedLogger {
 }
 
 
-class digital.boline.callAssistant.Loggable$Companion {
+class cubibon.callAssistant.Loggable$Companion {
 + String NEW_LINE
 }
 
-class digital.boline.callAssistant.Loggable {
+class cubibon.callAssistant.Loggable {
 #  slf4jLogger
 # CentralizedLogger logger
 # void logTrace(String,Any?)
@@ -294,9 +294,9 @@ class digital.boline.callAssistant.Loggable {
 }
 
 
-class digital.boline.callAssistant.llm.prompt.FieldsMatcher {
+class cubibon.callAssistant.llm.prompt.FieldsMatcher {
 }
-enum digital.boline.callAssistant.llm.prompt.SpecialSectionTitle {
+enum cubibon.callAssistant.llm.prompt.SpecialSectionTitle {
 +  METADATA
 +  CONSTANTS
 +  VARIABLES
@@ -304,7 +304,7 @@ enum digital.boline.callAssistant.llm.prompt.SpecialSectionTitle {
 }
 
 
-class digital.boline.callAssistant.llm.prompt.PromptsParser {
+class cubibon.callAssistant.llm.prompt.PromptsParser {
 -  REGEX_VAR
 -  REGEX_CONST
 -  REGEX_LINE_COMMENT
@@ -336,14 +336,14 @@ class digital.boline.callAssistant.llm.prompt.PromptsParser {
 }
 
 
-class digital.boline.callAssistant.llm.message.MessageData$Companion {
+class cubibon.callAssistant.llm.message.MessageData$Companion {
 +  SUMMARY_IDS_KEY
 +  ATTRIBUTES_KEY
 +  DATA_KEY
 +  TIMING_KEY
 }
 
-class digital.boline.callAssistant.llm.message.MessageData {
+class cubibon.callAssistant.llm.message.MessageData {
 + List<String>? summaryIds
 - MutableList<MetaAttribute>? mutableAttributes
 + List<MetaAttribute>? attributes
@@ -361,7 +361,7 @@ class digital.boline.callAssistant.llm.message.MessageData {
 }
 
 
-class digital.boline.callAssistant.llm.message.MetaMessage$Builder {
+class cubibon.callAssistant.llm.message.MetaMessage$Builder {
 + Builder setRole(MetaRole)
 + Builder addContents(List<String>)
 + MessageWrapper.Builder<M> setId(String)
@@ -371,11 +371,11 @@ class digital.boline.callAssistant.llm.message.MetaMessage$Builder {
 + void equals(Any?)
 }
 
-class digital.boline.callAssistant.llm.message.MetaMessage$Companion {
+class cubibon.callAssistant.llm.message.MetaMessage$Companion {
 + MessageWrapper.Builder<M> build(LlmMessage.Builder<M>)
 }
 
-class digital.boline.callAssistant.llm.message.MetaMessage {
+class cubibon.callAssistant.llm.message.MetaMessage {
 -  mutableContents
 + List<String> contents
 + MetaRole role
@@ -388,14 +388,14 @@ class digital.boline.callAssistant.llm.message.MetaMessage {
 }
 
 
-class digital.boline.callAssistant.speech2text.AwsTranscribe$Companion {
+class cubibon.callAssistant.speech2text.AwsTranscribe$Companion {
 -  LANGUAGE_CODE
 -  AUDIO_STREAM_CHUNK_SIZE_IN_BYTES
 -  SAMPLE_RATE
 -  MEDIA_ENCODING
 }
 
-class digital.boline.callAssistant.speech2text.AwsTranscribe {
+class cubibon.callAssistant.speech2text.AwsTranscribe {
 - TranscribeStreamingAsyncClient? client
 - StartStreamTranscriptionRequest? request
 - CompletableFuture<Void>? transcribeJob
@@ -409,18 +409,18 @@ class digital.boline.callAssistant.speech2text.AwsTranscribe {
 }
 
 
-class digital.boline.callAssistant.speech2text.AudioStreamPublisher$Companion {
+class cubibon.callAssistant.speech2text.AudioStreamPublisher$Companion {
 - SubscriptionImpl? currentSubscription
 -  mutex
 + void stop()
 }
 
 
-class digital.boline.callAssistant.speech2text.AudioStreamPublisher {
+class cubibon.callAssistant.speech2text.AudioStreamPublisher {
 + void subscribe(Subscriber<in AudioStream?>)
 }
 
-class digital.boline.callAssistant.speech2text.SubscriptionImpl {
+class cubibon.callAssistant.speech2text.SubscriptionImpl {
 - ExecutorService executor
 -  demand
 -  isOpen
@@ -431,11 +431,11 @@ class digital.boline.callAssistant.speech2text.SubscriptionImpl {
 }
 
 
-class digital.boline.callAssistant.llm.message.MessagesManager$Companion {
+class cubibon.callAssistant.llm.message.MessagesManager$Companion {
 +  FAKE_MESSAGE_CONTENTS
 }
 
-class digital.boline.callAssistant.llm.message.MessagesManager {
+class cubibon.callAssistant.llm.message.MessagesManager {
 -  firstLlmMessageIdx
 -  messageMapIdx
 -  mutableMessages
@@ -460,11 +460,11 @@ class digital.boline.callAssistant.llm.message.MessagesManager {
 }
 
 
-class digital.boline.callAssistant.llm.message.Summarizing$SummarizingMessage {
+class cubibon.callAssistant.llm.message.Summarizing$SummarizingMessage {
 + String format()
 }
 
-class digital.boline.callAssistant.llm.message.Summarizing$Formatter {
+class cubibon.callAssistant.llm.message.Summarizing$Formatter {
 -  USER_TAG
 -  ASSISTANT_TAG
 -  SUMMARY_TAG
@@ -487,14 +487,14 @@ class digital.boline.callAssistant.llm.message.Summarizing$Formatter {
 }
 
 
-class digital.boline.callAssistant.llm.message.Summarizing {
+class cubibon.callAssistant.llm.message.Summarizing {
 + String format(String,Boolean)
 + void toString()
 + List<Int> getIndexes()
 + void isEmpty()
 }
 
-interface digital.boline.callAssistant.llm.LlmRequest {
+interface cubibon.callAssistant.llm.LlmRequest {
 + P prompts
 + M messages
 + String modelName
@@ -503,20 +503,20 @@ interface digital.boline.callAssistant.llm.LlmRequest {
 + Int maxTokens
 }
 
-interface digital.boline.callAssistant.llm.LlmResponse {
+interface cubibon.callAssistant.llm.LlmResponse {
 + String message
 + Long responseLatency
 + Int inputToken
 + Int outputToken
 }
 
-abstract class digital.boline.callAssistant.llm.LlmInteract {
+abstract class cubibon.callAssistant.llm.LlmInteract {
 +  onResultCallbacks
 }
 
-class digital.boline.callAssistant.llm.prompt.SerializationFiles {
+class cubibon.callAssistant.llm.prompt.SerializationFiles {
 }
-interface digital.boline.callAssistant.ServiceInterface {
+interface cubibon.callAssistant.ServiceInterface {
 + AtomicBoolean isComputing
 + Boolean computeAsync(I,FrequentTimeout?)
 + Boolean wait(Timeout?)
@@ -524,7 +524,7 @@ interface digital.boline.callAssistant.ServiceInterface {
 }
 
 
-class digital.boline.callAssistant.Timeout$Companion {
+class cubibon.callAssistant.Timeout$Companion {
 # Long DEFAULT_TIMEOUT
 #  DEFAULT_CALLBACK
 # void timeoutToString(Long)
@@ -532,20 +532,20 @@ class digital.boline.callAssistant.Timeout$Companion {
 }
 
 
-class digital.boline.callAssistant.Timeout {
+class cubibon.callAssistant.Timeout {
 + void invokeCallback()
 + void toString()
 }
 
-class digital.boline.callAssistant.FrequentTimeout$Companion {
+class cubibon.callAssistant.FrequentTimeout$Companion {
 - Long DEFAULT_CHECK_PERIOD
 }
 
-class digital.boline.callAssistant.FrequentTimeout {
+class cubibon.callAssistant.FrequentTimeout {
 + void toString()
 }
 
-enum digital.boline.callAssistant.ErrorSource {
+enum cubibon.callAssistant.ErrorSource {
 +  ACTIVATING
 +  COMPUTING
 +  TIMEOUT
@@ -554,9 +554,9 @@ enum digital.boline.callAssistant.ErrorSource {
 +  DEACTIVATING
 }
 
-class digital.boline.callAssistant.ServiceError {
+class cubibon.callAssistant.ServiceError {
 }
-abstract class digital.boline.callAssistant.Service {
+abstract class cubibon.callAssistant.Service {
 # String serviceName
 - Job? computingJob
 - Job? timeoutJob
@@ -577,14 +577,14 @@ abstract class digital.boline.callAssistant.Service {
 }
 
 
-interface digital.boline.callAssistant.ReusableServiceInterface {
+interface cubibon.callAssistant.ReusableServiceInterface {
 + AtomicBoolean isActive
 + Boolean activate()
 + Boolean deactivate()
 }
 
 
-abstract class digital.boline.callAssistant.ReusableService {
+abstract class cubibon.callAssistant.ReusableService {
 +  isActive
 + Boolean checkComputingState(Boolean,String)
 - Boolean checkActiveState(Boolean,String)
@@ -595,7 +595,7 @@ abstract class digital.boline.callAssistant.ReusableService {
 }
 
 
-interface digital.boline.callAssistant.CallbackManagerInterface {
+interface cubibon.callAssistant.CallbackManagerInterface {
 + String add(((I) -> O))
 + void remove(((I) -> O))
 + void clear()
@@ -603,11 +603,11 @@ interface digital.boline.callAssistant.CallbackManagerInterface {
 + ((I) -> O)? getCallbacks(String)
 }
 
-class digital.boline.callAssistant.CallbackManager$Companion {
+class cubibon.callAssistant.CallbackManager$Companion {
 + String getCallbackIdentifier(((I) -> O))
 }
 
-class digital.boline.callAssistant.CallbackManager {
+class cubibon.callAssistant.CallbackManager {
 -  serviceName
 - MutableMap<String, ((I) -> O)> callbacks
 + ((I) -> O)? getCallbacks(String)
@@ -618,27 +618,27 @@ class digital.boline.callAssistant.CallbackManager {
 }
 
 
-interface digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface {
+interface cubibon.callAssistant.text2speech.Text2SpeechPlayerInterface {
 + CallbackManager<C, Unit> onBeginPlayingCallbacks
 + CallbackManager<C, Unit> onEndPlayingCallbacks
 }
 
-abstract class digital.boline.callAssistant.text2speech.Text2SpeechPlayer {
+abstract class cubibon.callAssistant.text2speech.Text2SpeechPlayer {
 }
-abstract class digital.boline.callAssistant.text2speech.Text2Speech {
+abstract class cubibon.callAssistant.text2speech.Text2Speech {
 # InputStream? fetchAudio(String)
 + void doComputeAsync(String)
 + void doWait()
 + void doStop()
 }
 
-class digital.boline.callAssistant.text2speech.AwsPolly$Companion {
+class cubibon.callAssistant.text2speech.AwsPolly$Companion {
 -  VOICE_NAME
 -  VOICE_TYPE
 -  MAX_TEXT_LENGTH
 }
 
-class digital.boline.callAssistant.text2speech.AwsPolly {
+class cubibon.callAssistant.text2speech.AwsPolly {
 - PollyClient? client
 - Voice? voice
 - PollyClient initializeClient()
@@ -651,82 +651,82 @@ class digital.boline.callAssistant.text2speech.AwsPolly {
 
 
 
-digital.boline.callAssistant.llm.message.AwsMessage +.. digital.boline.callAssistant.llm.message.AwsMessage$Builder
-digital.boline.callAssistant.llm.message.Builder <|.. digital.boline.callAssistant.llm.message.AwsMessage$Builder
-digital.boline.callAssistant.llm.message.AwsMessage +.. digital.boline.callAssistant.llm.message.AwsMessage$Companion
-digital.boline.callAssistant.llm.message.LlmMessage <|.. digital.boline.callAssistant.llm.message.AwsMessage
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.AwsMessage
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.DynamoDBMessage
-digital.boline.callAssistant.ApplicationRunner +.. digital.boline.callAssistant.ApplicationRunner$Companion
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.ApplicationRunner
-digital.boline.callAssistant.llm.AwsBedrockRequest +.. digital.boline.callAssistant.llm.AwsBedrockRequest$Companion
-digital.boline.callAssistant.llm.LlmRequest <|.. digital.boline.callAssistant.llm.AwsBedrockRequest
-digital.boline.callAssistant.llm.LlmResponse <|.. digital.boline.callAssistant.llm.AwsBedrockResponse
-digital.boline.callAssistant.llm.LlmInteract <|-- digital.boline.callAssistant.llm.AwsBedrock
-digital.boline.callAssistant.ReusableService <|-- digital.boline.callAssistant.speech2text.Speech2Text
-digital.boline.callAssistant.text2speech.Text2SpeechPlayer <|-- digital.boline.callAssistant.text2speech.DesktopAudioPlayer
-digital.boline.callAssistant.llm.message.LlmMessage +.. digital.boline.callAssistant.llm.message.LlmMessage$Builder
-digital.boline.callAssistant.llm.message.LoggableInterface <|.. digital.boline.callAssistant.llm.message.LlmMessage$Builder
-digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.message.LlmMessage
-digital.boline.callAssistant.llm.message.Builder +.. digital.boline.callAssistant.llm.message.Builder$Companion
-digital.boline.callAssistant.llm.message.MessageWrapper$Builder +.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder$Companion
-digital.boline.callAssistant.llm.message.MessageWrapper +.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder
-digital.boline.callAssistant.llm.message.LoggableInterface <|.. digital.boline.callAssistant.llm.message.MessageWrapper$Builder
-digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.message.MessageWrapper
-digital.boline.callAssistant.llm.prompt.ParsedPrompts +.. digital.boline.callAssistant.llm.prompt.ParsedPrompts$Companion
-digital.boline.callAssistant.llm.prompt.TypedPrompts <|-- digital.boline.callAssistant.llm.prompt.ParsedPrompts
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.PromptsDeserializer
-digital.boline.callAssistant.speech2text.Speech2TextStreamBuilder <|.. digital.boline.callAssistant.speech2text.DesktopMicrophone
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.speech2text.DesktopMicrophone
-digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.prompt.Prompts
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.SimplePrompt
-digital.boline.callAssistant.llm.prompt.Prompts <|.. digital.boline.callAssistant.llm.prompt.SimplePrompt
-digital.boline.callAssistant.llm.prompt.TypedPrompts +.. digital.boline.callAssistant.llm.prompt.TypedPrompts$Companion
-digital.boline.callAssistant.llm.prompt.SimplePrompt <|-- digital.boline.callAssistant.llm.prompt.TypedPrompts
-digital.boline.callAssistant.llm.prompt.PromptsManager +.. digital.boline.callAssistant.llm.prompt.PromptsManager$Companion
-digital.boline.callAssistant.llm.prompt.TypedPrompts <|-- digital.boline.callAssistant.llm.prompt.PromptsManager
-digital.boline.callAssistant.llm.prompt.PromptsManager <|-- digital.boline.callAssistant.llm.prompt.PromptsManagerImpl
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.VariablesFunction
-digital.boline.callAssistant.Factory +.. digital.boline.callAssistant.Factory$Companion
-digital.boline.callAssistant.LoggableInterface$Factory +.. digital.boline.callAssistant.LoggableInterface$Factory$Companion
-digital.boline.callAssistant.LoggableInterface +.. digital.boline.callAssistant.LoggableInterface$Factory
-digital.boline.callAssistant.LoggableInterface +.. digital.boline.callAssistant.LoggableInterface$Companion
-digital.boline.callAssistant.Loggable +.. digital.boline.callAssistant.Loggable$Companion
-digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.Loggable
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.PromptsParser
-digital.boline.callAssistant.llm.message.MessageData +.. digital.boline.callAssistant.llm.message.MessageData$Companion
-digital.boline.callAssistant.llm.message.MetaData <|.. digital.boline.callAssistant.llm.message.MessageData
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MessageData
-digital.boline.callAssistant.llm.message.MetaMessage +.. digital.boline.callAssistant.llm.message.MetaMessage$Builder
-digital.boline.callAssistant.llm.message.Builder <|.. digital.boline.callAssistant.llm.message.MetaMessage$Builder
-digital.boline.callAssistant.llm.message.MetaMessage +.. digital.boline.callAssistant.llm.message.MetaMessage$Companion
-digital.boline.callAssistant.llm.message.MessageWrapper <|.. digital.boline.callAssistant.llm.message.MetaMessage
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MetaMessage
-digital.boline.callAssistant.speech2text.AwsTranscribe +.. digital.boline.callAssistant.speech2text.AwsTranscribe$Companion
-digital.boline.callAssistant.speech2text.Speech2Text <|-- digital.boline.callAssistant.speech2text.AwsTranscribe
-digital.boline.callAssistant.speech2text.AudioStreamPublisher +.. digital.boline.callAssistant.speech2text.AudioStreamPublisher$Companion
-org.reactivestreams.Publisher <|.. digital.boline.callAssistant.speech2text.AudioStreamPublisher
-org.reactivestreams.Subscription <|.. digital.boline.callAssistant.speech2text.SubscriptionImpl
-digital.boline.callAssistant.llm.message.MessagesManager +.. digital.boline.callAssistant.llm.message.MessagesManager$Companion
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.message.MessagesManager
-digital.boline.callAssistant.llm.message.Summarizing +.. digital.boline.callAssistant.llm.message.Summarizing$SummarizingMessage
-digital.boline.callAssistant.llm.message.Summarizing +.. digital.boline.callAssistant.llm.message.Summarizing$Formatter
-digital.boline.callAssistant.ReusableService <|-- digital.boline.callAssistant.llm.LlmInteract
-digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.ServiceInterface
-digital.boline.callAssistant.Timeout +.. digital.boline.callAssistant.Timeout$Companion
-digital.boline.callAssistant.FrequentTimeout +.. digital.boline.callAssistant.FrequentTimeout$Companion
-digital.boline.callAssistant.Timeout <|-- digital.boline.callAssistant.FrequentTimeout
-digital.boline.callAssistant.ServiceInterface <|.. digital.boline.callAssistant.Service
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.Service
-digital.boline.callAssistant.ServiceInterface <|.. digital.boline.callAssistant.ReusableServiceInterface
-digital.boline.callAssistant.ReusableServiceInterface <|.. digital.boline.callAssistant.ReusableService
-digital.boline.callAssistant.Service <|-- digital.boline.callAssistant.ReusableService
-digital.boline.callAssistant.CallbackManager +.. digital.boline.callAssistant.CallbackManager$Companion
-digital.boline.callAssistant.CallbackManagerInterface <|.. digital.boline.callAssistant.CallbackManager
-digital.boline.callAssistant.text2speech.ServiceInterface <|.. digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface
-digital.boline.callAssistant.text2speech.Service <|-- digital.boline.callAssistant.text2speech.Text2SpeechPlayer
-digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface <|.. digital.boline.callAssistant.text2speech.Text2SpeechPlayer
-digital.boline.callAssistant.text2speech.ReusableService <|-- digital.boline.callAssistant.text2speech.Text2Speech
-digital.boline.callAssistant.text2speech.AwsPolly +.. digital.boline.callAssistant.text2speech.AwsPolly$Companion
-digital.boline.callAssistant.text2speech.Text2Speech <|-- digital.boline.callAssistant.text2speech.AwsPolly
+cubibon.callAssistant.llm.message.AwsMessage +.. cubibon.callAssistant.llm.message.AwsMessage$Builder
+cubibon.callAssistant.llm.message.Builder <|.. cubibon.callAssistant.llm.message.AwsMessage$Builder
+cubibon.callAssistant.llm.message.AwsMessage +.. cubibon.callAssistant.llm.message.AwsMessage$Companion
+cubibon.callAssistant.llm.message.LlmMessage <|.. cubibon.callAssistant.llm.message.AwsMessage
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.message.AwsMessage
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.message.DynamoDBMessage
+cubibon.callAssistant.ApplicationRunner +.. cubibon.callAssistant.ApplicationRunner$Companion
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.ApplicationRunner
+cubibon.callAssistant.llm.AwsBedrockRequest +.. cubibon.callAssistant.llm.AwsBedrockRequest$Companion
+cubibon.callAssistant.llm.LlmRequest <|.. cubibon.callAssistant.llm.AwsBedrockRequest
+cubibon.callAssistant.llm.LlmResponse <|.. cubibon.callAssistant.llm.AwsBedrockResponse
+cubibon.callAssistant.llm.LlmInteract <|-- cubibon.callAssistant.llm.AwsBedrock
+cubibon.callAssistant.ReusableService <|-- cubibon.callAssistant.speech2text.Speech2Text
+cubibon.callAssistant.text2speech.Text2SpeechPlayer <|-- cubibon.callAssistant.text2speech.DesktopAudioPlayer
+cubibon.callAssistant.llm.message.LlmMessage +.. cubibon.callAssistant.llm.message.LlmMessage$Builder
+cubibon.callAssistant.llm.message.LoggableInterface <|.. cubibon.callAssistant.llm.message.LlmMessage$Builder
+cubibon.callAssistant.LoggableInterface <|.. cubibon.callAssistant.llm.message.LlmMessage
+cubibon.callAssistant.llm.message.Builder +.. cubibon.callAssistant.llm.message.Builder$Companion
+cubibon.callAssistant.llm.message.MessageWrapper$Builder +.. cubibon.callAssistant.llm.message.MessageWrapper$Builder$Companion
+cubibon.callAssistant.llm.message.MessageWrapper +.. cubibon.callAssistant.llm.message.MessageWrapper$Builder
+cubibon.callAssistant.llm.message.LoggableInterface <|.. cubibon.callAssistant.llm.message.MessageWrapper$Builder
+cubibon.callAssistant.LoggableInterface <|.. cubibon.callAssistant.llm.message.MessageWrapper
+cubibon.callAssistant.llm.prompt.ParsedPrompts +.. cubibon.callAssistant.llm.prompt.ParsedPrompts$Companion
+cubibon.callAssistant.llm.prompt.TypedPrompts <|-- cubibon.callAssistant.llm.prompt.ParsedPrompts
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.prompt.PromptsDeserializer
+cubibon.callAssistant.speech2text.Speech2TextStreamBuilder <|.. cubibon.callAssistant.speech2text.DesktopMicrophone
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.speech2text.DesktopMicrophone
+cubibon.callAssistant.LoggableInterface <|.. cubibon.callAssistant.llm.prompt.Prompts
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.prompt.SimplePrompt
+cubibon.callAssistant.llm.prompt.Prompts <|.. cubibon.callAssistant.llm.prompt.SimplePrompt
+cubibon.callAssistant.llm.prompt.TypedPrompts +.. cubibon.callAssistant.llm.prompt.TypedPrompts$Companion
+cubibon.callAssistant.llm.prompt.SimplePrompt <|-- cubibon.callAssistant.llm.prompt.TypedPrompts
+cubibon.callAssistant.llm.prompt.PromptsManager +.. cubibon.callAssistant.llm.prompt.PromptsManager$Companion
+cubibon.callAssistant.llm.prompt.TypedPrompts <|-- cubibon.callAssistant.llm.prompt.PromptsManager
+cubibon.callAssistant.llm.prompt.PromptsManager <|-- cubibon.callAssistant.llm.prompt.PromptsManagerImpl
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.prompt.VariablesFunction
+cubibon.callAssistant.Factory +.. cubibon.callAssistant.Factory$Companion
+cubibon.callAssistant.LoggableInterface$Factory +.. cubibon.callAssistant.LoggableInterface$Factory$Companion
+cubibon.callAssistant.LoggableInterface +.. cubibon.callAssistant.LoggableInterface$Factory
+cubibon.callAssistant.LoggableInterface +.. cubibon.callAssistant.LoggableInterface$Companion
+cubibon.callAssistant.Loggable +.. cubibon.callAssistant.Loggable$Companion
+cubibon.callAssistant.LoggableInterface <|.. cubibon.callAssistant.Loggable
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.prompt.PromptsParser
+cubibon.callAssistant.llm.message.MessageData +.. cubibon.callAssistant.llm.message.MessageData$Companion
+cubibon.callAssistant.llm.message.MetaData <|.. cubibon.callAssistant.llm.message.MessageData
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.message.MessageData
+cubibon.callAssistant.llm.message.MetaMessage +.. cubibon.callAssistant.llm.message.MetaMessage$Builder
+cubibon.callAssistant.llm.message.Builder <|.. cubibon.callAssistant.llm.message.MetaMessage$Builder
+cubibon.callAssistant.llm.message.MetaMessage +.. cubibon.callAssistant.llm.message.MetaMessage$Companion
+cubibon.callAssistant.llm.message.MessageWrapper <|.. cubibon.callAssistant.llm.message.MetaMessage
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.message.MetaMessage
+cubibon.callAssistant.speech2text.AwsTranscribe +.. cubibon.callAssistant.speech2text.AwsTranscribe$Companion
+cubibon.callAssistant.speech2text.Speech2Text <|-- cubibon.callAssistant.speech2text.AwsTranscribe
+cubibon.callAssistant.speech2text.AudioStreamPublisher +.. cubibon.callAssistant.speech2text.AudioStreamPublisher$Companion
+org.reactivestreams.Publisher <|.. cubibon.callAssistant.speech2text.AudioStreamPublisher
+org.reactivestreams.Subscription <|.. cubibon.callAssistant.speech2text.SubscriptionImpl
+cubibon.callAssistant.llm.message.MessagesManager +.. cubibon.callAssistant.llm.message.MessagesManager$Companion
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.message.MessagesManager
+cubibon.callAssistant.llm.message.Summarizing +.. cubibon.callAssistant.llm.message.Summarizing$SummarizingMessage
+cubibon.callAssistant.llm.message.Summarizing +.. cubibon.callAssistant.llm.message.Summarizing$Formatter
+cubibon.callAssistant.ReusableService <|-- cubibon.callAssistant.llm.LlmInteract
+cubibon.callAssistant.LoggableInterface <|.. cubibon.callAssistant.ServiceInterface
+cubibon.callAssistant.Timeout +.. cubibon.callAssistant.Timeout$Companion
+cubibon.callAssistant.FrequentTimeout +.. cubibon.callAssistant.FrequentTimeout$Companion
+cubibon.callAssistant.Timeout <|-- cubibon.callAssistant.FrequentTimeout
+cubibon.callAssistant.ServiceInterface <|.. cubibon.callAssistant.Service
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.Service
+cubibon.callAssistant.ServiceInterface <|.. cubibon.callAssistant.ReusableServiceInterface
+cubibon.callAssistant.ReusableServiceInterface <|.. cubibon.callAssistant.ReusableService
+cubibon.callAssistant.Service <|-- cubibon.callAssistant.ReusableService
+cubibon.callAssistant.CallbackManager +.. cubibon.callAssistant.CallbackManager$Companion
+cubibon.callAssistant.CallbackManagerInterface <|.. cubibon.callAssistant.CallbackManager
+cubibon.callAssistant.text2speech.ServiceInterface <|.. cubibon.callAssistant.text2speech.Text2SpeechPlayerInterface
+cubibon.callAssistant.text2speech.Service <|-- cubibon.callAssistant.text2speech.Text2SpeechPlayer
+cubibon.callAssistant.text2speech.Text2SpeechPlayerInterface <|.. cubibon.callAssistant.text2speech.Text2SpeechPlayer
+cubibon.callAssistant.text2speech.ReusableService <|-- cubibon.callAssistant.text2speech.Text2Speech
+cubibon.callAssistant.text2speech.AwsPolly +.. cubibon.callAssistant.text2speech.AwsPolly$Companion
+cubibon.callAssistant.text2speech.Text2Speech <|-- cubibon.callAssistant.text2speech.AwsPolly
 @enduml

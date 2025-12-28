@@ -1,30 +1,30 @@
 @startuml
-interface digital.boline.callAssistant.llm.prompt.Prompts {
+interface cubibon.callAssistant.llm.prompt.Prompts {
 + Map<K,T> prompts
 }
 
-abstract class digital.boline.callAssistant.llm.prompt.SimplePrompt {
+abstract class cubibon.callAssistant.llm.prompt.SimplePrompt {
 + Map<K, T> metadata
 + Map<K, O> variables
 # String formatMap2String(Map<*,*>,String,String)
 }
 
 
-class digital.boline.callAssistant.llm.prompt.TypedPrompts$Companion {
+class cubibon.callAssistant.llm.prompt.TypedPrompts$Companion {
 -  SEPARATOR
 }
 
-abstract class digital.boline.callAssistant.llm.prompt.TypedPrompts {
+abstract class cubibon.callAssistant.llm.prompt.TypedPrompts {
 + String toString()
 + Boolean equals(Any?)
 + Int hashCode()
 }
 
-class digital.boline.callAssistant.llm.prompt.PromptsManager$Companion {
+class cubibon.callAssistant.llm.prompt.PromptsManager$Companion {
 -  MESSAGE_SUMMARY_TITLE_KEY
 }
 
-abstract class digital.boline.callAssistant.llm.prompt.PromptsManager {
+abstract class cubibon.callAssistant.llm.prompt.PromptsManager {
 + Map<String, String> rawPrompts
 + String messageSummary
 + String formatPrompts(List<String>,Boolean,Boolean)
@@ -32,13 +32,13 @@ abstract class digital.boline.callAssistant.llm.prompt.PromptsManager {
 }
 
 
-class digital.boline.callAssistant.llm.prompt.PromptsManagerImpl {
+class cubibon.callAssistant.llm.prompt.PromptsManagerImpl {
 + Map<String, String> prompts
 + void applyVariables()
 }
 
 
-class digital.boline.callAssistant.llm.prompt.VariablesFunction {
+class cubibon.callAssistant.llm.prompt.VariablesFunction {
 -  functionMap
 - String formattedTime
 - Pair<String, () -> String> addFunction(() -> String)
@@ -52,9 +52,9 @@ class digital.boline.callAssistant.llm.prompt.VariablesFunction {
 }
 
 
-class digital.boline.callAssistant.llm.prompt.FieldsMatcher {
+class cubibon.callAssistant.llm.prompt.FieldsMatcher {
 }
-enum digital.boline.callAssistant.llm.prompt.SpecialSectionTitle {
+enum cubibon.callAssistant.llm.prompt.SpecialSectionTitle {
 +  METADATA
 +  CONSTANTS
 +  VARIABLES
@@ -62,7 +62,7 @@ enum digital.boline.callAssistant.llm.prompt.SpecialSectionTitle {
 }
 
 
-class digital.boline.callAssistant.llm.prompt.PromptsParser {
+class cubibon.callAssistant.llm.prompt.PromptsParser {
 -  REGEX_VAR
 -  REGEX_CONST
 -  REGEX_LINE_COMMENT
@@ -94,17 +94,17 @@ class digital.boline.callAssistant.llm.prompt.PromptsParser {
 }
 
 
-class digital.boline.callAssistant.llm.prompt.SerializationFiles {
+class cubibon.callAssistant.llm.prompt.SerializationFiles {
 }
-class digital.boline.callAssistant.llm.prompt.Occurrence {
+class cubibon.callAssistant.llm.prompt.Occurrence {
 + String toString()
 }
 
-class digital.boline.callAssistant.llm.prompt.ParsedPrompts$Companion {
+class cubibon.callAssistant.llm.prompt.ParsedPrompts$Companion {
 -  SEPARATOR
 }
 
-class digital.boline.callAssistant.llm.prompt.ParsedPrompts {
+class cubibon.callAssistant.llm.prompt.ParsedPrompts {
 +  metadata
 +  variables
 +  prompts
@@ -120,7 +120,7 @@ class digital.boline.callAssistant.llm.prompt.ParsedPrompts {
 }
 
 
-class digital.boline.callAssistant.llm.prompt.PromptsDeserializer {
+class cubibon.callAssistant.llm.prompt.PromptsDeserializer {
 + PromptsManager? fromBytesOrJson(String)
 + PromptsManager? fromBytesOrJson(File)
 + PromptsManager? fromBytes(String)
@@ -132,17 +132,17 @@ class digital.boline.callAssistant.llm.prompt.PromptsDeserializer {
 
 
 
-digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.llm.prompt.Prompts
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.SimplePrompt
-digital.boline.callAssistant.llm.prompt.Prompts <|.. digital.boline.callAssistant.llm.prompt.SimplePrompt
-digital.boline.callAssistant.llm.prompt.TypedPrompts +.. digital.boline.callAssistant.llm.prompt.TypedPrompts$Companion
-digital.boline.callAssistant.llm.prompt.SimplePrompt <|-- digital.boline.callAssistant.llm.prompt.TypedPrompts
-digital.boline.callAssistant.llm.prompt.PromptsManager +.. digital.boline.callAssistant.llm.prompt.PromptsManager$Companion
-digital.boline.callAssistant.llm.prompt.TypedPrompts <|-- digital.boline.callAssistant.llm.prompt.PromptsManager
-digital.boline.callAssistant.llm.prompt.PromptsManager <|-- digital.boline.callAssistant.llm.prompt.PromptsManagerImpl
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.VariablesFunction
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.PromptsParser
-digital.boline.callAssistant.llm.prompt.ParsedPrompts +.. digital.boline.callAssistant.llm.prompt.ParsedPrompts$Companion
-digital.boline.callAssistant.llm.prompt.TypedPrompts <|-- digital.boline.callAssistant.llm.prompt.ParsedPrompts
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.llm.prompt.PromptsDeserializer
+cubibon.callAssistant.LoggableInterface <|.. cubibon.callAssistant.llm.prompt.Prompts
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.prompt.SimplePrompt
+cubibon.callAssistant.llm.prompt.Prompts <|.. cubibon.callAssistant.llm.prompt.SimplePrompt
+cubibon.callAssistant.llm.prompt.TypedPrompts +.. cubibon.callAssistant.llm.prompt.TypedPrompts$Companion
+cubibon.callAssistant.llm.prompt.SimplePrompt <|-- cubibon.callAssistant.llm.prompt.TypedPrompts
+cubibon.callAssistant.llm.prompt.PromptsManager +.. cubibon.callAssistant.llm.prompt.PromptsManager$Companion
+cubibon.callAssistant.llm.prompt.TypedPrompts <|-- cubibon.callAssistant.llm.prompt.PromptsManager
+cubibon.callAssistant.llm.prompt.PromptsManager <|-- cubibon.callAssistant.llm.prompt.PromptsManagerImpl
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.prompt.VariablesFunction
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.prompt.PromptsParser
+cubibon.callAssistant.llm.prompt.ParsedPrompts +.. cubibon.callAssistant.llm.prompt.ParsedPrompts$Companion
+cubibon.callAssistant.llm.prompt.TypedPrompts <|-- cubibon.callAssistant.llm.prompt.ParsedPrompts
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.llm.prompt.PromptsDeserializer
 @enduml

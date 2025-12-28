@@ -1,12 +1,12 @@
 @startuml
-interface digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface {
+interface cubibon.callAssistant.text2speech.Text2SpeechPlayerInterface {
 + CallbackManager<C, Unit> onBeginPlayingCallbacks
 + CallbackManager<C, Unit> onEndPlayingCallbacks
 }
 
-abstract class digital.boline.callAssistant.text2speech.Text2SpeechPlayer {
+abstract class cubibon.callAssistant.text2speech.Text2SpeechPlayer {
 }
-abstract class digital.boline.callAssistant.text2speech.Text2Speech {
+abstract class cubibon.callAssistant.text2speech.Text2Speech {
 +  onResultCallbacks
 + <<Create>> Text2Speech(Text2SpeechPlayer<*>)
 # InputStream? fetchAudio(String)
@@ -16,11 +16,11 @@ abstract class digital.boline.callAssistant.text2speech.Text2Speech {
 }
 
 
-class digital.boline.callAssistant.text2speech.PlaybackData {
+class cubibon.callAssistant.text2speech.PlaybackData {
 + <<Create>> PlaybackData(PlaybackEvent?,String)
 }
 
-class digital.boline.callAssistant.text2speech.DesktopAudioPlayer {
+class cubibon.callAssistant.text2speech.DesktopAudioPlayer {
 +  onBeginPlayingCallbacks
 +  onEndPlayingCallbacks
 - AdvancedPlayer? player
@@ -29,13 +29,13 @@ class digital.boline.callAssistant.text2speech.DesktopAudioPlayer {
 }
 
 
-class digital.boline.callAssistant.text2speech.AwsPolly$Companion {
+class cubibon.callAssistant.text2speech.AwsPolly$Companion {
 -  VOICE_NAME
 -  VOICE_TYPE
 -  MAX_TEXT_LENGTH
 }
 
-class digital.boline.callAssistant.text2speech.AwsPolly {
+class cubibon.callAssistant.text2speech.AwsPolly {
 - PollyClient? client
 - Voice? voice
 + <<Create>> AwsPolly(Text2SpeechPlayer<C>)
@@ -49,12 +49,12 @@ class digital.boline.callAssistant.text2speech.AwsPolly {
 
 
 
-digital.boline.callAssistant.text2speech.ServiceInterface <|.. digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface
-digital.boline.callAssistant.text2speech.Service <|-- digital.boline.callAssistant.text2speech.Text2SpeechPlayer
-digital.boline.callAssistant.text2speech.Text2SpeechPlayerInterface <|.. digital.boline.callAssistant.text2speech.Text2SpeechPlayer
-digital.boline.callAssistant.text2speech.ReusableService <|-- digital.boline.callAssistant.text2speech.Text2Speech
-digital.boline.callAssistant.CallbackInput <|.. digital.boline.callAssistant.text2speech.PlaybackData
-digital.boline.callAssistant.text2speech.Text2SpeechPlayer <|-- digital.boline.callAssistant.text2speech.DesktopAudioPlayer
-digital.boline.callAssistant.text2speech.AwsPolly +.. digital.boline.callAssistant.text2speech.AwsPolly$Companion
-digital.boline.callAssistant.text2speech.Text2Speech <|-- digital.boline.callAssistant.text2speech.AwsPolly
+cubibon.callAssistant.text2speech.ServiceInterface <|.. cubibon.callAssistant.text2speech.Text2SpeechPlayerInterface
+cubibon.callAssistant.text2speech.Service <|-- cubibon.callAssistant.text2speech.Text2SpeechPlayer
+cubibon.callAssistant.text2speech.Text2SpeechPlayerInterface <|.. cubibon.callAssistant.text2speech.Text2SpeechPlayer
+cubibon.callAssistant.text2speech.ReusableService <|-- cubibon.callAssistant.text2speech.Text2Speech
+cubibon.callAssistant.CallbackInput <|.. cubibon.callAssistant.text2speech.PlaybackData
+cubibon.callAssistant.text2speech.Text2SpeechPlayer <|-- cubibon.callAssistant.text2speech.DesktopAudioPlayer
+cubibon.callAssistant.text2speech.AwsPolly +.. cubibon.callAssistant.text2speech.AwsPolly$Companion
+cubibon.callAssistant.text2speech.Text2Speech <|-- cubibon.callAssistant.text2speech.AwsPolly
 @enduml

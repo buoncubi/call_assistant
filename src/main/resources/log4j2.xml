@@ -8,7 +8,7 @@
 <Configuration status="WARN"> <!-- packages="com.amazonaws.services.lambda.runtime.log4j2"> -->
     <Properties>
         <!-- Variables for project structure (set by virtual environment ) -->
-        <Property name="PACKAGE_ID">${env:BASE_PKG:-digital.boline.callAssistant}</Property>
+        <Property name="PACKAGE_ID">${env:BASE_PKG:-cubibon.callAssistant}</Property>
         <Property name="PACKAGE_ID_AWS">${env:BASE_PKG_AWS:-software.amazon.awssdk}</Property>
 
         <!-- Root log level (set by virtual environment ) -->

@@ -286,13 +286,13 @@ suspend fun main() {
 }
 ```
 For more implementation details check out the 
-[documented code](../dokka/html/-call-assistant--brain/digital.boline.callAssistant/index.html).
+[documented code](../dokka/html/-call-assistant--brain/cubibon.callAssistant/index.html).
 
 For more examples checkout
- - [ServiceInterfaceTest](../../src/test/kotlin/digital/boline/callAssistant/ServiceInterfaceTest.kt)
- - [DummyText2Speech](../../src/test/kotlin/digital/boline/callAssistant/text2speech/DummyText2Speech.kt)
- - [DummySpeech2Text](../../src/test/kotlin/digital/boline/callAssistant/speech2text/DummySpeech2Text.kt)
- - [DummyLlmInteract](../../src/test/kotlin/digital/boline/callAssistant/llm/DummyLlmInteract.kt)
+ - [ServiceInterfaceTest](../../src/test/kotlin/cubibon/callAssistant/ServiceInterfaceTest.kt)
+ - [DummyText2Speech](../../src/test/kotlin/cubibon/callAssistant/text2speech/DummyText2Speech.kt)
+ - [DummySpeech2Text](../../src/test/kotlin/cubibon/callAssistant/speech2text/DummySpeech2Text.kt)
+ - [DummyLlmInteract](../../src/test/kotlin/cubibon/callAssistant/llm/DummyLlmInteract.kt)
 
 ---
 

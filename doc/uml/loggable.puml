@@ -1,5 +1,5 @@
 @startuml
-class digital.boline.callAssistant.LoggableInterface$Factory$Companion {
+class cubibon.callAssistant.LoggableInterface$Factory$Companion {
 -  internalLogger
 - void getLoggerName(Class<*>)
 - Logger getNewLogger(Class<*>)
@@ -8,21 +8,21 @@ class digital.boline.callAssistant.LoggableInterface$Factory$Companion {
 }
 
 
-class digital.boline.callAssistant.LoggableInterface$Factory {
+class cubibon.callAssistant.LoggableInterface$Factory {
 + Logger slf4jLogger
 + <<Create>> Factory(Class<out LoggableInterface>)
 }
 
 
-class digital.boline.callAssistant.LoggableInterface$Companion {
+class cubibon.callAssistant.LoggableInterface$Companion {
 + String NEW_LINE
 }
 
-interface digital.boline.callAssistant.LoggableInterface {
+interface cubibon.callAssistant.LoggableInterface {
 + void loggerFactory(Class<out LoggableInterface>?)
 }
 
-class digital.boline.callAssistant.CentralizedLogger {
+class cubibon.callAssistant.CentralizedLogger {
 -  loggerTag
 +  logsFor
 + <<Create>> CentralizedLogger(Class<out LoggableInterface>,Logger)
@@ -35,11 +35,11 @@ class digital.boline.callAssistant.CentralizedLogger {
 }
 
 
-class digital.boline.callAssistant.Loggable$Companion {
+class cubibon.callAssistant.Loggable$Companion {
 + String NEW_LINE
 }
 
-class digital.boline.callAssistant.Loggable {
+class cubibon.callAssistant.Loggable {
 #  slf4jLogger
 # CentralizedLogger logger
 + <<Create>> Loggable(Class<out LoggableInterface>?)
@@ -54,10 +54,10 @@ class digital.boline.callAssistant.Loggable {
 
 
 
-digital.boline.callAssistant.Factory +.. digital.boline.callAssistant.Factory$Companion
-digital.boline.callAssistant.LoggableInterface$Factory +.. digital.boline.callAssistant.LoggableInterface$Factory$Companion
-digital.boline.callAssistant.LoggableInterface +.. digital.boline.callAssistant.LoggableInterface$Factory
-digital.boline.callAssistant.LoggableInterface +.. digital.boline.callAssistant.LoggableInterface$Companion
-digital.boline.callAssistant.Loggable +.. digital.boline.callAssistant.Loggable$Companion
-digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.Loggable
+cubibon.callAssistant.Factory +.. cubibon.callAssistant.Factory$Companion
+cubibon.callAssistant.LoggableInterface$Factory +.. cubibon.callAssistant.LoggableInterface$Factory$Companion
+cubibon.callAssistant.LoggableInterface +.. cubibon.callAssistant.LoggableInterface$Factory
+cubibon.callAssistant.LoggableInterface +.. cubibon.callAssistant.LoggableInterface$Companion
+cubibon.callAssistant.Loggable +.. cubibon.callAssistant.Loggable$Companion
+cubibon.callAssistant.LoggableInterface <|.. cubibon.callAssistant.Loggable
 @enduml

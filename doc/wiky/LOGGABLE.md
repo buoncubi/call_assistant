@@ -1,6 +1,6 @@
 # Loggable Facilities
 
-The [Loggable.kt](../../src/main/kotlin/digital/boline/callAssistant/Loggable.kt) file contains all the interfaces and
+The [Loggable.kt](../../src/main/kotlin/cubibon/callAssistant/Loggable.kt) file contains all the interfaces and
 class that provides logging facilities to this project in a general manner. The file implements the `LoggableInterface`
 and the `Loggable` class. The latter class can be implemented by any class to inherit logging ability, while the former
 should be used if a class already implements another class; since a class cannot extend two classes, e.g., it might 
@@ -81,7 +81,7 @@ Where the arguments are:
 ## Software Architecture 
 
 The following image show the implemented architecture for the loggable facilities. For more, see the 
-[documented code](../dokka/html/-call-assistant--brain/digital.boline.callAssistant/index.html).
+[documented code](../dokka/html/-call-assistant--brain/cubibon.callAssistant/index.html).
 
 ![localImage](../uml/loggable.svg)
 

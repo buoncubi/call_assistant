@@ -69,10 +69,10 @@ The implementation of a service able to leverage AWS services is `AwsPolly`, whi
 
 For more info see the [Service Interface](SERVICE).  
 For more implementation details check out the
-[documented code](../dokka/html/-call-assistant--brain/digital.boline.callAssistant.text2speech/index.html).  
+[documented code](../dokka/html/-call-assistant--brain/cubibon.callAssistant.text2speech/index.html).  
 For more examples checkout
-[DummyText2Speech.kt](../../src/test/kotlin/digital/boline/callAssistant/text2speech/DummyText2Speech.kt) and
-[AwsPollyRunner.kt](../../src/test/kotlin/digital/boline/callAssistant/text2speech/AwsPollyRunner.kt).
+[DummyText2Speech.kt](../../src/test/kotlin/cubibon/callAssistant/text2speech/DummyText2Speech.kt) and
+[AwsPollyRunner.kt](../../src/test/kotlin/cubibon/callAssistant/text2speech/AwsPollyRunner.kt).
 
 ---
 

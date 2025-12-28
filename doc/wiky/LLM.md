@@ -77,10 +77,10 @@ It follows an example on how to use `AwsBedrock`
 
 For more info see the [Service Interface](SERVICE).  
 For more implementation details check out the
-[documented code](../dokka/html/-call-assistant--brain/digital.boline.callAssistant.llm/index.html).  
+[documented code](../dokka/html/-call-assistant--brain/cubibon.callAssistant.llm/index.html).  
 For more examples checkout
-[DummyLlmService.kt](../../src/test/kotlin/digital/boline/callAssistant/llm/DummyLlmService.kt) and
-[AwsBedrockRunner.kt](../../src/test/kotlin/digital/boline/callAssistant/llm/AwsBedrockRunner.kt).
+[DummyLlmService.kt](../../src/test/kotlin/cubibon/callAssistant/llm/DummyLlmService.kt) and
+[AwsBedrockRunner.kt](../../src/test/kotlin/cubibon/callAssistant/llm/AwsBedrockRunner.kt).
 
 ---
 

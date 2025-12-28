@@ -1,9 +1,9 @@
 @startuml
-class digital.boline.callAssistant.ServiceInterface$Companion {
+class cubibon.callAssistant.ServiceInterface$Companion {
 +  UNKNOWN_SOURCE_TAG
 }
 
-interface digital.boline.callAssistant.ServiceInterface {
+interface cubibon.callAssistant.ServiceInterface {
 + AtomicBoolean isComputing
 + Boolean canCompute()
 + Boolean computeAsync(I,FrequentTimeout?,String)
@@ -13,7 +13,7 @@ interface digital.boline.callAssistant.ServiceInterface {
 }
 
 
-class digital.boline.callAssistant.Timeout$Companion {
+class cubibon.callAssistant.Timeout$Companion {
 # Long DEFAULT_TIMEOUT
 #  DEFAULT_CALLBACK
 # void timeoutToString(Long)
@@ -21,22 +21,22 @@ class digital.boline.callAssistant.Timeout$Companion {
 }
 
 
-class digital.boline.callAssistant.Timeout {
+class cubibon.callAssistant.Timeout {
 + <<Create>> Timeout(Long,((String) -> Unit)?)
 + void invokeCallback(String)
 + void toString()
 }
 
-class digital.boline.callAssistant.FrequentTimeout$Companion {
+class cubibon.callAssistant.FrequentTimeout$Companion {
 - Long DEFAULT_CHECK_PERIOD
 }
 
-class digital.boline.callAssistant.FrequentTimeout {
+class cubibon.callAssistant.FrequentTimeout {
 + <<Create>> FrequentTimeout(Long,Long,((String) -> Unit)?)
 + void toString()
 }
 
-enum digital.boline.callAssistant.ErrorSource {
+enum cubibon.callAssistant.ErrorSource {
 +  ACTIVATING
 +  COMPUTING
 +  TIMEOUT
@@ -47,11 +47,11 @@ enum digital.boline.callAssistant.ErrorSource {
 }
 
 
-class digital.boline.callAssistant.ServiceError {
+class cubibon.callAssistant.ServiceError {
 + <<Create>> ServiceError(Throwable,ErrorSource,String)
 }
 
-abstract class digital.boline.callAssistant.Service {
+abstract class cubibon.callAssistant.Service {
 - Job? computingJob
 - Job? timeoutJob
 - AtomicLong? timeoutStart
@@ -75,7 +75,7 @@ abstract class digital.boline.callAssistant.Service {
 }
 
 
-interface digital.boline.callAssistant.ReusableServiceInterface {
+interface cubibon.callAssistant.ReusableServiceInterface {
 + AtomicBoolean isActive
 + Boolean canActivate()
 + Boolean activate(String)
@@ -84,7 +84,7 @@ interface digital.boline.callAssistant.ReusableServiceInterface {
 }
 
 
-abstract class digital.boline.callAssistant.ReusableService {
+abstract class cubibon.callAssistant.ReusableService {
 +  isActive
 + <<Create>> ReusableService(CoroutineScope)
 + Boolean checkComputingState(Boolean,String)
@@ -98,7 +98,7 @@ abstract class digital.boline.callAssistant.ReusableService {
 }
 
 
-interface digital.boline.callAssistant.CallbackManagerInterface {
+interface cubibon.callAssistant.CallbackManagerInterface {
 + String add(((I) -> O))
 + void remove(((I) -> O))
 + void remove(String)
@@ -107,19 +107,19 @@ interface digital.boline.callAssistant.CallbackManagerInterface {
 + ((I) -> O)? getCallbacks(String)
 }
 
-interface digital.boline.callAssistant.CallbackInput {
+interface cubibon.callAssistant.CallbackInput {
 + String sourceTag
 }
 
-class digital.boline.callAssistant.SimpleCallbackInput {
+class cubibon.callAssistant.SimpleCallbackInput {
 + <<Create>> SimpleCallbackInput(String)
 }
 
-class digital.boline.callAssistant.CallbackManager$Companion {
+class cubibon.callAssistant.CallbackManager$Companion {
 + String getCallbackIdentifier(((I) -> O))
 }
 
-class digital.boline.callAssistant.CallbackManager {
+class cubibon.callAssistant.CallbackManager {
 -  serviceName
 - MutableMap<String, ((I) -> O)> callbacks
 + <<Create>> CallbackManager(CentralizedLogger)
@@ -134,18 +134,18 @@ class digital.boline.callAssistant.CallbackManager {
 
 
 
-digital.boline.callAssistant.ServiceInterface +.. digital.boline.callAssistant.ServiceInterface$Companion
-digital.boline.callAssistant.LoggableInterface <|.. digital.boline.callAssistant.ServiceInterface
-digital.boline.callAssistant.Timeout +.. digital.boline.callAssistant.Timeout$Companion
-digital.boline.callAssistant.FrequentTimeout +.. digital.boline.callAssistant.FrequentTimeout$Companion
-digital.boline.callAssistant.Timeout <|-- digital.boline.callAssistant.FrequentTimeout
-digital.boline.callAssistant.CallbackInput <|.. digital.boline.callAssistant.ServiceError
-digital.boline.callAssistant.ServiceInterface <|.. digital.boline.callAssistant.Service
-digital.boline.callAssistant.Loggable <|-- digital.boline.callAssistant.Service
-digital.boline.callAssistant.ServiceInterface <|.. digital.boline.callAssistant.ReusableServiceInterface
-digital.boline.callAssistant.ReusableServiceInterface <|.. digital.boline.callAssistant.ReusableService
-digital.boline.callAssistant.Service <|-- digital.boline.callAssistant.ReusableService
-digital.boline.callAssistant.CallbackInput <|.. digital.boline.callAssistant.SimpleCallbackInput
-digital.boline.callAssistant.CallbackManager +.. digital.boline.callAssistant.CallbackManager$Companion
-digital.boline.callAssistant.CallbackManagerInterface <|.. digital.boline.callAssistant.CallbackManager
+cubibon.callAssistant.ServiceInterface +.. cubibon.callAssistant.ServiceInterface$Companion
+cubibon.callAssistant.LoggableInterface <|.. cubibon.callAssistant.ServiceInterface
+cubibon.callAssistant.Timeout +.. cubibon.callAssistant.Timeout$Companion
+cubibon.callAssistant.FrequentTimeout +.. cubibon.callAssistant.FrequentTimeout$Companion
+cubibon.callAssistant.Timeout <|-- cubibon.callAssistant.FrequentTimeout
+cubibon.callAssistant.CallbackInput <|.. cubibon.callAssistant.ServiceError
+cubibon.callAssistant.ServiceInterface <|.. cubibon.callAssistant.Service
+cubibon.callAssistant.Loggable <|-- cubibon.callAssistant.Service
+cubibon.callAssistant.ServiceInterface <|.. cubibon.callAssistant.ReusableServiceInterface
+cubibon.callAssistant.ReusableServiceInterface <|.. cubibon.callAssistant.ReusableService
+cubibon.callAssistant.Service <|-- cubibon.callAssistant.ReusableService
+cubibon.callAssistant.CallbackInput <|.. cubibon.callAssistant.SimpleCallbackInput
+cubibon.callAssistant.CallbackManager +.. cubibon.callAssistant.CallbackManager$Companion
+cubibon.callAssistant.CallbackManagerInterface <|.. cubibon.callAssistant.CallbackManager
 @enduml
